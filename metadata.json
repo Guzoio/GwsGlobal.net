@@ -1,0 +1,6 @@
+{
+  "name": "Gestão de Licitações e Propostas Comerciais",
+  "description": "Sistema completo de gestão de licitações, extrator de links e gerador de propostas comerciais em Word (.docx) com catálogo ilustrativo de produtos.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
