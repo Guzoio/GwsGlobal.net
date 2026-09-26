@@ -1,92 +1,56 @@
-# Gestão de Licitações e Gerador de Propostas Comerciais com Catálogo de Produtos
+# GWS GLOBAL.net - Gestão de Licitações & Gerador de Propostas Comerciais
 
-Aplicação web completa desenvolvida em **Python** utilizando **Streamlit**, **SQLite**, **python-docx / docxtpl**, **num2words**, **BeautifulSoup** e **Pillow**.
+Sistema completo para empresas participantes de licitações públicas (pregões eletrônicos, dispensas e concorrências). Permite cadastrar processos, cadastrar itens com fotos e especificações técnicas, calcular limites de lances e gerar propostas comerciais oficiais em PDF com papel timbrado dinâmico e catálogo ilustrativo.
 
 ---
 
-## 🚀 1. Como Instalar e Rodar Localmente
+## 🚀 Como Publicar na Hostinger (Ficar 100% Idêntico)
 
-### Pré-requisitos
-- Python 3.10 ou superior
-- Gerenciador de pacotes `pip`
+### ⚠️ Por que a página ficou incompleta/sem botões ao subir os arquivos brutos?
+O navegador de internet **não interpreta arquivos TypeScript (.tsx)** diretamente. Quando você coloca arquivos de código-fonte como `src/main.tsx` no servidor web da Hostinger (Nginx, Apache ou hPanel), o navegador tenta carregar o arquivo `.tsx` e não consegue, resultando numa tela incompleta.
 
-### Passo 1: Instalar dependências
-Execute o comando abaixo no terminal:
+---
+
+### Opção 1: O Método Mais Rápido (Só Arrastar e Soltar na Hostinger)
+1. No sistema, clique no botão **"Exportar / Hostinger"** no topo da tela (ou abra o menu Configurações).
+2. Baixe o arquivo **`gws_sistema_dist_hostinger.zip`**.
+3. Extraia o arquivo no seu computador. Você verá o arquivo `index.html` e a pasta `assets/`.
+4. No **Gerenciador de Arquivos** da Hostinger (ou via FTP/FileZilla), envie esses arquivos direto para dentro da pasta **`public_html`** (ou `/var/www/html` na sua VPS).
+5. Pronto! Acesse seu domínio: o sistema abrirá **100% idêntico, com todos os botões, logotipo, gerador de PDF e calculadora funcionando**.
+
+---
+
+### Opção 2: Rodar na VPS com Node.js + PM2 (Servidor Completo)
+Se você tem uma VPS Hostinger (KVM 1 ou KVM 2) e deseja rodar o servidor Node.js:
+
 ```bash
-pip install -r requirements.txt
+# 1. Conecte na sua VPS via SSH
+ssh root@seu_ip_da_vps
+
+# 2. Acesse a pasta do projeto
+cd /var/www/gws-licitacoes
+
+# 3. Instale as dependências e compile o projeto
+npm install
+npm run build
+
+# 4. Inicie o servidor em segundo plano com PM2
+npm install -g pm2
+pm2 start server.js --name "gws-licitacoes"
+pm2 save
+pm2 startup
 ```
-Ou instale individualmente:
-```bash
-pip install streamlit docxtpl python-docx num2words beautifulsoup4 requests pillow
-```
 
-### Passo 2: Iniciar o aplicativo Streamlit
+---
+
+### Opção 3: Versão em Python (app.py) com Streamlit
+Se preferir rodar a versão em Python com Streamlit e banco de dados SQLite:
+
 ```bash
+# 1. Instalar dependências no servidor ou máquina local
+pip install streamlit reportlab num2words beautifulsoup4 requests pillow
+
+# 2. Executar o sistema
 streamlit run app.py
 ```
-O aplicativo será aberto automaticamente no navegador no endereço `http://localhost:8501`.
-
----
-
-## 🗄️ 2. Estrutura do Banco de Dados (SQLite)
-
-O arquivo `licitacoes.db` é criado e gerenciado automaticamente na primeira execução:
-
-- **Tabela `licitacoes`**:
-  - `id`: Chave primária (INTEGER AUTOINCREMENT)
-  - `orgao`: Nome do órgão público licitante (TEXT)
-  - `processo_pregao`: Número do processo ou pregão (TEXT)
-  - `modalidade`: Modalidade de licitação (ex: Pregão Eletrônico) (TEXT)
-  - `data_cadastro`: Data no formato DD/MM/AAAA (TEXT)
-  - `status`: Status da licitação (Pendente, Aprovada, Perdida) (TEXT)
-
-- **Tabela `itens_licitacao`**:
-  - `id`: Chave primária (INTEGER AUTOINCREMENT)
-  - `licitacao_id`: Chave estrangeira referenciando `licitacoes.id` (INTEGER)
-  - `num_item`: Número sequencial do item no edital (INTEGER)
-  - `link_produto`: URL informada para extração/referência (TEXT)
-  - `descricao_curta`: Descrição resumida para a Tabela Comercial (TEXT)
-  - `descricao_tecnica`: Especificação técnica completa para o Catálogo (TEXT)
-  - `marca`: Marca / Fabricante / Modelo (TEXT)
-  - `quantidade`: Quantidade exigida (REAL)
-  - `valor_unitario`: Preço unitário em Reais (REAL)
-  - `valor_total`: Quantidade * Valor Unitário (REAL)
-  - `caminho_imagem`: Caminho relativo da foto salva na pasta `uploads_produtos/` (TEXT)
-
----
-
-## 📝 3. Instruções do Template Word (.docx) com Tags de Substituição
-
-Caso deseje utilizar um papel timbrado personalizado da sua empresa via `docxtpl`, crie um arquivo Word nomeado `template_proposta.docx` com as seguintes tags Jinja2:
-
-### Variáveis do Cabeçalho Dinâmico:
-- `{{ orgao }}`: Nome do órgão público licitante
-- `{{ processo_pregao }}`: Número do pregão/processo
-- `{{ modalidade }}`: Modalidade da licitação
-- `{{ data_hoje }}`: Data formatada (DD/MM/AAAA)
-
-### Tabela Comercial (Linha com Repetição):
-Crie uma tabela com cabeçalho padrão e na segunda linha insira a diretiva de repetição:
-```text
-| Item | Descrição | Marca | Qtd | Valor Unit. | Valor Total |
-| {% tr for item in itens %}{{ item.num_item }} | {{ item.descricao_curta }} | {{ item.marca }} | {{ item.quantidade }} | {{ item.valor_unitario }} | {{ item.valor_total }}{% tr endfor %} |
-```
-
-### Linha do Total e Extenso:
-- `{{ total_geral }}`: Valor total somado formatado (Ex: `R$ 45.280,00`)
-- `{{ extenso }}`: Valor por extenso em português do Brasil (Ex: `quarenta e cinco mil duzentos e oitenta reais`)
-
-### Seção 2 — Anexo Catálogo Ilustrativo (Grade de 2 Colunas):
-Insira uma quebra de página, o título do anexo e uma tabela de 1 linha e 2 colunas:
-- **Coluna da Esquerda**: `{{ item.imagem_docxtpl }}` (ajustada com largura máxima de 5 cm)
-- **Coluna da Direita**:
-  ```text
-  {% for item in itens %}
-  ITEM {{ item.num_item }} — {{ item.descricao_curta }}
-  Marca / Modelo: {{ item.marca }}
-  Especificações Técnicas:
-  {{ item.descricao_tecnica }}
-  {% endfor %}
-  ```
-
-> **Nota:** O script `app.py` possui um gerador nativo que cria o arquivo Word completo automaticamente com layout institucional, papel timbrado, cores corporativas e catálogo de 2 colunas, mesmo sem o arquivo template pré-existente!
+O sistema abrirá na porta `8501`.

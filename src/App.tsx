@@ -12,6 +12,7 @@ import { VisualizarPdfTab } from './components/VisualizarPdfTab';
 import { PapelTimbradoTab } from './components/PapelTimbradoTab';
 import { CodigoPythonTab } from './components/CodigoPythonTab';
 import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
+import { ExportarProjetoModal } from './components/ExportarProjetoModal';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from './types';
 import {
   obterLicitacoes,
@@ -36,6 +37,7 @@ export default function App() {
     obterPapelTimbradoConfig()
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
+  const [exportarModalAberto, setExportarModalAberto] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
 
   // Carrega dados iniciais do banco local
@@ -245,12 +247,19 @@ export default function App() {
         abaAtiva={abaAtiva}
         setAbaAtiva={setAbaAtiva}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
+        onAbrirExportar={() => setExportarModalAberto(true)}
       />
 
       {/* Painel lateral deslizante da Calculadora de Limite de Oferta */}
       <CalculadoraOfertaDrawer
         aberto={calculadoraAberta}
         onFechar={() => setCalculadoraAberta(false)}
+      />
+
+      {/* Modal de Exportação e Deploy na Hostinger */}
+      <ExportarProjetoModal
+        aberto={exportarModalAberto}
+        onFechar={() => setExportarModalAberto(false)}
       />
 
       {/* Toast flutuante */}

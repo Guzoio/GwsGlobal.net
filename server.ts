@@ -2,6 +2,8 @@ import express from 'express';
 import { createServer as createViteServer } from 'vite';
 import { GoogleGenAI } from '@google/genai';
 import path from 'path';
+import fs from 'fs';
+import { execSync } from 'child_process';
 import dotenv from 'dotenv';
 
 dotenv.config();
@@ -19,6 +21,145 @@ const ai = new GoogleGenAI({
       'User-Agent': 'aistudio-build',
     },
   },
+});
+
+// Helper recursivo para listar arquivos
+function listarArquivosRecursivo(dir: string, base: string = ''): Array<{ path: string; content: string; isBase64: boolean }> {
+  let results: Array<{ path: string; content: string; isBase64: boolean }> = [];
+  if (!fs.existsSync(dir)) return results;
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    if (file.startsWith('.')) continue; // Ignora arquivos ocultos (.gitignore, etc.)
+    const fullPath = path.join(dir, file);
+    const relPath = base ? path.join(base, file) : file;
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      results = results.concat(listarArquivosRecursivo(fullPath, relPath));
+    } else {
+      // Arquivos de texto vs binários
+      const ext = path.extname(file).toLowerCase();
+      const isText = ['.html', '.css', '.js', '.json', '.ts', '.tsx', '.py', '.md', '.txt', '.svg'].includes(ext);
+      if (isText) {
+        const textContent = fs.readFileSync(fullPath, 'utf8');
+        results.push({ path: relPath.replace(/\\/g, '/'), content: textContent, isBase64: false });
+      } else {
+        const buffer = fs.readFileSync(fullPath);
+        results.push({ path: relPath.replace(/\\/g, '/'), content: buffer.toString('base64'), isBase64: true });
+      }
+    }
+  }
+  return results;
+}
+
+// Endpoint JSON para retorno de todos os arquivos de dist (usado pelo JSZip no navegador)
+app.get('/api/exportar/dist-files', (_req, res) => {
+  try {
+    const distPath = path.resolve(process.cwd(), 'dist');
+    if (!fs.existsSync(distPath)) {
+      return res.status(400).json({ erro: 'A pasta dist ainda não foi gerada.' });
+    }
+    const arquivos = listarArquivosRecursivo(distPath);
+    return res.json({ sucesso: true, arquivos });
+  } catch (error: any) {
+    console.error('Erro em dist-files:', error);
+    return res.status(500).json({ erro: error?.message || 'Erro ao ler arquivos compilados.' });
+  }
+});
+
+// Endpoint JSON para retorno de todos os arquivos do código-fonte (usado pelo JSZip no navegador)
+app.get('/api/exportar/projeto-files', (_req, res) => {
+  try {
+    const rootDir = process.cwd();
+    let arquivos: Array<{ path: string; content: string; isBase64: boolean }> = [];
+
+    // Arquivos da raiz
+    const arquivosRaiz = [
+      'package.json',
+      'index.html',
+      'vite.config.ts',
+      'server.ts',
+      'app.py',
+      'tsconfig.json',
+      'README.md',
+      'metadata.json',
+    ];
+
+    for (const f of arquivosRaiz) {
+      const fullPath = path.join(rootDir, f);
+      if (fs.existsSync(fullPath)) {
+        const content = fs.readFileSync(fullPath, 'utf8');
+        arquivos.push({ path: f, content, isBase64: false });
+      }
+    }
+
+    // Pasta src/
+    const srcArquivos = listarArquivosRecursivo(path.join(rootDir, 'src'), 'src');
+    arquivos = arquivos.concat(srcArquivos);
+
+    return res.json({ sucesso: true, arquivos });
+  } catch (error: any) {
+    console.error('Erro em projeto-files:', error);
+    return res.status(500).json({ erro: error?.message || 'Erro ao ler arquivos do projeto.' });
+  }
+});
+
+// Endpoint para baixar app.py (Python/Streamlit) diretamente
+app.get('/api/exportar/app-py', (_req, res) => {
+  const filePath = path.resolve(process.cwd(), 'app.py');
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, 'app.py');
+  } else {
+    res.status(404).send('Arquivo app.py não encontrado no servidor.');
+  }
+});
+
+// Endpoint para baixar o bundle compilado (dist) em .zip pronto para Hostinger
+app.get('/api/exportar/dist-zip', (_req, res) => {
+  try {
+    const distPath = path.resolve(process.cwd(), 'dist');
+    if (!fs.existsSync(distPath)) {
+      return res.status(400).send('A pasta dist ainda não foi gerada no servidor.');
+    }
+
+    const zipPath = path.resolve(process.cwd(), 'dist_hostinger.zip');
+    execSync(
+      `python3 -c "import zipfile, os
+with zipfile.ZipFile('${zipPath}', 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk('dist'):
+        for f in files:
+            full = os.path.join(root, f)
+            rel = os.path.relpath(full, 'dist')
+            z.write(full, rel)"`
+    );
+
+    res.download(zipPath, 'gws_sistema_dist_hostinger.zip');
+  } catch (error: any) {
+    console.error('Erro no endpoint dist-zip:', error);
+    res.status(500).send('Erro ao compactar arquivos de distribuição.');
+  }
+});
+
+// Endpoint para baixar o código-fonte completo em .zip
+app.get('/api/exportar/projeto-completo-zip', (_req, res) => {
+  try {
+    const zipPath = path.resolve(process.cwd(), 'codigo_fonte.zip');
+    execSync(
+      `python3 -c "import zipfile, os
+with zipfile.ZipFile('${zipPath}', 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk('src'):
+        for f in files:
+            full = os.path.join(root, f)
+            z.write(full, full)
+    for f in ['package.json', 'index.html', 'vite.config.ts', 'server.ts', 'app.py', 'tsconfig.json', 'README.md', 'metadata.json']:
+        if os.path.exists(f):
+            z.write(f, f)"`
+    );
+
+    res.download(zipPath, 'gws_sistema_licitacoes_codigo_fonte.zip');
+  } catch (error: any) {
+    console.error('Erro no endpoint projeto-completo-zip:', error);
+    res.status(500).send('Erro ao compactar código-fonte.');
+  }
 });
 
 // Endpoint para otimização e estruturação de especificações técnicas de licitação com Gemini

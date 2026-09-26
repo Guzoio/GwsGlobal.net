@@ -9,6 +9,8 @@ import {
   Settings,
   Code2,
   ChevronDown,
+  Globe,
+  Download,
 } from 'lucide-react';
 import { LogoGwsMartelo } from './LogoGwsMartelo';
 
@@ -16,12 +18,14 @@ interface HeaderProps {
   abaAtiva: string;
   setAbaAtiva: (aba: string) => void;
   onAbrirCalculadora?: () => void;
+  onAbrirExportar?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   abaAtiva,
   setAbaAtiva,
   onAbrirCalculadora,
+  onAbrirExportar,
 }) => {
   const [menuConfigAberto, setMenuConfigAberto] = useState(false);
 
@@ -172,6 +176,31 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                     </div>
                   </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  <button
+                    onClick={() => {
+                      onAbrirExportar?.();
+                      setMenuConfigAberto(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-emerald-50 transition-colors cursor-pointer text-slate-700"
+                  >
+                    <div className="p-1.5 rounded-md bg-emerald-100 text-emerald-800 mt-0.5 shrink-0">
+                      <Globe className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-emerald-950 flex items-center gap-1.5">
+                        Hospedar na Hostinger / Exportar
+                        <span className="text-[9px] font-bold bg-emerald-200 text-emerald-900 px-1.5 py-0.2 rounded">
+                          Deploy
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        Baixar ZIP compilado ou app.py pronto para a VPS
+                      </div>
+                    </div>
+                  </button>
                 </div>
               </>
             )}
@@ -184,6 +213,15 @@ export const Header: React.FC<HeaderProps> = ({
           >
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             Calcular
+          </button>
+
+          <button
+            onClick={onAbrirExportar}
+            className="px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
+            title="Exportar projeto para Hostinger ou baixar app.py"
+          >
+            <Download className="w-3.5 h-3.5 text-emerald-600" />
+            <span className="hidden lg:inline">Exportar /</span> Hostinger
           </button>
         </div>
       </div>
@@ -243,6 +281,13 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Settings className="w-3.5 h-3.5" />
           Configurações
+        </button>
+        <button
+          onClick={onAbrirExportar}
+          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-emerald-100 text-emerald-800 shrink-0"
+        >
+          <Download className="w-3.5 h-3.5 text-emerald-600" />
+          Hostinger
         </button>
       </div>
     </header>
