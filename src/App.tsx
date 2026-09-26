@@ -317,6 +317,7 @@ export default function App() {
             config={timbradoConfig}
             onSalvarConfig={handleSalvarTimbrado}
             onVisualizarPdf={() => setAbaAtiva('preview')}
+            onAbrirExportar={() => setExportarModalAberto(true)}
           />
         )}
 

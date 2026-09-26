@@ -259,18 +259,105 @@ export const ExportarProjetoModal: React.FC<ExportarProjetoModalProps> = ({
               </button>
             </div>
 
-            <div className="bg-white border border-emerald-200 rounded-lg p-3 text-xs text-slate-700 space-y-1.5 mt-2">
-              <div className="font-semibold text-emerald-900">Como colocar no ar em 1 minuto na Hostinger:</div>
-              <ol className="list-decimal list-inside space-y-1 text-slate-600 pl-1">
+            <div className="bg-white border border-emerald-200 rounded-lg p-3 text-xs text-slate-700 space-y-2 mt-2">
+              <div className="font-semibold text-emerald-900">Como colocar no ar na Hostinger ou testar no PC:</div>
+              <ol className="list-decimal list-inside space-y-1.5 text-slate-600 pl-1">
                 <li>Clique no botão verde acima para baixar o arquivo <strong>gws_sistema_dist_hostinger.zip</strong>.</li>
-                <li>Extraia o arquivo no seu computador (você verá o <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">index.html</code> e a pasta <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">assets/</code>).</li>
-                <li>No <strong>Gerenciador de Arquivos</strong> da Hostinger (hPanel ou FTP), envie esses arquivos direto para dentro da pasta <strong>public_html</strong> (ou <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">/var/www/html</code> na VPS).</li>
-                <li>Pronto! Ao abrir o seu domínio, o sistema abrirá <strong>100% idêntico, com todos os botões e cores, sem precisar instalar nada</strong>.</li>
+                <li>Extraia o arquivo no seu computador (você verá o <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">index.html</code>, a pasta <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">assets/</code> e o executável <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">iniciar_local_windows.bat</code>).</li>
+                <li>
+                  <strong>Para colocar no ar na Hostinger:</strong> No Gerenciador de Arquivos da Hostinger, envie o <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">index.html</code> e a pasta <code className="bg-slate-100 px-1 py-0.5 rounded font-mono">assets/</code> para dentro da pasta <strong>public_html</strong>. Acesse o seu domínio e o sistema abrirá 100% idêntico e completo!
+                </li>
+                <li>
+                  <strong>Para testar no seu computador:</strong> Dê dois cliques em <strong>iniciar_local_windows.bat</strong>! (Se abrir o <em>index.html</em> diretamente por dois cliques, o Google Chrome bloqueia scripts por regra de segurança CORS e mostra tela branca. Usando o iniciador .bat ou a Hostinger, abre na hora).
+                </li>
               </ol>
             </div>
           </div>
 
-          {/* Opção 2: Código Completo para VPS com Node.js + PM2 */}
+          {/* Card Especial: Como colocar no ar no CloudPanel (VPS) */}
+          <div className="border border-indigo-200 bg-indigo-50/50 rounded-xl p-5 shadow-xs">
+            <div className="flex items-center gap-2.5 mb-3">
+              <div className="p-2 bg-indigo-100 text-indigo-700 rounded-lg">
+                <Server className="w-5 h-5" />
+              </div>
+              <div>
+                <h3 className="font-bold text-slate-900 text-base">
+                  Como rodar no CloudPanel (VPS Hostinger / Hetzner)
+                </h3>
+                <p className="text-xs text-slate-600">
+                  Passo a passo exato para quem usa o CloudPanel integrado com GitHub ou SFTP
+                </p>
+              </div>
+            </div>
+
+            <div className="bg-white border border-indigo-100 rounded-lg p-4 text-xs text-slate-700 space-y-3">
+              <div>
+                <div className="font-bold text-indigo-950 mb-1">
+                  ❓ Por que o site não abriu igual ao puxar do GitHub para o CloudPanel?
+                </div>
+                <p className="text-slate-600 leading-relaxed">
+                  O GitHub salva o código-fonte puro em TypeScript (<code className="font-mono bg-slate-100 px-1 py-0.5 rounded">.tsx</code>). Os navegadores não conseguem ler arquivos TypeScript diretamente sem que eles sejam compilados em HTML e JavaScript prontos (que ficam na pasta <strong>dist</strong>).
+                </p>
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-3 pt-1">
+                <div className="bg-indigo-50/60 border border-indigo-200/80 rounded-lg p-3">
+                  <div className="font-bold text-indigo-900 text-xs mb-1.5 flex items-center gap-1.5">
+                    <span>Método A (Mais Fácil): Como Site Estático</span>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-600 text-[11px]">
+                    <li>No CloudPanel, crie ou abra o site (tipo <strong>Static HTML</strong>).</li>
+                    <li>Vá na aba <strong>Settings</strong> do site.</li>
+                    <li>No campo <strong>Root Directory</strong>, mude para terminar com <strong>/dist</strong>:
+                      <code className="block bg-white p-1 rounded font-mono text-[10px] text-indigo-900 mt-1">/home/usuario/htdocs/seusite.com/dist</code>
+                    </li>
+                    <li>Pronto! Agora o CloudPanel lerá o sistema já compilado.</li>
+                  </ol>
+                </div>
+
+                <div className="bg-emerald-50/60 border border-emerald-200/80 rounded-lg p-3">
+                  <div className="font-bold text-emerald-900 text-xs mb-1.5 flex items-center gap-1.5">
+                    <span>Método B: Como Aplicação Node.js</span>
+                  </div>
+                  <ol className="list-decimal list-inside space-y-1 text-slate-600 text-[11px]">
+                    <li>No CloudPanel, crie o site como <strong>Node.js</strong>.</li>
+                    <li>Na aba <strong>Node.js Settings</strong>, defina a porta como <strong>3000</strong>.</li>
+                    <li>No script de Build: <code className="bg-white px-1 rounded font-mono text-[10px]">npm install && npm run build</code></li>
+                    <li>No script de Start: <code className="bg-white px-1 rounded font-mono text-[10px]">node server.js</code></li>
+                    <li>O próprio CloudPanel cuidará de manter o sistema 24h no ar com PM2.</li>
+                  </ol>
+                </div>
+              </div>
+
+              <div className="bg-slate-900 text-slate-200 rounded-lg p-3 font-mono text-[11px]">
+                <div className="flex items-center justify-between text-slate-400 pb-1.5 border-b border-slate-800 mb-1.5">
+                  <span>Como acessar o Terminal ou Enviar Arquivos no CloudPanel:</span>
+                  <button
+                    onClick={() =>
+                      copiarComando(
+                        `cd /home/usuario/htdocs/seusite.com\nnpm install\nnpm run build`,
+                        'cloudpanel-cmd'
+                      )
+                    }
+                    className="flex items-center gap-1 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                  >
+                    {copiadoPasso === 'cloudpanel-cmd' ? (
+                      <Check className="w-3 h-3 text-emerald-400" />
+                    ) : (
+                      <Copy className="w-3 h-3" />
+                    )}
+                    {copiadoPasso === 'cloudpanel-cmd' ? 'Copiado!' : 'Copiar'}
+                  </button>
+                </div>
+                <p className="text-slate-400"># 1. No CloudPanel, clique na aba "SSH/FTP" e crie seu usuário SSH.</p>
+                <p className="text-slate-400"># 2. No prompt de comando do seu computador (Windows CMD), digite:</p>
+                <p className="text-amber-300">ssh seu-usuario@ip-da-sua-vps</p>
+                <p className="text-slate-400 mt-1"># 3. Navegue até o site e compile:</p>
+                <p className="text-emerald-400">cd /home/seu-usuario/htdocs/seusite.com</p>
+                <p className="text-emerald-400">npm install && npm run build</p>
+              </div>
+            </div>
+          </div>
           <div className="border border-slate-200 bg-white rounded-xl p-5 shadow-xs">
             <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-3">
               <div className="flex items-center gap-2.5">

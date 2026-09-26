@@ -3,8 +3,8 @@ import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import path from "path";
 import fs from "fs";
+import { execSync } from "child_process";
 import dotenv from "dotenv";
-import archiver from "archiver";
 dotenv.config();
 const app = express();
 const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
@@ -17,51 +17,49 @@ const ai = new GoogleGenAI({
     }
   }
 });
-app.get("/api/exportar/app-py", (_req, res) => {
-  const filePath = path.resolve(process.cwd(), "app.py");
-  if (fs.existsSync(filePath)) {
-    res.download(filePath, "app.py");
-  } else {
-    res.status(404).send("Arquivo app.py n\xE3o encontrado no servidor.");
+function listarArquivosRecursivo(dir, base = "") {
+  let results = [];
+  if (!fs.existsSync(dir)) return results;
+  const list = fs.readdirSync(dir);
+  for (const file of list) {
+    if (file.startsWith(".") && file !== ".htaccess") continue;
+    const fullPath = path.join(dir, file);
+    const relPath = base ? path.join(base, file) : file;
+    const stat = fs.statSync(fullPath);
+    if (stat.isDirectory()) {
+      results = results.concat(listarArquivosRecursivo(fullPath, relPath));
+    } else {
+      const ext = path.extname(file).toLowerCase();
+      const isText = [".html", ".css", ".js", ".json", ".ts", ".tsx", ".py", ".md", ".txt", ".svg", ".bat", ".htaccess", ""].includes(ext) || file === ".htaccess";
+      if (isText) {
+        const textContent = fs.readFileSync(fullPath, "utf8");
+        results.push({ path: relPath.replace(/\\/g, "/"), content: textContent, isBase64: false });
+      } else {
+        const buffer = fs.readFileSync(fullPath);
+        results.push({ path: relPath.replace(/\\/g, "/"), content: buffer.toString("base64"), isBase64: true });
+      }
+    }
   }
-});
-app.get("/api/exportar/dist-zip", async (_req, res) => {
+  return results;
+}
+app.get("/api/exportar/dist-files", (_req, res) => {
   try {
     const distPath = path.resolve(process.cwd(), "dist");
     if (!fs.existsSync(distPath)) {
-      return res.status(400).send("A pasta dist ainda n\xE3o foi gerada no servidor.");
+      return res.status(400).json({ erro: "A pasta dist ainda n\xE3o foi gerada." });
     }
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", 'attachment; filename="gws_sistema_dist_hostinger.zip"');
-    const archive = archiver("zip", { zlib: { level: 9 } });
-    archive.on("error", (err) => {
-      console.error("Erro ao gerar dist.zip:", err);
-      res.status(500).end();
-    });
-    archive.pipe(res);
-    archive.directory(distPath, false);
-    await archive.finalize();
+    const arquivos = listarArquivosRecursivo(distPath);
+    return res.json({ sucesso: true, arquivos });
   } catch (error) {
-    console.error("Erro no endpoint dist-zip:", error);
-    res.status(500).send("Erro ao compactar arquivos de distribui\xE7\xE3o.");
+    console.error("Erro em dist-files:", error);
+    return res.status(500).json({ erro: error?.message || "Erro ao ler arquivos compilados." });
   }
 });
-app.get("/api/exportar/projeto-completo-zip", async (_req, res) => {
+app.get("/api/exportar/projeto-files", (_req, res) => {
   try {
-    res.setHeader("Content-Type", "application/zip");
-    res.setHeader("Content-Disposition", 'attachment; filename="gws_sistema_licitacoes_codigo_fonte.zip"');
-    const archive = archiver("zip", { zlib: { level: 9 } });
-    archive.on("error", (err) => {
-      console.error("Erro ao gerar zip completo:", err);
-      res.status(500).end();
-    });
-    archive.pipe(res);
     const rootDir = process.cwd();
-    archive.directory(path.join(rootDir, "src"), "src");
-    if (fs.existsSync(path.join(rootDir, "dist"))) {
-      archive.directory(path.join(rootDir, "dist"), "dist");
-    }
-    const filesToInclude = [
+    let arquivos = [];
+    const arquivosRaiz = [
       "package.json",
       "index.html",
       "vite.config.ts",
@@ -71,13 +69,66 @@ app.get("/api/exportar/projeto-completo-zip", async (_req, res) => {
       "README.md",
       "metadata.json"
     ];
-    for (const f of filesToInclude) {
+    for (const f of arquivosRaiz) {
       const fullPath = path.join(rootDir, f);
       if (fs.existsSync(fullPath)) {
-        archive.file(fullPath, { name: f });
+        const content = fs.readFileSync(fullPath, "utf8");
+        arquivos.push({ path: f, content, isBase64: false });
       }
     }
-    await archive.finalize();
+    const srcArquivos = listarArquivosRecursivo(path.join(rootDir, "src"), "src");
+    arquivos = arquivos.concat(srcArquivos);
+    return res.json({ sucesso: true, arquivos });
+  } catch (error) {
+    console.error("Erro em projeto-files:", error);
+    return res.status(500).json({ erro: error?.message || "Erro ao ler arquivos do projeto." });
+  }
+});
+app.get("/api/exportar/app-py", (_req, res) => {
+  const filePath = path.resolve(process.cwd(), "app.py");
+  if (fs.existsSync(filePath)) {
+    res.download(filePath, "app.py");
+  } else {
+    res.status(404).send("Arquivo app.py n\xE3o encontrado no servidor.");
+  }
+});
+app.get("/api/exportar/dist-zip", (_req, res) => {
+  try {
+    const distPath = path.resolve(process.cwd(), "dist");
+    if (!fs.existsSync(distPath)) {
+      return res.status(400).send("A pasta dist ainda n\xE3o foi gerada no servidor.");
+    }
+    const zipPath = path.resolve(process.cwd(), "dist_hostinger.zip");
+    execSync(
+      `python3 -c "import zipfile, os
+with zipfile.ZipFile('${zipPath}', 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk('dist'):
+        for f in files:
+            full = os.path.join(root, f)
+            rel = os.path.relpath(full, 'dist')
+            z.write(full, rel)"`
+    );
+    res.download(zipPath, "gws_sistema_dist_hostinger.zip");
+  } catch (error) {
+    console.error("Erro no endpoint dist-zip:", error);
+    res.status(500).send("Erro ao compactar arquivos de distribui\xE7\xE3o.");
+  }
+});
+app.get("/api/exportar/projeto-completo-zip", (_req, res) => {
+  try {
+    const zipPath = path.resolve(process.cwd(), "codigo_fonte.zip");
+    execSync(
+      `python3 -c "import zipfile, os
+with zipfile.ZipFile('${zipPath}', 'w', zipfile.ZIP_DEFLATED) as z:
+    for root, dirs, files in os.walk('src'):
+        for f in files:
+            full = os.path.join(root, f)
+            z.write(full, full)
+    for f in ['package.json', 'index.html', 'vite.config.ts', 'server.ts', 'app.py', 'tsconfig.json', 'README.md', 'metadata.json']:
+        if os.path.exists(f):
+            z.write(f, f)"`
+    );
+    res.download(zipPath, "gws_sistema_licitacoes_codigo_fonte.zip");
   } catch (error) {
     console.error("Erro no endpoint projeto-completo-zip:", error);
     res.status(500).send("Erro ao compactar c\xF3digo-fonte.");

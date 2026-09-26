@@ -214,15 +214,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             Calcular
           </button>
-
-          <button
-            onClick={onAbrirExportar}
-            className="px-3 py-2 text-xs font-semibold text-emerald-800 bg-emerald-50 hover:bg-emerald-100 border border-emerald-300 rounded-lg shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer whitespace-nowrap"
-            title="Exportar projeto para Hostinger ou baixar app.py"
-          >
-            <Download className="w-3.5 h-3.5 text-emerald-600" />
-            <span className="hidden lg:inline">Exportar /</span> Hostinger
-          </button>
         </div>
       </div>
 
@@ -281,13 +272,6 @@ export const Header: React.FC<HeaderProps> = ({
         >
           <Settings className="w-3.5 h-3.5" />
           Configurações
-        </button>
-        <button
-          onClick={onAbrirExportar}
-          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-emerald-100 text-emerald-800 shrink-0"
-        >
-          <Download className="w-3.5 h-3.5 text-emerald-600" />
-          Hostinger
         </button>
       </div>
     </header>

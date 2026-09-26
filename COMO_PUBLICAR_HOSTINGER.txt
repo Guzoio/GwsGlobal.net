@@ -1,0 +1,31 @@
+======================================================================
+  GWS GLOBAL.net - INSTRUÇÕES PARA HOSPEDAR NA HOSTINGER OU RODAR LOCAL
+======================================================================
+
+1. POR QUE A PÁGINA FICOU BRANCA AO DAR DOIS CLIQUES NO COMPUTADOR?
+----------------------------------------------------------------------
+O Google Chrome e navegadores modernos possuem uma regra de segurança
+(CORS) que bloqueia scripts JavaScript modulares (ES Modules) quando
+abertos diretamente pelo explorador de arquivos (file:///C:/...).
+Eles só executam quando servidos por um servidor web (http:// ou https://).
+
+
+2. COMO COLOCAR NO AR NA HOSTINGER (FUNCIONAMENTO 100% GARANTIDO):
+----------------------------------------------------------------------
+1) Acesse o painel da Hostinger (hPanel) da sua hospedagem.
+2) Clique em "Gerenciador de Arquivos" (File Manager).
+3) Entre na pasta "public_html".
+4) Envie os arquivos desta pasta para lá:
+   - index.html
+   - pasta assets/ (com todos os arquivos .js e .css dentro)
+   - .htaccess (se houver)
+5) Acesse o seu domínio no navegador (exemplo: https://seusite.com.br).
+O sistema abrirá completo e idêntico, com todos os botões e cores!
+
+
+3. COMO TESTAR NO SEU COMPUTADOR SEM SUBIR NA HOSTINGER:
+----------------------------------------------------------------------
+Dê dois cliques no arquivo "iniciar_local_windows.bat" que está nesta pasta.
+Ele iniciará automaticamente um servidor local seguro e abrirá o seu
+Google Chrome em http://localhost:8080 funcionando 100%!
+======================================================================

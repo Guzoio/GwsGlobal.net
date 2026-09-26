@@ -29,7 +29,7 @@ function listarArquivosRecursivo(dir: string, base: string = ''): Array<{ path: 
   if (!fs.existsSync(dir)) return results;
   const list = fs.readdirSync(dir);
   for (const file of list) {
-    if (file.startsWith('.')) continue; // Ignora arquivos ocultos (.gitignore, etc.)
+    if (file.startsWith('.') && file !== '.htaccess') continue; // Permite .htaccess mas ignora .git*
     const fullPath = path.join(dir, file);
     const relPath = base ? path.join(base, file) : file;
     const stat = fs.statSync(fullPath);
@@ -38,7 +38,7 @@ function listarArquivosRecursivo(dir: string, base: string = ''): Array<{ path: 
     } else {
       // Arquivos de texto vs binários
       const ext = path.extname(file).toLowerCase();
-      const isText = ['.html', '.css', '.js', '.json', '.ts', '.tsx', '.py', '.md', '.txt', '.svg'].includes(ext);
+      const isText = ['.html', '.css', '.js', '.json', '.ts', '.tsx', '.py', '.md', '.txt', '.svg', '.bat', '.htaccess', ''].includes(ext) || file === '.htaccess';
       if (isText) {
         const textContent = fs.readFileSync(fullPath, 'utf8');
         results.push({ path: relPath.replace(/\\/g, '/'), content: textContent, isBase64: false });

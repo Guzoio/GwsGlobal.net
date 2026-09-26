@@ -14,7 +14,41 @@
     <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
   </head>
   <body class="bg-slate-50 text-slate-900 antialiased font-sans">
+    <noscript>
+      <div style="max-width: 600px; margin: 50px auto; padding: 25px; border-radius: 12px; background: #FFFBEB; border: 1px solid #F59E0B; font-family: system-ui, sans-serif; color: #78350F; text-align: center;">
+        <h2 style="margin-top:0; color: #B45309;">JavaScript Necessário</h2>
+        <p>Por favor, ative o JavaScript no seu navegador para utilizar o sistema GWS GLOBAL.net.</p>
+      </div>
+    </noscript>
     <div id="root"></div>
+    <script>
+      // Detecta se o arquivo foi aberto diretamente por dois cliques (file:///) no computador
+      if (window.location.protocol === 'file:') {
+        window.addEventListener('DOMContentLoaded', function() {
+          setTimeout(function() {
+            var rootEl = document.getElementById('root');
+            if (rootEl && rootEl.childElementCount === 0) {
+              var aviso = document.createElement('div');
+              aviso.style.cssText = 'max-width: 640px; margin: 40px auto; padding: 24px; border-radius: 14px; background: #FFFBEB; border: 2px solid #F59E0B; font-family: system-ui, -apple-system, sans-serif; color: #78350F; line-height: 1.6; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.1);';
+              aviso.innerHTML = '<div style="display:flex; align-items:center; gap:10px; margin-bottom: 12px;">' +
+                '<span style="font-size:24px;">⚠️</span>' +
+                '<h2 style="margin:0; color:#92400E; font-size:18px; font-weight:700;">Aberto diretamente por dois cliques (file:///)</h2>' +
+                '</div>' +
+                '<p style="margin:0 0 12px 0; font-size:14px; color:#451A03;">Por medidas de segurança contra vírus locais, o <strong>Google Chrome e o Microsoft Edge bloqueiam scripts JavaScript modernos (ES Modules)</strong> quando abertos direto da pasta sem um servidor web.</p>' +
+                '<div style="background:#FFFFFF; border:1px solid #FCD34D; border-radius:8px; padding:12px 16px; margin-bottom:14px; font-size:13px;">' +
+                '<p style="margin:0 0 6px 0; font-weight:700; color:#1E3A8A;">🚀 Como colocar no ar na Hostinger (100% Funcional):</p>' +
+                '<p style="margin:0; color:#334155;">Envie a pasta <strong>assets</strong> e o arquivo <strong>index.html</strong> para dentro de <strong>public_html</strong> no Gerenciador de Arquivos da Hostinger. Ao acessar o seu domínio (ex: <code>https://seusite.com</code>), o sistema abre instantaneamente!</p>' +
+                '</div>' +
+                '<div style="background:#F0FDF4; border:1px solid #86EFAC; border-radius:8px; padding:12px 16px; font-size:13px;">' +
+                '<p style="margin:0 0 4px 0; font-weight:700; color:#166534;">💻 Para rodar no seu computador sem Hostinger:</p>' +
+                '<p style="margin:0; color:#166534;">Basta dar dois cliques no arquivo <strong>iniciar_local_windows.bat</strong> incluso no arquivo ZIP baixado!</p>' +
+                '</div>';
+              document.body.prepend(aviso);
+            }
+          }, 600);
+        });
+      }
+    </script>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>
