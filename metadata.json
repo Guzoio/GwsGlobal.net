@@ -1,6 +1,6 @@
 {
-  "name": "Gestão de Licitações e Propostas Comerciais",
-  "description": "Sistema completo de gestão de licitações, extrator de links e gerador de propostas comerciais em Word (.docx) com catálogo ilustrativo de produtos.",
+  "name": "GWS GLOBAL.net",
+  "description": "GWS GLOBAL.net - Sistema de gestão de licitações, propostas comerciais e catálogo técnico em PDF com papel timbrado.",
   "requestFramePermissions": [],
   "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
 }

@@ -90,13 +90,3 @@ export interface PapelTimbradoConfig {
   telefoneEmail?: string;
 }
 
-export interface UsuarioLogin {
-  id: string; // Identificador único interno
-  login: string; // ID / Usuário de login (ex: gwsglobalnet)
-  nome: string; // Nome legível (ex: Administrador GWS)
-  senha: string; // Senha em texto para o sistema interno (ex: gwsglobal2026)
-  funcao?: string; // Cargo/Perfil (ex: Administrador, Operador, etc.)
-  criadoEm?: string; // Data DD/MM/AAAA
-  isAdmin?: boolean;
-}
-

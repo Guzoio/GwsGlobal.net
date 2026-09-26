@@ -11,10 +11,8 @@ import { MontarPropostaTab } from './components/MontarPropostaTab';
 import { VisualizarPdfTab } from './components/VisualizarPdfTab';
 import { PapelTimbradoTab } from './components/PapelTimbradoTab';
 import { CodigoPythonTab } from './components/CodigoPythonTab';
-import { GerenciarLoginsTab } from './components/GerenciarLoginsTab';
-import { LoginScreen } from './components/LoginScreen';
 import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
-import { Licitacao, ItemLicitacao, PapelTimbradoConfig, UsuarioLogin } from './types';
+import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from './types';
 import {
   obterLicitacoes,
   salvarLicitacoes,
@@ -24,10 +22,6 @@ import {
   salvarPapelTimbradoConfig,
   obterResponsaveis,
   salvarResponsaveis,
-  obterUsuariosLogins,
-  salvarUsuariosLogins,
-  obterSessaoAtiva,
-  salvarSessaoAtiva,
 } from './utils/storage';
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
@@ -43,54 +37,6 @@ export default function App() {
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
-
-  // Gerenciamento de Logins e Autenticação Interna
-  const [usuariosLogins, setUsuariosLogins] = useState<UsuarioLogin[]>(() => obterUsuariosLogins());
-  const [usuarioLogado, setUsuarioLogado] = useState<UsuarioLogin | null>(() => obterSessaoAtiva());
-
-  const handleLogin = (usuario: UsuarioLogin) => {
-    setUsuarioLogado(usuario);
-    salvarSessaoAtiva(usuario);
-    mostrarToast(`Bem-vindo ao sistema, ${usuario.nome || usuario.login}!`);
-  };
-
-  const handleLogout = () => {
-    setUsuarioLogado(null);
-    salvarSessaoAtiva(null);
-    mostrarToast('Você saiu do sistema com sucesso.');
-  };
-
-  const handleAdicionarUsuario = (novo: Omit<UsuarioLogin, 'id' | 'criadoEm'>): boolean => {
-    const novoId = `user_${Date.now()}`;
-    const dataHoje = new Date().toLocaleDateString('pt-BR');
-    const usuarioCriado: UsuarioLogin = {
-      ...novo,
-      id: novoId,
-      criadoEm: dataHoje,
-    };
-    const listaAtualizada = [...usuariosLogins, usuarioCriado];
-    setUsuariosLogins(listaAtualizada);
-    salvarUsuariosLogins(listaAtualizada);
-    mostrarToast(`Login "${novo.login}" cadastrado com sucesso!`);
-    return true;
-  };
-
-  const handleAtualizarUsuario = (atualizado: UsuarioLogin) => {
-    const listaAtualizada = usuariosLogins.map(u => (u.id === atualizado.id ? atualizado : u));
-    setUsuariosLogins(listaAtualizada);
-    salvarUsuariosLogins(listaAtualizada);
-    if (usuarioLogado?.id === atualizado.id) {
-      setUsuarioLogado(atualizado);
-      salvarSessaoAtiva(atualizado);
-    }
-  };
-
-  const handleExcluirUsuario = (id: string): boolean => {
-    const listaAtualizada = usuariosLogins.filter(u => u.id !== id);
-    setUsuariosLogins(listaAtualizada);
-    salvarUsuariosLogins(listaAtualizada);
-    return true;
-  };
 
   // Carrega dados iniciais do banco local
   useEffect(() => {
@@ -292,16 +238,6 @@ export default function App() {
   const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId);
   const temItensNaLicAtual = itens.some(i => i.licitacao_id === licitacaoSelecionadaId);
 
-  // SE NÃO HOUVER USUÁRIO CONECTADO, EXIBE A TELA DE LOGIN INTERNA
-  if (!usuarioLogado) {
-    return (
-      <LoginScreen
-        onLoginSucesso={handleLogin}
-        usuariosDisponiveis={usuariosLogins}
-      />
-    );
-  }
-
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Barra de navegação do topo */}
@@ -309,8 +245,6 @@ export default function App() {
         abaAtiva={abaAtiva}
         setAbaAtiva={setAbaAtiva}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
-        usuarioLogado={usuarioLogado}
-        onLogout={handleLogout}
       />
 
       {/* Painel lateral deslizante da Calculadora de Limite de Oferta */}

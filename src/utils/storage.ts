@@ -1,4 +1,4 @@
-import { Licitacao, ItemLicitacao, UsuarioLogin } from '../types';
+import { Licitacao, ItemLicitacao } from '../types';
 
 // Helper to generate a clean product graphic data URL for default items
 export function criarImagemPadrao(tipo: 'notebook' | 'monitor' | 'impressora' | 'periferico'): string {
@@ -504,77 +504,4 @@ export function obterItens(): ItemLicitacao[] {
 
 export function salvarItens(itens: ItemLicitacao[]): void {
   localStorage.setItem(ITENS_KEY, JSON.stringify(itens));
-}
-
-// ============================================================================
-// GERENCIAMENTO DE LOGINS E AUTENTICAÇÃO INTERNA
-// ============================================================================
-const USUARIOS_LOGINS_KEY = 'gws_usuarios_logins_v1';
-const SESSAO_ATIVA_KEY = 'gws_sessao_ativa_v1';
-
-export const USUARIO_PADRAO_ADMIN: UsuarioLogin = {
-  id: 'admin_gws_default',
-  login: 'gwsglobalnet',
-  nome: 'Administrador GWS',
-  senha: 'gwsglobal2026',
-  funcao: 'Administrador',
-  criadoEm: '25/09/2026',
-  isAdmin: true,
-};
-
-export function obterUsuariosLogins(): UsuarioLogin[] {
-  try {
-    const data = localStorage.getItem(USUARIOS_LOGINS_KEY);
-    if (!data) {
-      salvarUsuariosLogins([USUARIO_PADRAO_ADMIN]);
-      return [USUARIO_PADRAO_ADMIN];
-    }
-    const parsed: UsuarioLogin[] = JSON.parse(data);
-    if (!parsed || parsed.length === 0) {
-      salvarUsuariosLogins([USUARIO_PADRAO_ADMIN]);
-      return [USUARIO_PADRAO_ADMIN];
-    }
-    // Garante que o login admin padrão com gwsglobalnet esteja presente se foi corrompido
-    const temAdmin = parsed.some(u => u.login.toLowerCase() === 'gwsglobalnet');
-    if (!temAdmin) {
-      const atualizados = [USUARIO_PADRAO_ADMIN, ...parsed];
-      salvarUsuariosLogins(atualizados);
-      return atualizados;
-    }
-    return parsed;
-  } catch (err) {
-    console.error('Erro ao ler usuários de login:', err);
-    return [USUARIO_PADRAO_ADMIN];
-  }
-}
-
-export function salvarUsuariosLogins(usuarios: UsuarioLogin[]): void {
-  try {
-    localStorage.setItem(USUARIOS_LOGINS_KEY, JSON.stringify(usuarios));
-  } catch (err) {
-    console.error('Erro ao salvar usuários de login:', err);
-  }
-}
-
-export function obterSessaoAtiva(): UsuarioLogin | null {
-  try {
-    const data = localStorage.getItem(SESSAO_ATIVA_KEY);
-    if (!data) return null;
-    return JSON.parse(data);
-  } catch (err) {
-    console.error('Erro ao ler sessão ativa:', err);
-    return null;
-  }
-}
-
-export function salvarSessaoAtiva(usuario: UsuarioLogin | null): void {
-  try {
-    if (!usuario) {
-      localStorage.removeItem(SESSAO_ATIVA_KEY);
-    } else {
-      localStorage.setItem(SESSAO_ATIVA_KEY, JSON.stringify(usuario));
-    }
-  } catch (err) {
-    console.error('Erro ao salvar sessão ativa:', err);
-  }
 }

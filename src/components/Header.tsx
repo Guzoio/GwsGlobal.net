@@ -9,27 +9,19 @@ import {
   Settings,
   Code2,
   ChevronDown,
-  Users,
-  LogOut,
-  User,
 } from 'lucide-react';
 import { LogoGwsMartelo } from './LogoGwsMartelo';
-import { UsuarioLogin } from '../types';
 
 interface HeaderProps {
   abaAtiva: string;
   setAbaAtiva: (aba: string) => void;
   onAbrirCalculadora?: () => void;
-  usuarioLogado?: UsuarioLogin | null;
-  onLogout?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
   abaAtiva,
   setAbaAtiva,
   onAbrirCalculadora,
-  usuarioLogado,
-  onLogout,
 }) => {
   const [menuConfigAberto, setMenuConfigAberto] = useState(false);
 
@@ -180,35 +172,6 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                     </div>
                   </button>
-
-                  <div className="my-1 border-t border-slate-100" />
-
-                  <button
-                    onClick={() => {
-                      setAbaAtiva('logins');
-                      setMenuConfigAberto(false);
-                    }}
-                    className={`w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer ${
-                      abaAtiva === 'logins'
-                        ? 'bg-amber-50/70 text-slate-950 font-bold'
-                        : 'text-slate-700'
-                    }`}
-                  >
-                    <div className="p-1.5 rounded-md bg-purple-100 text-purple-700 mt-0.5 shrink-0">
-                      <Users className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
-                        Gerenciar Usuários & Logins
-                        <span className="text-[9px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded">
-                          Acessos
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        Cadastrar logins, alterar senhas e ID de acesso
-                      </div>
-                    </div>
-                  </button>
                 </div>
               </>
             )}
@@ -222,33 +185,6 @@ export const Header: React.FC<HeaderProps> = ({
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             Calcular
           </button>
-
-          {/* Usuário Logado & Botão Sair */}
-          {usuarioLogado && (
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div
-                className="hidden xl:flex flex-col text-right cursor-pointer"
-                onClick={() => setAbaAtiva('logins')}
-                title="Clique para gerenciar logins"
-              >
-                <span className="text-xs font-bold text-slate-900 leading-tight truncate max-w-[130px]">
-                  {usuarioLogado.nome || usuarioLogado.login}
-                </span>
-                <span className="text-[10px] text-slate-500 font-mono">
-                  @{usuarioLogado.login}
-                </span>
-              </div>
-
-              <button
-                onClick={onLogout}
-                className="px-2.5 py-1.5 text-xs font-semibold text-slate-600 hover:text-rose-600 hover:bg-rose-50 rounded-lg border border-slate-200 hover:border-rose-200 transition-colors cursor-pointer flex items-center gap-1.5"
-                title="Sair do sistema (Logout)"
-              >
-                <LogOut className="w-3.5 h-3.5 text-rose-500" />
-                <span className="hidden sm:inline">Sair</span>
-              </button>
-            </div>
-          )}
         </div>
       </div>
 
@@ -300,7 +236,7 @@ export const Header: React.FC<HeaderProps> = ({
         <button
           onClick={() => setMenuConfigAberto(true)}
           className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            abaAtiva === 'timbrado' || abaAtiva === 'python' || abaAtiva === 'logins'
+            abaAtiva === 'timbrado' || abaAtiva === 'python'
               ? 'bg-[#0F2C59] text-white'
               : 'text-slate-600 hover:bg-slate-200'
           }`}
@@ -308,16 +244,6 @@ export const Header: React.FC<HeaderProps> = ({
           <Settings className="w-3.5 h-3.5" />
           Configurações
         </button>
-        {usuarioLogado && (
-          <button
-            onClick={onLogout}
-            className="px-2.5 py-1.5 text-xs font-semibold text-rose-600 hover:bg-rose-50 rounded-md whitespace-nowrap transition-colors flex items-center gap-1 shrink-0 ml-auto"
-            title="Sair"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            Sair
-          </button>
-        )}
       </div>
     </header>
   );
