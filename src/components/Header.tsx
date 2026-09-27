@@ -11,6 +11,9 @@ import {
   ChevronDown,
   Globe,
   Download,
+  Shield,
+  Lock,
+  LogOut,
 } from 'lucide-react';
 import { LogoGwsMartelo } from './LogoGwsMartelo';
 
@@ -19,6 +22,9 @@ interface HeaderProps {
   setAbaAtiva: (aba: string) => void;
   onAbrirCalculadora?: () => void;
   onAbrirExportar?: () => void;
+  onAbrirSeguranca?: () => void;
+  onLogout?: () => void;
+  statusNuvem?: 'conectando' | 'conectado' | 'desconectado';
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +32,9 @@ export const Header: React.FC<HeaderProps> = ({
   setAbaAtiva,
   onAbrirCalculadora,
   onAbrirExportar,
+  onAbrirSeguranca,
+  onLogout,
+  statusNuvem = 'conectado',
 }) => {
   const [menuConfigAberto, setMenuConfigAberto] = useState(false);
 
@@ -95,8 +104,21 @@ export const Header: React.FC<HeaderProps> = ({
           </button>
         </nav>
 
-        {/* Lado direito: Engrenagem de Configuração e Botão Calcular */}
-        <div className="flex items-center gap-2.5 shrink-0 relative">
+        {/* Lado direito: Sincronização Nuvem, Configurações e Botão Calcular */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0 relative">
+          {/* Badge de Sincronização em Nuvem Automática (Firebase) */}
+          <div
+            className="flex items-center gap-1.5 sm:gap-2 px-2.5 py-1.5 rounded-lg bg-emerald-50 border border-emerald-200/90 text-emerald-800 text-xs font-semibold shadow-2xs select-none"
+            title="Sincronização em tempo real ativa! Qualquer alteração ou cadastro aparece instantaneamente nos outros computadores."
+          >
+            <span className="relative flex h-2 w-2">
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+            </span>
+            <span className="hidden sm:inline">Nuvem Sincronizada</span>
+            <span className="sm:hidden text-[11px]">Nuvem Ativa</span>
+          </div>
+
           {/* Engrenagem de Configuração (contém Papel Timbrado e Código Python) */}
           <div className="relative">
             <button
@@ -179,6 +201,30 @@ export const Header: React.FC<HeaderProps> = ({
 
                   <div className="my-1 border-t border-slate-100" />
 
+                  {/* Opção Segurança e Acesso */}
+                  <button
+                    onClick={() => {
+                      onAbrirSeguranca?.();
+                      setMenuConfigAberto(false);
+                    }}
+                    className="w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer text-slate-700"
+                  >
+                    <div className="p-1.5 rounded-md bg-purple-100 text-purple-700 mt-0.5 shrink-0">
+                      <Shield className="w-4 h-4" />
+                    </div>
+                    <div>
+                      <div className="font-semibold text-slate-900 flex items-center gap-1.5">
+                        Segurança e Acesso
+                        <span className="text-[9px] font-bold bg-purple-100 text-purple-800 px-1.5 py-0.2 rounded">
+                          Senha
+                        </span>
+                      </div>
+                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
+                        Alterar ID de usuário e senha do sistema
+                      </div>
+                    </div>
+                  </button>
+
                   <button
                     onClick={() => {
                       onAbrirExportar?.();
@@ -201,6 +247,20 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                     </div>
                   </button>
+
+                  <div className="my-1 border-t border-slate-100" />
+
+                  {/* Opção Sair do Sistema */}
+                  <button
+                    onClick={() => {
+                      setMenuConfigAberto(false);
+                      onLogout?.();
+                    }}
+                    className="w-full px-3.5 py-2 text-left text-xs flex items-center gap-2 hover:bg-red-50 text-red-600 transition-colors cursor-pointer font-semibold"
+                  >
+                    <LogOut className="w-3.5 h-3.5" />
+                    Sair do Sistema
+                  </button>
                 </div>
               </>
             )}
@@ -214,21 +274,24 @@ export const Header: React.FC<HeaderProps> = ({
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             Calcular
           </button>
+
+          {/* Botão Sair direto no cabeçalho */}
+          <button
+            onClick={onLogout}
+            className="px-3 py-2 text-xs font-semibold text-slate-600 hover:text-red-600 bg-slate-100 hover:bg-red-50 border border-slate-200 hover:border-red-200 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap"
+            title="Encerrar sessão e sair do sistema"
+          >
+            <LogOut className="w-3.5 h-3.5" />
+            <span className="hidden lg:inline">Sair</span>
+          </button>
         </div>
       </div>
 
       {/* Barra de opções para dispositivos móveis limpa */}
       <div className="flex md:hidden items-center gap-2 overflow-x-auto px-4 py-2 border-t border-slate-200 bg-slate-50/90">
         <button
-          onClick={onAbrirCalculadora}
-          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-[#0F2C59] text-white shrink-0"
-        >
-          <Calculator className="w-3.5 h-3.5 text-amber-400" />
-          Calcular
-        </button>
-        <button
           onClick={() => setAbaAtiva('historico')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
             abaAtiva === 'historico' ? 'bg-[#0F2C59] text-white' : 'text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -237,7 +300,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={() => setAbaAtiva('cadastrar')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
             abaAtiva === 'cadastrar' ? 'bg-[#0F2C59] text-white' : 'text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -246,7 +309,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={() => setAbaAtiva('montar')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
             abaAtiva === 'montar' ? 'bg-[#0F2C59] text-white' : 'text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -255,7 +318,7 @@ export const Header: React.FC<HeaderProps> = ({
         </button>
         <button
           onClick={() => setAbaAtiva('preview')}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
+          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 shrink-0 ${
             abaAtiva === 'preview' ? 'bg-[#0F2C59] text-white' : 'text-slate-600 hover:bg-slate-200'
           }`}
         >
@@ -263,15 +326,25 @@ export const Header: React.FC<HeaderProps> = ({
           Visualizar PDF
         </button>
         <button
-          onClick={() => setMenuConfigAberto(true)}
-          className={`px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 ${
-            abaAtiva === 'timbrado' || abaAtiva === 'python'
-              ? 'bg-[#0F2C59] text-white'
-              : 'text-slate-600 hover:bg-slate-200'
-          }`}
+          onClick={onAbrirCalculadora}
+          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-[#0F2C59] text-white shrink-0"
         >
-          <Settings className="w-3.5 h-3.5" />
-          Configurações
+          <Calculator className="w-3.5 h-3.5 text-amber-400" />
+          Calcular
+        </button>
+        <button
+          onClick={onAbrirSeguranca}
+          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-purple-50 text-purple-700 border border-purple-200 shrink-0"
+        >
+          <Shield className="w-3.5 h-3.5 text-purple-600" />
+          Segurança
+        </button>
+        <button
+          onClick={onLogout}
+          className="px-3 py-1.5 text-xs font-semibold rounded-md whitespace-nowrap transition-colors flex items-center gap-1.5 bg-red-50 text-red-600 border border-red-200 shrink-0"
+        >
+          <LogOut className="w-3.5 h-3.5" />
+          Sair
         </button>
       </div>
     </header>

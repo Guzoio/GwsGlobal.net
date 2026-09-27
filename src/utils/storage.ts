@@ -1,4 +1,64 @@
-import { Licitacao, ItemLicitacao } from '../types';
+import { Licitacao, ItemLicitacao, AcessoConfig } from '../types';
+import { ACESSO_INICIAL, ID_PADRAO, HASH_PADRAO } from './security';
+
+const ACESSO_KEY = 'gws_acesso_config';
+const AUTH_SESSION_KEY = 'gws_auth_active';
+
+export function obterAcessoConfig(): AcessoConfig {
+  try {
+    const data = localStorage.getItem(ACESSO_KEY);
+    if (!data) {
+      salvarAcessoConfig(ACESSO_INICIAL);
+      return ACESSO_INICIAL;
+    }
+    const parsed = JSON.parse(data);
+    // Se era a credencial antiga de teste admin/123, atualiza para gwsglobal / gwsglobal2026
+    if (parsed.usuarioId === 'admin') {
+      salvarAcessoConfig(ACESSO_INICIAL);
+      return ACESSO_INICIAL;
+    }
+    return {
+      usuarioId: parsed.usuarioId || ID_PADRAO,
+      senhaHash: parsed.senhaHash || HASH_PADRAO,
+      atualizadoEm: parsed.atualizadoEm,
+    };
+  } catch {
+    return ACESSO_INICIAL;
+  }
+}
+
+export function salvarAcessoConfig(config: AcessoConfig): void {
+  localStorage.setItem(ACESSO_KEY, JSON.stringify(config));
+}
+
+export function estaAutenticado(): boolean {
+  try {
+    return (
+      sessionStorage.getItem(AUTH_SESSION_KEY) === 'true' ||
+      localStorage.getItem(AUTH_SESSION_KEY) === 'true'
+    );
+  } catch {
+    return false;
+  }
+}
+
+export function registrarLogin(lembrar: boolean): void {
+  try {
+    sessionStorage.setItem(AUTH_SESSION_KEY, 'true');
+    if (lembrar) {
+      localStorage.setItem(AUTH_SESSION_KEY, 'true');
+    }
+  } catch {}
+}
+
+export function deslogar(): void {
+  try {
+    sessionStorage.removeItem(AUTH_SESSION_KEY);
+    localStorage.removeItem(AUTH_SESSION_KEY);
+  } catch {}
+}
+
+
 
 // Helper to generate a clean product graphic data URL for default items
 export function criarImagemPadrao(tipo: 'notebook' | 'monitor' | 'impressora' | 'periferico'): string {

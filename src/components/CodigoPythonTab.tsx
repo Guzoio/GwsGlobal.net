@@ -20,6 +20,14 @@ import requests
 from bs4 import BeautifulSoup
 from PIL import Image
 import streamlit as st
+import hashlib
+
+# Autenticação Segura de Acesso Administrativo Único
+ID_ADMIN_PADRAO = "gwsglobal"
+HASH_ADMIN_PADRAO = "93c443aebd50f1eab9f124a758f0d46728c01156b88ff0e8bae8068f52ef34c1"
+
+def hash_senha_segura(senha: str) -> str:
+    return hashlib.sha256(f"gws_salt_2026_{senha.strip()}".encode("utf-8")).hexdigest()
 
 # Biblioteca para valor por extenso em Português
 try:
@@ -56,6 +64,34 @@ st.set_page_config(
     layout="wide",
     initial_sidebar_state="expanded",
 )
+
+# Controle de Sessão e Autenticação Única
+if "autenticado" not in st.session_state:
+    st.session_state["autenticado"] = False
+
+if not st.session_state["autenticado"]:
+    st.markdown("<h2 style='text-align: center; color: #0F2C59; font-weight: 900;'>GWS GLOBAL.net</h2>", unsafe_allow_html=True)
+    st.markdown("<p style='text-align: center; color: #64748B; font-size: 13px;'>Sistema de Gestão de Licitações &bull; Acesso Restrito</p>", unsafe_allow_html=True)
+    _, col_form, _ = st.columns([1, 1.8, 1])
+    with col_form:
+        with st.form("form_login_seguro"):
+            st.subheader("Login de Acesso")
+            usuario_input = st.text_input("ID / Usuário")
+            senha_input = st.text_input("Senha", type="password")
+            btn_entrar = st.form_submit_button("Entrar no Sistema")
+            if btn_entrar:
+                if usuario_input.strip().lower() == ID_ADMIN_PADRAO and hash_senha_segura(senha_input) == HASH_ADMIN_PADRAO:
+                    st.session_state["autenticado"] = True
+                    st.rerun()
+                else:
+                    st.error("ID de usuário ou senha incorretos. Verifique suas credenciais.")
+    st.stop()
+
+# Botão Sair na barra lateral
+with st.sidebar:
+    if st.button("🚪 Sair do Sistema"):
+        st.session_state["autenticado"] = False
+        st.rerun()
 
 DB_PATH = "licitacoes.db"
 UPLOADS_DIR = "uploads_produtos"

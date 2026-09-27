@@ -90,3 +90,10 @@ export interface PapelTimbradoConfig {
   telefoneEmail?: string;
 }
 
+export interface AcessoConfig {
+  usuarioId: string;
+  senhaHash: string;
+  senha?: string;
+  atualizadoEm?: string;
+}
+

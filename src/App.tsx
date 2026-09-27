@@ -13,7 +13,9 @@ import { PapelTimbradoTab } from './components/PapelTimbradoTab';
 import { CodigoPythonTab } from './components/CodigoPythonTab';
 import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
 import { ExportarProjetoModal } from './components/ExportarProjetoModal';
-import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from './types';
+import { LoginScreen } from './components/LoginScreen';
+import { SegurancaModal } from './components/SegurancaModal';
+import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from './types';
 import {
   obterLicitacoes,
   salvarLicitacoes,
@@ -23,11 +25,35 @@ import {
   salvarPapelTimbradoConfig,
   obterResponsaveis,
   salvarResponsaveis,
+  obterAcessoConfig,
+  salvarAcessoConfig,
+  estaAutenticado,
+  registrarLogin,
+  deslogar,
 } from './utils/storage';
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import {
+  ouvirLicitacoesNuvem,
+  ouvirItensNuvem,
+  ouvirPapelTimbradoNuvem,
+  ouvirResponsaveisNuvem,
+  ouvirAcessoConfigNuvem,
+  salvarAcessoConfigNuvem,
+  salvarLicitacaoNuvem,
+  removerLicitacaoNuvem,
+  salvarItemNuvem,
+  removerItemNuvem,
+  removerItensDaLicitacaoNuvem,
+  salvarPapelTimbradoNuvem,
+  salvarResponsaveisNuvem,
+  sincronizarBancoInicialSeVazio,
+} from './firebase/firestoreService';
 
 export default function App() {
+  const [autenticado, setAutenticado] = useState<boolean>(() => estaAutenticado());
+  const [acessoConfig, setAcessoConfig] = useState<AcessoConfig>(() => obterAcessoConfig());
+  const [segurancaModalAberto, setSegurancaModalAberto] = useState<boolean>(false);
   const [licitacoes, setLicitacoes] = useState<Licitacao[]>([]);
   const [itens, setItens] = useState<ItemLicitacao[]>([]);
   const [responsaveis, setResponsaveis] = useState<string[]>(() => obterResponsaveis());
@@ -39,25 +65,112 @@ export default function App() {
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
   const [exportarModalAberto, setExportarModalAberto] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
+  const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
 
-  // Carrega dados iniciais do banco local
+  // Carrega dados iniciais do banco local imediatamente
   useEffect(() => {
     const lics = obterLicitacoes();
     const its = obterItens();
     const timb = obterPapelTimbradoConfig();
     const resps = obterResponsaveis();
+    const acesso = obterAcessoConfig();
     setLicitacoes(lics);
     setItens(its);
     setTimbradoConfig(timb);
     setResponsaveis(resps);
+    setAcessoConfig(acesso);
     if (lics.length > 0) {
       setLicitacaoSelecionadaId(lics[0].id);
     }
   }, []);
 
+  // Sincronização em tempo real totalmente automática com Firebase Firestore
+  useEffect(() => {
+    setStatusNuvem('conectado');
+
+    // Sincroniza banco inicial na nuvem se estiver vazio
+    const licsAtuais = obterLicitacoes();
+    const itsAtuais = obterItens();
+    const timbAtual = obterPapelTimbradoConfig();
+    const respsAtuais = obterResponsaveis();
+    sincronizarBancoInicialSeVazio(licsAtuais, itsAtuais, timbAtual, respsAtuais).catch(() => {});
+
+    // Ativa ouvintes em tempo real para sincronização instantânea e automática entre computadores
+    const unsubLics = ouvirLicitacoesNuvem((licsNuvem) => {
+      if (licsNuvem && licsNuvem.length > 0) {
+        setLicitacoes(licsNuvem);
+        salvarLicitacoes(licsNuvem);
+        setLicitacaoSelecionadaId(prev => {
+          if (licsNuvem.some(l => l.id === prev)) return prev;
+          return licsNuvem[0].id;
+        });
+      }
+    });
+
+    const unsubItens = ouvirItensNuvem((itensNuvem) => {
+      if (itensNuvem && itensNuvem.length > 0) {
+        setItens(itensNuvem);
+        salvarItens(itensNuvem);
+      }
+    });
+
+    const unsubTimbrado = ouvirPapelTimbradoNuvem((timbradoNuvem) => {
+      if (timbradoNuvem) {
+        setTimbradoConfig(timbradoNuvem);
+        salvarPapelTimbradoConfig(timbradoNuvem);
+      }
+    });
+
+    const unsubResponsaveis = ouvirResponsaveisNuvem((respsNuvem) => {
+      if (respsNuvem && respsNuvem.length > 0) {
+        setResponsaveis(respsNuvem);
+        salvarResponsaveis(respsNuvem);
+      }
+    });
+
+    const unsubSeguranca = ouvirAcessoConfigNuvem((acessoNuvem) => {
+      if (acessoNuvem && acessoNuvem.usuarioId && acessoNuvem.senhaHash) {
+        setAcessoConfig(acessoNuvem);
+        salvarAcessoConfig(acessoNuvem);
+      }
+    });
+
+    return () => {
+      unsubLics();
+      unsubItens();
+      unsubTimbrado();
+      unsubResponsaveis();
+      unsubSeguranca();
+    };
+  }, []);
+
   const mostrarToast = (mensagem: string, tipo: 'sucesso' | 'erro' = 'sucesso') => {
     setToast({ mensagem, tipo });
     setTimeout(() => setToast(null), 3500);
+  };
+
+  // Funções de Autenticação e Segurança
+  const handleLoginSucesso = (lembrar: boolean) => {
+    registrarLogin(lembrar);
+    setAutenticado(true);
+    mostrarToast('Acesso autorizado com sucesso!', 'sucesso');
+  };
+
+  const handleLogout = () => {
+    deslogar();
+    setAutenticado(false);
+    mostrarToast('Sessão encerrada com sucesso.', 'sucesso');
+  };
+
+  const handleSalvarAcesso = async (novoAcesso: AcessoConfig) => {
+    setAcessoConfig(novoAcesso);
+    salvarAcessoConfig(novoAcesso);
+    try {
+      await salvarAcessoConfigNuvem(novoAcesso);
+    } catch (err) {
+      console.warn('Erro ao salvar segurança na nuvem:', err);
+    }
+    mostrarToast('Credenciais de acesso atualizadas com sucesso!', 'sucesso');
   };
 
   // Gerenciamento de Responsáveis (Adicionar e Excluir)
@@ -75,6 +188,7 @@ export default function App() {
     const novaLista = [...responsaveis, nomeLimpo];
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
+    salvarResponsaveisNuvem(novaLista).catch(() => {});
     mostrarToast(`Responsável "${nomeLimpo}" adicionado com sucesso!`);
     return true;
   };
@@ -89,6 +203,7 @@ export default function App() {
     const novaLista = responsaveis.filter(r => r !== nomeParaExcluir);
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
+    salvarResponsaveisNuvem(novaLista).catch(() => {});
 
     // Reatribuir licitações vinculadas a esse nome
     const destino = transferirPara || novaLista[0] || 'Gustavo';
@@ -96,7 +211,9 @@ export default function App() {
     const licsAtualizadas = licitacoes.map(lic => {
       if ((lic.responsavel || '').toLowerCase() === nomeParaExcluir.toLowerCase()) {
         alteradas++;
-        return { ...lic, responsavel: destino };
+        const licAtualizada = { ...lic, responsavel: destino };
+        salvarLicitacaoNuvem(licAtualizada).catch(() => {});
+        return licAtualizada;
       }
       return lic;
     });
@@ -114,6 +231,7 @@ export default function App() {
   const handleSalvarTimbrado = (novaConfig: PapelTimbradoConfig) => {
     setTimbradoConfig(novaConfig);
     salvarPapelTimbradoConfig(novaConfig);
+    salvarPapelTimbradoNuvem(novaConfig).catch(() => {});
     mostrarToast('Configurações de papel timbrado salvas com sucesso!');
   };
 
@@ -124,8 +242,16 @@ export default function App() {
       const novaLista = [...responsaveis, novoResponsavel];
       setResponsaveis(novaLista);
       salvarResponsaveis(novaLista);
+      salvarResponsaveisNuvem(novaLista).catch(() => {});
     }
-    const atualizadas = licitacoes.map(l => (l.id === id ? { ...l, responsavel: novoResponsavel } : l));
+    const atualizadas = licitacoes.map(l => {
+      if (l.id === id) {
+        const atual = { ...l, responsavel: novoResponsavel };
+        salvarLicitacaoNuvem(atual).catch(() => {});
+        return atual;
+      }
+      return l;
+    });
     setLicitacoes(atualizadas);
     salvarLicitacoes(atualizadas);
     mostrarToast(`Responsável atualizado para "${novoResponsavel}".`);
@@ -139,6 +265,9 @@ export default function App() {
     salvarLicitacoes(licsAtualizadas);
     salvarItens(itensAtualizados);
 
+    removerLicitacaoNuvem(id).catch(() => {});
+    removerItensDaLicitacaoNuvem(id, itens).catch(() => {});
+
     if (licitacaoSelecionadaId === id && licsAtualizadas.length > 0) {
       setLicitacaoSelecionadaId(licsAtualizadas[0].id);
     }
@@ -151,6 +280,8 @@ export default function App() {
     const listaAtualizada = [itemCriado, ...licitacoes];
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
+    salvarLicitacaoNuvem(itemCriado).catch(() => {});
+
     setLicitacaoSelecionadaId(novoId);
     setAbaAtiva('montar');
     mostrarToast(`Licitação #${novoId} cadastrada com sucesso! Adicione os itens da proposta.`);
@@ -171,21 +302,33 @@ export default function App() {
     const listaAtualizada = [...itens, itemCriado];
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    salvarItemNuvem(itemCriado).catch(() => {});
+
     mostrarToast(`Item #${novoItem.num_item} adicionado à proposta.`);
   };
 
   const handleAlternarSelecaoItem = (itemId: number) => {
-    const listaAtualizada = itens.map(i =>
-      i.id === itemId ? { ...i, selecionado: i.selecionado === false ? true : false } : i
-    );
+    const listaAtualizada = itens.map(i => {
+      if (i.id === itemId) {
+        const itemModificado = { ...i, selecionado: i.selecionado === false ? true : false };
+        salvarItemNuvem(itemModificado).catch(() => {});
+        return itemModificado;
+      }
+      return i;
+    });
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
   };
 
   const handleAlternarTodosItens = (licId: number, selecionarTodos: boolean) => {
-    const listaAtualizada = itens.map(i =>
-      i.licitacao_id === licId ? { ...i, selecionado: selecionarTodos } : i
-    );
+    const listaAtualizada = itens.map(i => {
+      if (i.licitacao_id === licId) {
+        const itemModificado = { ...i, selecionado: selecionarTodos };
+        salvarItemNuvem(itemModificado).catch(() => {});
+        return itemModificado;
+      }
+      return i;
+    });
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
     mostrarToast(
@@ -199,6 +342,8 @@ export default function App() {
     const listaAtualizada = itens.map(i => (i.id === itemAtualizado.id ? itemAtualizado : i));
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    salvarItemNuvem(itemAtualizado).catch(() => {});
+
     mostrarToast(`Item #${itemAtualizado.num_item} atualizado.`);
   };
 
@@ -206,6 +351,8 @@ export default function App() {
     const listaAtualizada = itens.filter(i => i.id !== itemId);
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    removerItemNuvem(itemId).catch(() => {});
+
     mostrarToast('Item excluído da proposta.');
   };
 
@@ -240,6 +387,34 @@ export default function App() {
   const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId);
   const temItensNaLicAtual = itens.some(i => i.licitacao_id === licitacaoSelecionadaId);
 
+  // Se não estiver autenticado, bloqueia completamente o sistema e exibe apenas a tela de login
+  if (!autenticado) {
+    return (
+      <>
+        <LoginScreen
+          acessoConfig={acessoConfig}
+          onLoginSucesso={handleLoginSucesso}
+        />
+        {toast && (
+          <div
+            className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all ${
+              toast.tipo === 'sucesso'
+                ? 'bg-slate-900 text-white border-slate-700'
+                : 'bg-rose-900 text-white border-rose-700'
+            }`}
+          >
+            {toast.tipo === 'sucesso' ? (
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-rose-400" />
+            )}
+            {toast.mensagem}
+          </div>
+        )}
+      </>
+    );
+  }
+
   return (
     <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
       {/* Barra de navegação do topo */}
@@ -248,6 +423,9 @@ export default function App() {
         setAbaAtiva={setAbaAtiva}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
         onAbrirExportar={() => setExportarModalAberto(true)}
+        onAbrirSeguranca={() => setSegurancaModalAberto(true)}
+        onLogout={handleLogout}
+        statusNuvem={statusNuvem}
       />
 
       {/* Painel lateral deslizante da Calculadora de Limite de Oferta */}
@@ -260,6 +438,14 @@ export default function App() {
       <ExportarProjetoModal
         aberto={exportarModalAberto}
         onFechar={() => setExportarModalAberto(false)}
+      />
+
+      {/* Modal de Configuração de Segurança e Acesso */}
+      <SegurancaModal
+        aberto={segurancaModalAberto}
+        onFechar={() => setSegurancaModalAberto(false)}
+        acessoAtual={acessoConfig}
+        onSalvarAcesso={handleSalvarAcesso}
       />
 
       {/* Toast flutuante */}
@@ -297,6 +483,7 @@ export default function App() {
             }}
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
             onNavegarPara={setAbaAtiva}
+            onAbrirSeguranca={() => setSegurancaModalAberto(true)}
           />
         )}
 

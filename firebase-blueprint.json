@@ -1,0 +1,117 @@
+{
+  "entities": {
+    "Licitacao": {
+      "title": "Licitacao",
+      "description": "Dados da licitação ou pregão eletrônico",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID numérico único da licitação" },
+        "orgao": { "type": "string", "maxLength": 300, "description": "Órgão público ou processo administrativo" },
+        "processo_pregao": { "type": "string", "maxLength": 150, "description": "Número do pregão ou edital" },
+        "modalidade": { "type": "string", "maxLength": 80, "description": "Modalidade da licitação" },
+        "data_cadastro": { "type": "string", "maxLength": 20, "description": "Data do cadastro DD/MM/AAAA" },
+        "responsavel": { "type": "string", "maxLength": 100, "description": "Nome do responsável (Gustavo, Victor, etc)" },
+        "status": { "type": "string", "maxLength": 50, "description": "Status da licitação" },
+        "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
+      },
+      "required": ["id", "orgao", "processo_pregao", "modalidade", "data_cadastro", "responsavel"]
+    },
+    "ItemLicitacao": {
+      "title": "ItemLicitacao",
+      "description": "Item individual pertencente a uma licitação",
+      "type": "object",
+      "properties": {
+        "id": { "type": "number", "description": "ID numérico único do item" },
+        "licitacao_id": { "type": "number", "description": "ID da licitação à qual o item pertence" },
+        "num_item": { "type": "number", "description": "Número de ordem do item no edital" },
+        "descricao_curta": { "type": "string", "maxLength": 300, "description": "Resumo do produto" },
+        "descricao_tecnica": { "type": "string", "maxLength": 4000, "description": "Especificações técnicas completas" },
+        "marca": { "type": "string", "maxLength": 150, "description": "Marca ou modelo do item" },
+        "quantidade": { "type": "number", "description": "Quantidade solicitada" },
+        "valor_unitario": { "type": "number", "description": "Valor unitário estimado" },
+        "valor_total": { "type": "number", "description": "Valor total estimado" },
+        "lance_minimo": { "type": "number", "description": "Lance mínimo unitário" },
+        "lance_lote": { "type": "number", "description": "Lance mínimo total do lote" },
+        "link_produto": { "type": "string", "maxLength": 1000, "description": "Link do produto de referência" },
+        "caminho_imagem": { "type": "string", "description": "Imagem do produto ou data URL" },
+        "selecionado": { "type": "boolean", "description": "Se está selecionado para o PDF" },
+        "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
+      },
+      "required": ["id", "licitacao_id", "num_item", "descricao_curta", "marca", "quantidade", "valor_unitario"]
+    },
+    "PapelTimbradoConfig": {
+      "title": "PapelTimbradoConfig",
+      "description": "Configuração da empresa e papel timbrado",
+      "type": "object",
+      "properties": {
+        "razaoSocial": { "type": "string", "maxLength": 200 },
+        "cnpj": { "type": "string", "maxLength": 30 },
+        "inscricaoEstadual": { "type": "string", "maxLength": 50 },
+        "endereco": { "type": "string", "maxLength": 300 },
+        "telefone": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 100 },
+        "banco": { "type": "string", "maxLength": 100 },
+        "agencia": { "type": "string", "maxLength": 30 },
+        "contaCorrente": { "type": "string", "maxLength": 50 },
+        "chavePix": { "type": "string", "maxLength": 100 },
+        "nomeRepresentante": { "type": "string", "maxLength": 150 },
+        "rgRepresentante": { "type": "string", "maxLength": 50 },
+        "cpfRepresentante": { "type": "string", "maxLength": 30 },
+        "cargoRepresentante": { "type": "string", "maxLength": 100 },
+        "enderecoRepresentante": { "type": "string", "maxLength": 300 },
+        "assinaturaImagem": { "type": "string" },
+        "prazoEntrega": { "type": "string", "maxLength": 200 },
+        "prazoValidade": { "type": "string", "maxLength": 200 },
+        "declaracaoTrabalhista": { "type": "string", "maxLength": 2000 },
+        "cidadeEmissao": { "type": "string", "maxLength": 100 },
+        "dataEmissao": { "type": "string", "maxLength": 50 }
+      },
+      "required": ["razaoSocial", "cnpj", "nomeRepresentante"]
+    },
+    "ListaResponsaveis": {
+      "title": "ListaResponsaveis",
+      "description": "Lista de responsáveis pelas licitações",
+      "type": "object",
+      "properties": {
+        "nomes": {
+          "type": "string",
+          "description": "Nomes dos responsáveis separados por vírgula ou JSON string"
+        }
+      },
+      "required": ["nomes"]
+    },
+    "AcessoConfig": {
+      "title": "AcessoConfig",
+      "description": "Credenciais de acesso simples (ID e Senha) para proteger o site",
+      "type": "object",
+      "properties": {
+        "usuarioId": { "type": "string", "maxLength": 100 },
+        "senha": { "type": "string", "maxLength": 100 },
+        "atualizadoEm": { "type": "string" }
+      },
+      "required": ["usuarioId", "senha"]
+    }
+  },
+  "firestore": {
+    "/licitacoes/{licitacaoId}": {
+      "schema": "Licitacao",
+      "description": "Coleção de licitações compartilhadas em tempo real"
+    },
+    "/itens/{itemId}": {
+      "schema": "ItemLicitacao",
+      "description": "Coleção de itens de licitações compartilhados em tempo real"
+    },
+    "/configuracoes/papel_timbrado": {
+      "schema": "PapelTimbradoConfig",
+      "description": "Dados da empresa e modelo timbrado compartilhados"
+    },
+    "/configuracoes/lista_responsaveis": {
+      "schema": "ListaResponsaveis",
+      "description": "Lista de responsáveis compartilhada"
+    },
+    "/configuracoes/seguranca": {
+      "schema": "AcessoConfig",
+      "description": "Credenciais de login protegendo o site"
+    }
+  }
+}

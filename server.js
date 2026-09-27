@@ -7,7 +7,7 @@ import { execSync } from "child_process";
 import dotenv from "dotenv";
 dotenv.config();
 const app = express();
-const port = process.env.PORT ? parseInt(process.env.PORT, 10) : 3e3;
+const port = parseInt(process.env.PORT || process.env.APP_PORT || "3000", 10);
 app.use(express.json({ limit: "10mb" }));
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,
@@ -205,28 +205,42 @@ app.get("/api/health", (_req, res) => {
   res.json({ status: "ok", timestamp: (/* @__PURE__ */ new Date()).toISOString() });
 });
 async function startServer() {
-  const isProd = process.env.NODE_ENV === "production";
-  if (!isProd) {
-    const vite = await createViteServer({
-      server: {
-        middlewareMode: true,
-        port,
-        host: "0.0.0.0",
-        hmr: process.env.DISABLE_HMR !== "true",
-        watch: process.env.DISABLE_HMR === "true" ? null : {}
-      },
-      appType: "spa"
-    });
-    app.use(vite.middlewares);
-  } else {
-    const distPath = path.resolve(process.cwd(), "dist");
+  const distPath = path.resolve(process.cwd(), "dist");
+  const hasDist = fs.existsSync(path.resolve(distPath, "index.html"));
+  const isProd = process.env.NODE_ENV === "production" || hasDist;
+  if (isProd && hasDist) {
     app.use(express.static(distPath));
     app.get("*", (_req, res) => {
       res.sendFile(path.resolve(distPath, "index.html"));
     });
+  } else {
+    try {
+      const vite = await createViteServer({
+        server: {
+          middlewareMode: true,
+          port,
+          host: "0.0.0.0",
+          hmr: process.env.DISABLE_HMR !== "true",
+          watch: process.env.DISABLE_HMR === "true" ? null : {}
+        },
+        appType: "spa"
+      });
+      app.use(vite.middlewares);
+    } catch (viteErr) {
+      console.warn("Vite dev server failed to start, falling back to static:", viteErr);
+      if (hasDist) {
+        app.use(express.static(distPath));
+        app.get("*", (_req, res) => {
+          res.sendFile(path.resolve(distPath, "index.html"));
+        });
+      }
+    }
   }
-  app.listen(port, "0.0.0.0", () => {
-    console.log(`Servidor rodando em http://localhost:${port}`);
+  const server = app.listen(port, "0.0.0.0", () => {
+    console.log(`[GWS] Servidor rodando com sucesso em http://0.0.0.0:${port} (Modo: ${isProd ? "Produ\xE7\xE3o" : "Desenvolvimento"})`);
+  });
+  server.on("error", (err) => {
+    console.error(`[GWS] Erro ao iniciar servidor na porta ${port}:`, err);
   });
 }
 startServer();
