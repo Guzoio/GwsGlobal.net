@@ -7,15 +7,12 @@ import {
   Image as ImageIcon,
   Calculator,
   Settings,
-  Code2,
   ChevronDown,
-  Globe,
-  Download,
   Shield,
   Lock,
   LogOut,
 } from 'lucide-react';
-import { LogoGwsMartelo } from './LogoGwsMartelo';
+import { LogoGwsGlobal } from './LogoGwsGlobal';
 
 interface HeaderProps {
   abaAtiva: string;
@@ -41,13 +38,13 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-white/95 backdrop-blur-sm border-b border-slate-200 shadow-xs">
       <div className="w-full px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-6">
-        {/* Logo e Nome posicionados à esquerda, com o G fundido ao martelo */}
+        {/* Logo e Nome posicionados à esquerda */}
         <div
           className="flex items-center gap-2.5 sm:gap-3 shrink-0 cursor-pointer group"
           onClick={() => setAbaAtiva('historico')}
           title="GWS GLOBAL.net — Minhas Licitações"
         >
-          <LogoGwsMartelo className="w-9 h-9 sm:w-10 sm:h-10 transition-transform duration-200 group-hover:scale-105 shrink-0 drop-shadow-xs" />
+          <LogoGwsGlobal className="w-10 h-10 sm:w-11 sm:h-11 transition-transform duration-200 group-hover:scale-105 shrink-0 rounded-xl" />
           <span className="text-xl font-black tracking-tight text-slate-900 leading-none">
             GWS GLOBAL.net
           </span>
@@ -119,16 +116,16 @@ export const Header: React.FC<HeaderProps> = ({
             <span className="sm:hidden text-[11px]">Nuvem Ativa</span>
           </div>
 
-          {/* Engrenagem de Configuração (contém Papel Timbrado e Código Python) */}
+          {/* Engrenagem de Configuração (contém Papel Timbrado e Segurança) */}
           <div className="relative">
             <button
               onClick={() => setMenuConfigAberto(prev => !prev)}
               className={`px-3 py-2 rounded-lg border transition-all cursor-pointer flex items-center gap-1.5 text-xs font-semibold ${
-                abaAtiva === 'timbrado' || abaAtiva === 'python' || abaAtiva === 'logins' || menuConfigAberto
+                abaAtiva === 'timbrado' || menuConfigAberto
                   ? 'bg-slate-100 text-[#0F2C59] border-slate-300 shadow-xs'
                   : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-50 hover:text-slate-900'
               }`}
-              title="Configurações do Sistema, Papel Timbrado e Usuários"
+              title="Configurações do Sistema e Segurança"
             >
               <Settings
                 className={`w-4 h-4 transition-transform duration-200 ${
@@ -151,6 +148,7 @@ export const Header: React.FC<HeaderProps> = ({
                     Opções de Configuração
                   </div>
 
+                  {/* Opção Papel Timbrado */}
                   <button
                     onClick={() => {
                       setAbaAtiva('timbrado');
@@ -171,30 +169,6 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-500 font-normal mt-0.5">
                         Logotipo, cabeçalho, rodapé e dados da empresa
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      setAbaAtiva('python');
-                      setMenuConfigAberto(false);
-                    }}
-                    className={`w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer ${
-                      abaAtiva === 'python'
-                        ? 'bg-amber-50/70 text-slate-950 font-bold'
-                        : 'text-slate-700'
-                    }`}
-                  >
-                    <div className="p-1.5 rounded-md bg-blue-100 text-[#0F2C59] mt-0.5 shrink-0">
-                      <Code2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        Código Python / Streamlit
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        Script completo com banco SQLite e extração
                       </div>
                     </div>
                   </button>
@@ -221,29 +195,6 @@ export const Header: React.FC<HeaderProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-500 font-normal mt-0.5">
                         Alterar ID de usuário e senha do sistema
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      onAbrirExportar?.();
-                      setMenuConfigAberto(false);
-                    }}
-                    className="w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-emerald-50 transition-colors cursor-pointer text-slate-700"
-                  >
-                    <div className="p-1.5 rounded-md bg-emerald-100 text-emerald-800 mt-0.5 shrink-0">
-                      <Globe className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-emerald-950 flex items-center gap-1.5">
-                        Hospedar na Hostinger / Exportar
-                        <span className="text-[9px] font-bold bg-emerald-200 text-emerald-900 px-1.5 py-0.2 rounded">
-                          Deploy
-                        </span>
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        Baixar ZIP compilado ou app.py pronto para a VPS
                       </div>
                     </div>
                   </button>

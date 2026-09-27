@@ -29,14 +29,12 @@ interface PapelTimbradoTabProps {
   config: PapelTimbradoConfig;
   onSalvarConfig: (novaConfig: PapelTimbradoConfig) => void;
   onVisualizarPdf: () => void;
-  onAbrirExportar?: () => void;
 }
 
 export const PapelTimbradoTab: React.FC<PapelTimbradoTabProps> = ({
   config,
   onSalvarConfig,
   onVisualizarPdf,
-  onAbrirExportar,
 }) => {
   // Dados Oficiais da Empresa (exatos da imagem do usuário)
   const [razaoSocial, setRazaoSocial] = useState<string>(config.razaoSocial || TIMBRADO_PADRAO.razaoSocial);
@@ -236,16 +234,6 @@ export const PapelTimbradoTab: React.FC<PapelTimbradoTabProps> = ({
           </div>
 
           <div className="flex flex-wrap items-center gap-2">
-            {onAbrirExportar && (
-              <button
-                onClick={onAbrirExportar}
-                className="px-3 py-2 bg-emerald-50 hover:bg-emerald-100 text-emerald-800 border border-emerald-300 text-xs font-semibold rounded-lg shadow-2xs transition-colors flex items-center gap-1.5 cursor-pointer"
-                title="Exportar projeto para Hostinger ou baixar arquivos compilados"
-              >
-                <Globe className="w-3.5 h-3.5 text-emerald-600" />
-                Hospedar na Hostinger / Exportar
-              </button>
-            )}
             <button
               onClick={handleRestaurarDadosImagem}
               className="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"

@@ -10,9 +10,7 @@ import { CadastrarLicitacaoTab } from './components/CadastrarLicitacaoTab';
 import { MontarPropostaTab } from './components/MontarPropostaTab';
 import { VisualizarPdfTab } from './components/VisualizarPdfTab';
 import { PapelTimbradoTab } from './components/PapelTimbradoTab';
-import { CodigoPythonTab } from './components/CodigoPythonTab';
 import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
-import { ExportarProjetoModal } from './components/ExportarProjetoModal';
 import { LoginScreen } from './components/LoginScreen';
 import { SegurancaModal } from './components/SegurancaModal';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from './types';
@@ -63,7 +61,6 @@ export default function App() {
     obterPapelTimbradoConfig()
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
-  const [exportarModalAberto, setExportarModalAberto] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
 
@@ -422,7 +419,6 @@ export default function App() {
         abaAtiva={abaAtiva}
         setAbaAtiva={setAbaAtiva}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
-        onAbrirExportar={() => setExportarModalAberto(true)}
         onAbrirSeguranca={() => setSegurancaModalAberto(true)}
         onLogout={handleLogout}
         statusNuvem={statusNuvem}
@@ -432,12 +428,6 @@ export default function App() {
       <CalculadoraOfertaDrawer
         aberto={calculadoraAberta}
         onFechar={() => setCalculadoraAberta(false)}
-      />
-
-      {/* Modal de Exportação e Deploy na Hostinger */}
-      <ExportarProjetoModal
-        aberto={exportarModalAberto}
-        onFechar={() => setExportarModalAberto(false)}
       />
 
       {/* Modal de Configuração de Segurança e Acesso */}
@@ -504,7 +494,6 @@ export default function App() {
             config={timbradoConfig}
             onSalvarConfig={handleSalvarTimbrado}
             onVisualizarPdf={() => setAbaAtiva('preview')}
-            onAbrirExportar={() => setExportarModalAberto(true)}
           />
         )}
 
@@ -539,8 +528,6 @@ export default function App() {
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
           />
         )}
-
-        {abaAtiva === 'python' && <CodigoPythonTab />}
       </main>
 
       {/* Footer simples e limpo */}

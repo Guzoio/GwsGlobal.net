@@ -15,7 +15,6 @@ import {
   UserPlus,
   ArrowRightLeft,
   Image as ImageIcon,
-  Code2,
   Target,
   CheckSquare,
   Layers,
@@ -407,27 +406,6 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                       </div>
                       <div className="text-[11px] text-slate-500 font-normal mt-0.5">
                         Logotipo, cabeçalho, rodapé e dados da empresa
-                      </div>
-                    </div>
-                  </button>
-
-                  <button
-                    type="button"
-                    onClick={() => {
-                      setMenuConfigAberto(false);
-                      onNavegarPara?.('python');
-                    }}
-                    className="w-full px-3.5 py-2.5 text-left text-xs flex items-start gap-2.5 hover:bg-slate-50 transition-colors cursor-pointer text-slate-700"
-                  >
-                    <div className="p-1.5 rounded-md bg-blue-100 text-[#0F2C59] mt-0.5 shrink-0">
-                      <Code2 className="w-4 h-4" />
-                    </div>
-                    <div>
-                      <div className="font-semibold text-slate-900">
-                        Código Python / Streamlit
-                      </div>
-                      <div className="text-[11px] text-slate-500 font-normal mt-0.5">
-                        Script completo com banco SQLite e extração
                       </div>
                     </div>
                   </button>

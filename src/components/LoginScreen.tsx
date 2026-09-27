@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
-import { LogoGwsMartelo } from './LogoGwsMartelo';
+import { LogoGwsGlobal } from './LogoGwsGlobal';
 import { AcessoConfig } from '../types';
 import { verificarSenha, ID_PADRAO } from '../utils/security';
 
@@ -62,8 +62,8 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden p-6 sm:p-8">
           {/* Logo e Cabeçalho */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center p-3 rounded-2xl bg-[#0F2C59] shadow-md mb-3">
-              <LogoGwsMartelo className="w-12 h-12 text-white" />
+            <div className="inline-flex items-center justify-center mb-3">
+              <LogoGwsGlobal className="w-20 h-20 shadow-lg rounded-2xl hover:scale-105 transition-transform duration-200" />
             </div>
             <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
               GWS GLOBAL.net
