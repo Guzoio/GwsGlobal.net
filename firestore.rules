@@ -12,17 +12,17 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+      return id is string && id.size() > 0 && id.size() <= 128;
     }
 
     function isValidLicitacao(data) {
       return data.keys().hasAll(['id', 'orgao', 'processo_pregao', 'modalidade', 'data_cadastro', 'responsavel'])
         && data.id is number
-        && data.orgao is string && data.orgao.size() <= 500
-        && data.processo_pregao is string && data.processo_pregao.size() <= 200
-        && data.modalidade is string && data.modalidade.size() <= 100
-        && data.data_cadastro is string && data.data_cadastro.size() <= 50
-        && data.responsavel is string && data.responsavel.size() <= 150;
+        && data.orgao is string && data.orgao.size() <= 1000
+        && data.processo_pregao is string && data.processo_pregao.size() <= 500
+        && data.modalidade is string && data.modalidade.size() <= 200
+        && data.data_cadastro is string && data.data_cadastro.size() <= 100
+        && data.responsavel is string && data.responsavel.size() <= 200;
     }
 
     function isValidItem(data) {
@@ -30,22 +30,22 @@ service cloud.firestore {
         && data.id is number
         && data.licitacao_id is number
         && data.num_item is number
-        && data.descricao_curta is string && data.descricao_curta.size() <= 500
-        && data.marca is string && data.marca.size() <= 200
+        && data.descricao_curta is string && data.descricao_curta.size() <= 5000
+        && data.marca is string && data.marca.size() <= 500
         && data.quantidade is number
         && data.valor_unitario is number;
     }
 
     function isValidTimbrado(data) {
       return data.keys().hasAll(['razaoSocial', 'cnpj', 'nomeRepresentante'])
-        && data.razaoSocial is string && data.razaoSocial.size() <= 300
-        && data.cnpj is string && data.cnpj.size() <= 50
-        && data.nomeRepresentante is string && data.nomeRepresentante.size() <= 200;
+        && data.razaoSocial is string && data.razaoSocial.size() <= 500
+        && data.cnpj is string && data.cnpj.size() <= 100
+        && data.nomeRepresentante is string && data.nomeRepresentante.size() <= 300;
     }
 
     function isValidResponsaveis(data) {
       return data.keys().hasAll(['nomes'])
-        && data.nomes is string && data.nomes.size() <= 2000;
+        && data.nomes is string && data.nomes.size() <= 5000;
     }
 
     function isValidSeguranca(data) {
@@ -59,16 +59,14 @@ service cloud.firestore {
     // Licitações Collection - Sincronização em tempo real da equipe
     match /licitacoes/{licitacaoId} {
       allow read: if true;
-      allow create: if isValidId(licitacaoId) && isValidLicitacao(incoming());
-      allow update: if isValidId(licitacaoId) && isValidLicitacao(incoming());
+      allow create, update: if isValidId(licitacaoId) && isValidLicitacao(incoming());
       allow delete: if isValidId(licitacaoId);
     }
 
     // Itens de Licitação Collection
     match /itens/{itemId} {
       allow read: if true;
-      allow create: if isValidId(itemId) && isValidItem(incoming());
-      allow update: if isValidId(itemId) && isValidItem(incoming());
+      allow create, update: if isValidId(itemId) && isValidItem(incoming());
       allow delete: if isValidId(itemId);
     }
 
@@ -89,6 +87,10 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if isValidSeguranca(incoming());
       allow delete: if false;
+    }
+
+    match /configuracoes/inicializacao {
+      allow read, write: if true;
     }
 
     // Test connection doc

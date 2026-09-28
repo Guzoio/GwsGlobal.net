@@ -24,7 +24,7 @@ import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 
 interface MontarPropostaTabProps {
   licitacoes: Licitacao[];
-  licitacaoSelecionadaId: number;
+  licitacaoSelecionadaId: number | null;
   onSelecionarLicitacao: (id: number) => void;
   itens: ItemLicitacao[];
   onAdicionarItem: (item: Omit<ItemLicitacao, 'id'>) => void;
@@ -326,7 +326,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </label>
             <div className="relative">
               <select
-                value={licitacaoSelecionadaId}
+                value={licitacaoSelecionadaId ?? ''}
                 onChange={e => onSelecionarLicitacao(Number(e.target.value))}
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
               >

@@ -5,16 +5,19 @@ import {
   deleteDoc,
   onSnapshot,
   getDocs,
+  getDoc,
+  query,
+  where,
   writeBatch,
 } from 'firebase/firestore';
-import { db, handleFirestoreError, OperationType, auth } from './config';
+import { db, handleFirestoreError, OperationType } from './config';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from '../types';
 
 const LICITACOES_COL = 'licitacoes';
 const ITENS_COL = 'itens';
 const CONFIG_COL = 'configuracoes';
 
-// Ouvir licitações em tempo real
+// Ouvir licitações em tempo real (qualquer inserção, alteração ou exclusão reflete instantaneamente)
 export function ouvirLicitacoesNuvem(
   onUpdate: (licitacoes: Licitacao[]) => void,
   onError?: (err: any) => void
@@ -38,17 +41,17 @@ export function ouvirLicitacoesNuvem(
       });
       // Ordena por ID decrescente
       lista.sort((a, b) => b.id - a.id);
+      // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
       onUpdate(lista);
     },
     (error) => {
       console.warn('Aviso sincronização licitações:', error.message);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.LIST, LICITACOES_COL);
     }
   );
 }
 
-// Ouvir itens em tempo real
+// Ouvir itens de licitação em tempo real
 export function ouvirItensNuvem(
   onUpdate: (itens: ItemLicitacao[]) => void,
   onError?: (err: any) => void
@@ -77,12 +80,12 @@ export function ouvirItensNuvem(
           selecionado: data.selecionado !== false,
         });
       });
+      // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
       onUpdate(lista);
     },
     (error) => {
       console.warn('Aviso sincronização itens:', error.message);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.LIST, ITENS_COL);
     }
   );
 }
@@ -104,7 +107,6 @@ export function ouvirPapelTimbradoNuvem(
     (error) => {
       console.warn('Aviso sincronização timbrado:', error.message);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, `${CONFIG_COL}/papel_timbrado`);
     }
   );
 }
@@ -133,7 +135,6 @@ export function ouvirResponsaveisNuvem(
     (error) => {
       console.warn('Aviso sincronização responsáveis:', error.message);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, `${CONFIG_COL}/lista_responsaveis`);
     }
   );
 }
@@ -157,13 +158,35 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
   }
 }
 
-// Excluir licitação na nuvem
+// Excluir licitação na nuvem com remoção atômica de todos os itens associados
 export async function removerLicitacaoNuvem(licId: number): Promise<void> {
   const path = `${LICITACOES_COL}/${licId}`;
   try {
-    await deleteDoc(doc(db, LICITACOES_COL, String(licId)));
+    const batch = writeBatch(db);
+
+    // 1. Remove o documento principal da licitação
+    const licRef = doc(db, LICITACOES_COL, String(licId));
+    batch.delete(licRef);
+
+    // 2. Busca e remove todos os itens desta licitação na nuvem
+    try {
+      const qNum = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(licId)));
+      const snapNum = await getDocs(qNum);
+      snapNum.forEach((d) => {
+        batch.delete(d.ref);
+      });
+    } catch (errQ) {
+      console.warn('Aviso ao consultar itens para exclusão por número:', errQ);
+    }
+
+    await batch.commit();
   } catch (error) {
-    handleFirestoreError(error, OperationType.DELETE, path);
+    // Se o batch falhar, tenta exclusão direta do documento principal
+    try {
+      await deleteDoc(doc(db, LICITACOES_COL, String(licId)));
+    } catch {
+      handleFirestoreError(error, OperationType.DELETE, path);
+    }
   }
 }
 
@@ -204,10 +227,33 @@ export async function removerItemNuvem(itemId: number): Promise<void> {
 }
 
 // Excluir todos os itens de uma licitação na nuvem
-export async function removerItensDaLicitacaoNuvem(licId: number, itens: ItemLicitacao[]): Promise<void> {
-  const itensParaRemover = itens.filter((i) => i.licitacao_id === licId);
-  for (const it of itensParaRemover) {
-    await removerItemNuvem(it.id);
+export async function removerItensDaLicitacaoNuvem(licId: number, itens?: ItemLicitacao[]): Promise<void> {
+  try {
+    const batch = writeBatch(db);
+    let count = 0;
+
+    // Se temos a lista de itens local
+    if (itens && itens.length > 0) {
+      const paraRemover = itens.filter((i) => i.licitacao_id === licId);
+      for (const it of paraRemover) {
+        batch.delete(doc(db, ITENS_COL, String(it.id)));
+        count++;
+      }
+    }
+
+    // Consulta também o banco para garantir itens órfãos
+    const q = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(licId)));
+    const snap = await getDocs(q);
+    snap.forEach((d) => {
+      batch.delete(d.ref);
+      count++;
+    });
+
+    if (count > 0) {
+      await batch.commit();
+    }
+  } catch (err) {
+    console.warn('Aviso ao remover itens da licitação:', err);
   }
 }
 
@@ -260,7 +306,6 @@ export function ouvirAcessoConfigNuvem(
     (error) => {
       console.warn('Aviso sincronização segurança:', error.message);
       if (onError) onError(error);
-      handleFirestoreError(error, OperationType.GET, `${CONFIG_COL}/seguranca`);
     }
   );
 }
@@ -279,7 +324,8 @@ export async function salvarAcessoConfigNuvem(config: AcessoConfig): Promise<voi
   }
 }
 
-// Sincronizar dados locais com a nuvem na primeira conexão
+// Sincronizar dados locais com a nuvem na PRIMEIRA vez que o banco existir.
+// Se o banco já tiver sido marcado como inicializado, NUNCA recria dados fictícios.
 export async function sincronizarBancoInicialSeVazio(
   licsLocais: Licitacao[],
   itensLocais: ItemLicitacao[],
@@ -287,18 +333,38 @@ export async function sincronizarBancoInicialSeVazio(
   responsaveisLocais: string[]
 ): Promise<void> {
   try {
+    const initDocRef = doc(db, CONFIG_COL, 'inicializacao');
+    const initSnap = await getDoc(initDocRef);
+
+    // Se já foi inicializado pela empresa, respeita 100% as exclusões do usuário!
+    if (initSnap.exists()) {
+      return;
+    }
+
+    // Se já existem licitações no Firestore, marca como inicializado e não recria
     const licsSnap = await getDocs(collection(db, LICITACOES_COL));
-    if (licsSnap.empty && licsLocais.length > 0) {
+    if (!licsSnap.empty) {
+      await setDoc(initDocRef, { inicializado: true, data: new Date().toISOString() });
+      return;
+    }
+
+    // Se é a primeiríssima vez da instalação:
+    await setDoc(initDocRef, { inicializado: true, data: new Date().toISOString() });
+
+    // Salva timbrado e responsáveis padrão
+    await salvarPapelTimbradoNuvem(timbradoLocal);
+    await salvarResponsaveisNuvem(responsaveisLocais);
+
+    // Sobe as licitações locais se houver
+    if (licsLocais && licsLocais.length > 0) {
       for (const lic of licsLocais) {
         await salvarLicitacaoNuvem(lic);
       }
       for (const item of itensLocais) {
         await salvarItemNuvem(item);
       }
-      await salvarPapelTimbradoNuvem(timbradoLocal);
-      await salvarResponsaveisNuvem(responsaveisLocais);
     }
   } catch (err) {
-    console.warn('Não foi possível inicializar banco nuvem:', err);
+    console.warn('Aviso na verificação de inicialização:', err);
   }
 }

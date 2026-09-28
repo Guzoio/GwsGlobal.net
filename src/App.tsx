@@ -42,7 +42,6 @@ import {
   removerLicitacaoNuvem,
   salvarItemNuvem,
   removerItemNuvem,
-  removerItensDaLicitacaoNuvem,
   salvarPapelTimbradoNuvem,
   salvarResponsaveisNuvem,
   sincronizarBancoInicialSeVazio,
@@ -56,7 +55,7 @@ export default function App() {
   const [itens, setItens] = useState<ItemLicitacao[]>([]);
   const [responsaveis, setResponsaveis] = useState<string[]>(() => obterResponsaveis());
   const [abaAtiva, setAbaAtiva] = useState<string>('historico');
-  const [licitacaoSelecionadaId, setLicitacaoSelecionadaId] = useState<number>(1);
+  const [licitacaoSelecionadaId, setLicitacaoSelecionadaId] = useState<number | null>(null);
   const [timbradoConfig, setTimbradoConfig] = useState<PapelTimbradoConfig>(() =>
     obterPapelTimbradoConfig()
   );
@@ -93,23 +92,32 @@ export default function App() {
     sincronizarBancoInicialSeVazio(licsAtuais, itsAtuais, timbAtual, respsAtuais).catch(() => {});
 
     // Ativa ouvintes em tempo real para sincronização instantânea e automática entre computadores
-    const unsubLics = ouvirLicitacoesNuvem((licsNuvem) => {
-      if (licsNuvem && licsNuvem.length > 0) {
+    const unsubLics = ouvirLicitacoesNuvem(
+      (licsNuvem) => {
+        setStatusNuvem('conectado');
         setLicitacoes(licsNuvem);
         salvarLicitacoes(licsNuvem);
         setLicitacaoSelecionadaId(prev => {
-          if (licsNuvem.some(l => l.id === prev)) return prev;
+          if (!licsNuvem || licsNuvem.length === 0) return null;
+          if (prev && licsNuvem.some(l => l.id === prev)) return prev;
           return licsNuvem[0].id;
         });
+      },
+      (err) => {
+        console.warn('Status nuvem: desconectado ou aviso ao escutar licitações', err);
+        setStatusNuvem('desconectado');
       }
-    });
+    );
 
-    const unsubItens = ouvirItensNuvem((itensNuvem) => {
-      if (itensNuvem && itensNuvem.length > 0) {
+    const unsubItens = ouvirItensNuvem(
+      (itensNuvem) => {
         setItens(itensNuvem);
         salvarItens(itensNuvem);
+      },
+      (err) => {
+        console.warn('Aviso ao escutar itens da nuvem', err);
       }
-    });
+    );
 
     const unsubTimbrado = ouvirPapelTimbradoNuvem((timbradoNuvem) => {
       if (timbradoNuvem) {
@@ -254,7 +262,7 @@ export default function App() {
     mostrarToast(`Responsável atualizado para "${novoResponsavel}".`);
   };
 
-  const handleExcluirLicitacao = (id: number) => {
+  const handleExcluirLicitacao = async (id: number) => {
     const licsAtualizadas = licitacoes.filter(l => l.id !== id);
     const itensAtualizados = itens.filter(i => i.licitacao_id !== id);
     setLicitacoes(licsAtualizadas);
@@ -262,13 +270,17 @@ export default function App() {
     salvarLicitacoes(licsAtualizadas);
     salvarItens(itensAtualizados);
 
-    removerLicitacaoNuvem(id).catch(() => {});
-    removerItensDaLicitacaoNuvem(id, itens).catch(() => {});
-
-    if (licitacaoSelecionadaId === id && licsAtualizadas.length > 0) {
-      setLicitacaoSelecionadaId(licsAtualizadas[0].id);
+    if (licitacaoSelecionadaId === id) {
+      setLicitacaoSelecionadaId(licsAtualizadas.length > 0 ? licsAtualizadas[0].id : null);
     }
-    mostrarToast('Licitação e seus itens excluídos com sucesso.');
+
+    try {
+      await removerLicitacaoNuvem(id);
+      mostrarToast('Licitação excluída com sucesso.');
+    } catch (err) {
+      console.warn('Licitação excluída localmente, sincronizando com a nuvem:', err);
+      mostrarToast('Licitação excluída com sucesso.');
+    }
   };
 
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
@@ -344,13 +356,17 @@ export default function App() {
     mostrarToast(`Item #${itemAtualizado.num_item} atualizado.`);
   };
 
-  const handleExcluirItem = (itemId: number) => {
+  const handleExcluirItem = async (itemId: number) => {
     const listaAtualizada = itens.filter(i => i.id !== itemId);
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
-    removerItemNuvem(itemId).catch(() => {});
-
-    mostrarToast('Item excluído da proposta.');
+    try {
+      await removerItemNuvem(itemId);
+      mostrarToast('Item excluído da proposta.');
+    } catch (err) {
+      console.warn('Item excluído localmente, sincronizando com a nuvem:', err);
+      mostrarToast('Item excluído da proposta.');
+    }
   };
 
   // Geração e Download do Arquivo PDF com Timbrado (apenas itens selecionados no quadrinho)

@@ -455,28 +455,10 @@ export function obterLicitacoes(): Licitacao[] {
   try {
     const data = localStorage.getItem(LICITACOES_KEY);
     if (!data) {
-      const iniciais: Licitacao[] = [
-        {
-          id: 1,
-          orgao: 'Processo Administrativo Nº 0038/2026',
-          processo_pregao: 'Pregão Eletrônico Nº 0019/26-A',
-          modalidade: 'Pregão Eletrônico',
-          data_cadastro: '24/09/2026',
-          responsavel: 'Gustavo',
-        },
-        {
-          id: 2,
-          orgao: 'Prefeitura Municipal de Timóteo - Secretaria de Administração',
-          processo_pregao: 'Dispensa Eletrônica Nº 0012/2026',
-          modalidade: 'Dispensa Eletrônica',
-          data_cadastro: '22/09/2026',
-          responsavel: 'Victor',
-        },
-      ];
-      salvarLicitacoes(iniciais);
-      return iniciais;
+      return [];
     }
     const lics: Licitacao[] = JSON.parse(data);
+    if (!Array.isArray(lics)) return [];
     // Sanitize legacy modality values and ensure responsavel is populated
     return lics.map((l, idx) => {
       let mod = l.modalidade;
@@ -499,59 +481,10 @@ export function obterItens(): ItemLicitacao[] {
   try {
     const data = localStorage.getItem(ITENS_KEY);
     if (!data) {
-      // Seed initial realistic tender items for licitacao #1
-      const iniciais: ItemLicitacao[] = [
-        {
-          id: 1,
-          licitacao_id: 1,
-          num_item: 1,
-          link_produto: 'https://www.dell.com/pt-br/shop/notebooks/latitude-5440',
-          descricao_curta: 'Notebook Corporativo Core i7 16GB SSD 512GB 14" FHD',
-          descricao_tecnica:
-            'Processador Intel Core i7-1365U (10 núcleos, até 5.0 GHz), Memória RAM 16 GB DDR5 4800MHz (expansível até 64GB), Armazenamento SSD M.2 512 GB PCIe NVMe Classe 35, Tela de 14 polegadas Full HD (1920x1080) antirreflexo IPS 250 nits, Placa gráfica Intel Iris Xe Graphics, Conectividade Wi-Fi 6E AX211 + Bluetooth 5.3, Portas: 2x Thunderbolt 4 com Power Delivery e DisplayPort, 2x USB 3.2 Gen 1, 1x HDMI 2.0, 1x RJ-45 Gigabit Ethernet, Bateria de 54Wh com recarga rápida ExpressCharge, Câmera FHD com obturador de privacidade e leitor biométrico integrado no botão liga/desliga. Garantia de 36 meses ProSupport on-site com atendimento no local.',
-          marca: 'Dell Latitude 5440',
-          quantidade: 25,
-          valor_unitario: 5200.0,
-          valor_total: 130000.0,
-          lance_minimo: 4800.0,
-          lance_lote: 120000.0,
-          caminho_imagem: criarImagemPadrao('notebook'),
-        },
-        {
-          id: 2,
-          licitacao_id: 1,
-          num_item: 2,
-          link_produto: 'https://www.dell.com/pt-br/shop/monitores/p2722h',
-          descricao_curta: 'Monitor Profissional 27" LED IPS Full HD c/ Ajuste de Altura',
-          descricao_tecnica:
-            'Tela de 27 polegadas retroiluminada por LED com tecnologia IPS (In-Plane Switching), Resolução nativa Full HD (1920 x 1080 a 60 Hz), Taxa de contraste 1000:1, Brilho 300 cd/m², Tempo de resposta de 5 ms (cinza para cinza), Ângulo de visualização 178° vertical e horizontal, Revestimento de tela antirreflexo com dureza 3H, Entradas de vídeo: 1x DisplayPort 1.2, 1x HDMI 1.4, 1x VGA, Hub USB 3.2 integrado com 4 portas downstream. Suporte ergonômico com ajuste de altura (150 mm), inclinação (-5° a 21°), rotação horizontal (45° a 45°) e rotação vertical (pivot de 90°). Certificações Energy Star e EPEAT Gold.',
-          marca: 'Dell P2722H',
-          quantidade: 50,
-          valor_unitario: 1150.0,
-          valor_total: 57500.0,
-          lance_minimo: 980.0,
-          lance_lote: 49000.0,
-          caminho_imagem: criarImagemPadrao('monitor'),
-        },
-        {
-          id: 3,
-          licitacao_id: 1,
-          num_item: 3,
-          link_produto: 'https://epson.com.br/ecotank-l6270',
-          descricao_curta: 'Impressora Multifuncional Tanque de Tinta Colorida Duplex e Rede',
-          descricao_tecnica:
-            'Multifuncional 3 em 1 (Impressão, Cópia e Scanner) com sistema tanque de tinta original EcoTank. Velocidade de impressão ISO de até 15,5 ppm em preto e 8,5 ppm em cores. Resolução máxima de até 4800 x 1200 dpi. Impressão frente e verso (duplex) automática de fábrica. Alimentador automático de documentos (ADF) para até 30 folhas. Conectividade: Ethernet Gigabit 10/100, Wi-Fi Direct e USB 2.0 de alta velocidade. Ciclo de trabalho mensal recomendado de até 5.000 páginas. Compatível com Windows 11/10 e principais distribuições Linux. Acompanha kit de garrafas com rendimento de até 7.500 páginas pretas e 6.000 páginas coloridas.',
-          marca: 'Epson EcoTank L6270',
-          quantidade: 8,
-          valor_unitario: 2450.0,
-          valor_total: 19600.0,
-          caminho_imagem: criarImagemPadrao('impressora'),
-        },
-      ];
-      salvarItens(iniciais);
-      return iniciais;
+      return [];
     }
     const parsedItens: ItemLicitacao[] = JSON.parse(data);
+    if (!Array.isArray(parsedItens)) return [];
     return parsedItens.map(it => ({
       ...it,
       selecionado: it.selecionado !== undefined ? it.selecionado : true,

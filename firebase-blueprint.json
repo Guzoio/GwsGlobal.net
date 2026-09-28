@@ -6,12 +6,12 @@
       "type": "object",
       "properties": {
         "id": { "type": "number", "description": "ID numérico único da licitação" },
-        "orgao": { "type": "string", "maxLength": 300, "description": "Órgão público ou processo administrativo" },
-        "processo_pregao": { "type": "string", "maxLength": 150, "description": "Número do pregão ou edital" },
-        "modalidade": { "type": "string", "maxLength": 80, "description": "Modalidade da licitação" },
-        "data_cadastro": { "type": "string", "maxLength": 20, "description": "Data do cadastro DD/MM/AAAA" },
-        "responsavel": { "type": "string", "maxLength": 100, "description": "Nome do responsável (Gustavo, Victor, etc)" },
-        "status": { "type": "string", "maxLength": 50, "description": "Status da licitação" },
+        "orgao": { "type": "string", "maxLength": 1000, "description": "Órgão público ou processo administrativo" },
+        "processo_pregao": { "type": "string", "maxLength": 500, "description": "Número do pregão ou edital" },
+        "modalidade": { "type": "string", "maxLength": 200, "description": "Modalidade da licitação" },
+        "data_cadastro": { "type": "string", "maxLength": 100, "description": "Data do cadastro DD/MM/AAAA" },
+        "responsavel": { "type": "string", "maxLength": 200, "description": "Nome do responsável (Gustavo, Victor, etc)" },
+        "status": { "type": "string", "maxLength": 100, "description": "Status da licitação" },
         "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
       },
       "required": ["id", "orgao", "processo_pregao", "modalidade", "data_cadastro", "responsavel"]
@@ -24,9 +24,9 @@
         "id": { "type": "number", "description": "ID numérico único do item" },
         "licitacao_id": { "type": "number", "description": "ID da licitação à qual o item pertence" },
         "num_item": { "type": "number", "description": "Número de ordem do item no edital" },
-        "descricao_curta": { "type": "string", "maxLength": 300, "description": "Resumo do produto" },
-        "descricao_tecnica": { "type": "string", "maxLength": 4000, "description": "Especificações técnicas completas" },
-        "marca": { "type": "string", "maxLength": 150, "description": "Marca ou modelo do item" },
+        "descricao_curta": { "type": "string", "maxLength": 5000, "description": "Resumo do produto" },
+        "descricao_tecnica": { "type": "string", "maxLength": 10000, "description": "Especificações técnicas completas" },
+        "marca": { "type": "string", "maxLength": 500, "description": "Marca ou modelo do item" },
         "quantidade": { "type": "number", "description": "Quantidade solicitada" },
         "valor_unitario": { "type": "number", "description": "Valor unitário estimado" },
         "valor_total": { "type": "number", "description": "Valor total estimado" },
@@ -44,27 +44,27 @@
       "description": "Configuração da empresa e papel timbrado",
       "type": "object",
       "properties": {
-        "razaoSocial": { "type": "string", "maxLength": 200 },
-        "cnpj": { "type": "string", "maxLength": 30 },
-        "inscricaoEstadual": { "type": "string", "maxLength": 50 },
-        "endereco": { "type": "string", "maxLength": 300 },
-        "telefone": { "type": "string", "maxLength": 50 },
-        "email": { "type": "string", "maxLength": 100 },
-        "banco": { "type": "string", "maxLength": 100 },
-        "agencia": { "type": "string", "maxLength": 30 },
-        "contaCorrente": { "type": "string", "maxLength": 50 },
-        "chavePix": { "type": "string", "maxLength": 100 },
-        "nomeRepresentante": { "type": "string", "maxLength": 150 },
-        "rgRepresentante": { "type": "string", "maxLength": 50 },
-        "cpfRepresentante": { "type": "string", "maxLength": 30 },
-        "cargoRepresentante": { "type": "string", "maxLength": 100 },
-        "enderecoRepresentante": { "type": "string", "maxLength": 300 },
+        "razaoSocial": { "type": "string", "maxLength": 500 },
+        "cnpj": { "type": "string", "maxLength": 100 },
+        "inscricaoEstadual": { "type": "string", "maxLength": 100 },
+        "endereco": { "type": "string", "maxLength": 500 },
+        "telefone": { "type": "string", "maxLength": 100 },
+        "email": { "type": "string", "maxLength": 200 },
+        "banco": { "type": "string", "maxLength": 200 },
+        "agencia": { "type": "string", "maxLength": 100 },
+        "contaCorrente": { "type": "string", "maxLength": 100 },
+        "chavePix": { "type": "string", "maxLength": 200 },
+        "nomeRepresentante": { "type": "string", "maxLength": 300 },
+        "rgRepresentante": { "type": "string", "maxLength": 100 },
+        "cpfRepresentante": { "type": "string", "maxLength": 100 },
+        "cargoRepresentante": { "type": "string", "maxLength": 200 },
+        "enderecoRepresentante": { "type": "string", "maxLength": 500 },
         "assinaturaImagem": { "type": "string" },
-        "prazoEntrega": { "type": "string", "maxLength": 200 },
-        "prazoValidade": { "type": "string", "maxLength": 200 },
-        "declaracaoTrabalhista": { "type": "string", "maxLength": 2000 },
-        "cidadeEmissao": { "type": "string", "maxLength": 100 },
-        "dataEmissao": { "type": "string", "maxLength": 50 }
+        "prazoEntrega": { "type": "string", "maxLength": 300 },
+        "prazoValidade": { "type": "string", "maxLength": 300 },
+        "declaracaoTrabalhista": { "type": "string", "maxLength": 3000 },
+        "cidadeEmissao": { "type": "string", "maxLength": 200 },
+        "dataEmissao": { "type": "string", "maxLength": 100 }
       },
       "required": ["razaoSocial", "cnpj", "nomeRepresentante"]
     },
@@ -90,6 +90,16 @@
         "atualizadoEm": { "type": "string" }
       },
       "required": ["usuarioId", "senha"]
+    },
+    "InicializacaoConfig": {
+      "title": "InicializacaoConfig",
+      "description": "Indica que o banco já foi inicializado pela empresa",
+      "type": "object",
+      "properties": {
+        "inicializado": { "type": "boolean" },
+        "data": { "type": "string" }
+      },
+      "required": ["inicializado"]
     }
   },
   "firestore": {
@@ -112,6 +122,10 @@
     "/configuracoes/seguranca": {
       "schema": "AcessoConfig",
       "description": "Credenciais de login protegendo o site"
+    },
+    "/configuracoes/inicializacao": {
+      "schema": "InicializacaoConfig",
+      "description": "Sinalização de banco inicializado"
     }
   }
 }
