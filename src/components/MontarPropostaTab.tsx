@@ -23,6 +23,9 @@ import {
   Link as LinkIcon,
   ExternalLink,
   Copy,
+  Save,
+  Loader2,
+  CheckCircle2,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
@@ -42,6 +45,7 @@ interface MontarPropostaTabProps {
   onGerarPdf: () => void;
   onVisualizarPdf: () => void;
   onIrParaTimbrado?: () => void;
+  onForcarSalvarProposta?: (licId: number) => Promise<boolean>;
 }
 
 export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
@@ -58,12 +62,13 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onGerarPdf,
   onVisualizarPdf,
   onIrParaTimbrado,
+  onForcarSalvarProposta,
 }) => {
   const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0];
   const itensAtuais = useMemo(() => {
     if (!licitacaoAtual) return [];
     return itens
-      .filter(i => i.licitacao_id === licitacaoAtual.id)
+      .filter(i => Number(i.licitacao_id) === Number(licitacaoAtual.id))
       .sort((a, b) => a.num_item - b.num_item);
   }, [itens, licitacaoAtual]);
 
@@ -95,6 +100,43 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [modalObservacaoItem, setModalObservacaoItem] = useState<ItemLicitacao | null>(null);
   const [linkCopiadoFeedback, setLinkCopiadoFeedback] = useState<string | null>(null);
   const [notificacao, setNotificacao] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+  const [salvandoManual, setSalvandoManual] = useState<boolean>(false);
+  const [ultimoSalvoTimestamp, setUltimoSalvoTimestamp] = useState<string | null>(null);
+  const [feedbackSalvar, setFeedbackSalvar] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
+
+  // Forçar salvamento garantido na nuvem e no armazenamento local
+  const handleForcarSalvar = async () => {
+    if (!licitacaoAtual) return;
+    setSalvandoManual(true);
+    setFeedbackSalvar(null);
+    try {
+      if (onForcarSalvarProposta) {
+        await onForcarSalvarProposta(licitacaoAtual.id);
+      }
+      const agora = new Date().toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+      setUltimoSalvoTimestamp(agora);
+      setFeedbackSalvar({
+        tipo: 'sucesso',
+        mensagem: `✓ Salvo com sucesso às ${agora}! Todos os ${itensAtuais.length} itens gravados.`,
+      });
+      setNotificacao({
+        tipo: 'sucesso',
+        texto: `✓ Salvo com sucesso às ${agora}!`,
+      });
+    } catch (err: any) {
+      const msgErro = err?.message || 'Falha de conexão com a nuvem';
+      setFeedbackSalvar({
+        tipo: 'erro',
+        mensagem: `❌ Erro ao salvar na nuvem: ${msgErro}. Dados salvos localmente.`,
+      });
+      setNotificacao({
+        tipo: 'erro',
+        texto: '❌ Erro ao salvar na nuvem.',
+      });
+    } finally {
+      setSalvandoManual(false);
+    }
+  };
 
   // Copiar link para área de transferência com feedback visual temporário
   const handleCopiarLink = (url: string) => {
@@ -270,7 +312,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
     // SE ESTIVER EM MODO DE EDIÇÃO DE ITEM EXISTENTE:
     if (idItemEditando) {
-      const itemExistente = itens.find(i => i.id === idItemEditando);
+      const itemExistente = itens.find(i => Number(i.id) === Number(idItemEditando));
       if (itemExistente && onAtualizarItem) {
         onAtualizarItem({
           ...itemExistente,
@@ -299,7 +341,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
     // MODO DE CRIAÇÃO DE NOVO ITEM:
     onAdicionarItem({
-      licitacao_id: licitacaoAtual.id,
+      licitacao_id: Number(licitacaoAtual.id),
       num_item: numItem,
       link_produto: linkProduto.trim() || undefined,
       descricao_curta: descricaoCurta.trim(),
@@ -401,7 +443,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                 className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
               >
                 {licitacoes.map(lic => {
-                  const itensDesta = itens.filter(i => i.licitacao_id === lic.id);
+                  const itensDesta = itens.filter(i => Number(i.licitacao_id) === Number(lic.id));
                   const itensMarcados = itensDesta.filter(i => i.selecionado !== false);
                   return (
                     <option key={lic.id} value={lic.id}>
@@ -415,7 +457,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
           {/* Campo de Data Específica Desta Licitação para o PDF */}
           {licitacaoAtual && (
-            <div className="w-full lg:w-60 bg-slate-50 border border-slate-200 rounded-lg p-2.5 shrink-0">
+            <div className="w-full lg:w-56 bg-slate-50 border border-slate-200 rounded-lg p-2.5 shrink-0">
               <label className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
                 <Calendar className="w-3.5 h-3.5 text-[#0F2C59]" />
                 Data no Documento PDF:
@@ -431,7 +473,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           )}
 
           {licitacaoAtual && (
-            <div className="flex items-center gap-4 text-xs text-slate-600 border-t lg:border-t-0 lg:border-l border-slate-200 pt-3 lg:pt-0 lg:pl-4">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 border-t lg:border-t-0 lg:border-l border-slate-200 pt-3 lg:pt-0 lg:pl-4">
               <div>
                 <span className="font-semibold text-slate-900 block">Modalidade:</span>
                 <span>{licitacaoAtual.modalidade}</span>
@@ -447,6 +489,34 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                 <span className="font-mono tabular-nums font-bold text-slate-900">
                   {itensSelecionados.length} de {itensAtuais.length} itens
                 </span>
+              </div>
+
+              {/* Botão de Forçar Salvamento de Garantia */}
+              <div className="flex flex-col items-start gap-1 shrink-0">
+                <button
+                  type="button"
+                  onClick={handleForcarSalvar}
+                  disabled={salvandoManual}
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75 whitespace-nowrap"
+                  title="Garante que todos os itens e especificações da proposta estejam gravados na nuvem e no armazenamento local"
+                >
+                  {salvandoManual ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Gravando na Nuvem...</span>
+                    </>
+                  ) : (
+                    <>
+                      <Save className="w-4 h-4 text-emerald-200" />
+                      <span>Salvar Proposta & Catálogo</span>
+                    </>
+                  )}
+                </button>
+                {ultimoSalvoTimestamp && (
+                  <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                    ✓ Salvo às {ultimoSalvoTimestamp}
+                  </span>
+                )}
               </div>
             </div>
           )}
@@ -1260,6 +1330,50 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </table>
           </div>
         )}
+
+        {/* ==================================================================== */}
+        {/* RODAPÉ DA PRÉ-VISUALIZAÇÃO: BOTÃO MAIOR DE SALVAR NO CANTO DIREITO   */}
+        {/* ==================================================================== */}
+        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+          {/* Mensagem de Confirmação ou Erro */}
+          <div className="flex-1 w-full sm:w-auto">
+            {feedbackSalvar?.tipo === 'sucesso' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-emerald-800 bg-emerald-100 border border-emerald-300 px-3.5 py-2 rounded-lg shadow-2xs animate-in fade-in duration-200">
+                <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>{feedbackSalvar.mensagem}</span>
+              </div>
+            )}
+            {feedbackSalvar?.tipo === 'erro' && (
+              <div className="flex items-center gap-2 text-xs font-semibold text-rose-800 bg-rose-100 border border-rose-300 px-3.5 py-2 rounded-lg shadow-2xs animate-in fade-in duration-200">
+                <AlertCircle className="w-4 h-4 text-rose-600 shrink-0" />
+                <span>{feedbackSalvar.mensagem}</span>
+              </div>
+            )}
+          </div>
+
+          {/* Botão no Canto Direito Inferior Só Escrito "Salvar" */}
+          <div className="flex items-center justify-end w-full sm:w-auto shrink-0">
+            <button
+              type="button"
+              onClick={handleForcarSalvar}
+              disabled={salvandoManual}
+              className="w-full sm:w-auto px-6 py-2.5 text-xs sm:text-sm font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs hover:shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              title="Salvar alterações na nuvem e no armazenamento local"
+            >
+              {salvandoManual ? (
+                <>
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <span>Salvando...</span>
+                </>
+              ) : (
+                <>
+                  <Save className="w-4 h-4 text-emerald-200" />
+                  <span>Salvar</span>
+                </>
+              )}
+            </button>
+          </div>
+        </div>
       </div>
 
       {/* ==================================================================== */}

@@ -52,7 +52,11 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
   }, [licitacao?.id, licitacao?.data_proposta, licitacao?.data_cadastro, timbrado.dataEmissao]);
 
   const itensDaLic = licitacao
-    ? itens.filter(i => i.licitacao_id === licitacao.id && i.selecionado !== false).sort((a, b) => a.num_item - b.num_item)
+    ? itens.filter(i => Number(i.licitacao_id) === Number(licitacao.id) && i.selecionado !== false).sort((a, b) => a.num_item - b.num_item)
+    : [];
+
+  const todosItensDaLic = licitacao
+    ? itens.filter(i => Number(i.licitacao_id) === Number(licitacao.id)).sort((a, b) => a.num_item - b.num_item)
     : [];
 
   const totalGeral = itensDaLic.reduce((acc, it) => acc + (it.valor_total || it.quantidade * it.valor_unitario), 0);
@@ -299,6 +303,18 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
               </button>
             </div>
           </div>
+
+          {/* Aviso se houver itens desmarcados na proposta */}
+          {todosItensDaLic.length > itensDaLic.length && (
+            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900 animate-in fade-in duration-150">
+              <div className="flex items-center gap-2">
+                <span className="font-bold text-amber-700">⚠️ Itens Ocultos do PDF:</span>
+                <span>
+                  Esta licitação possui <strong>{todosItensDaLic.length} produtos cadastrados</strong>, mas apenas <strong>{itensDaLic.length} estão com o quadrinho marcado</strong> para o PDF oficial ({todosItensDaLic.length - itensDaLic.length} item(ns) desmarcado(s) na aba Montar Proposta).
+                </span>
+              </div>
+            </div>
+          )}
 
           {/* Barra de Ajuste Rápido da Data de Emissão do Documento */}
           <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">

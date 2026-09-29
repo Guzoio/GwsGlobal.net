@@ -45,6 +45,7 @@ import {
   removerItemNuvem,
   salvarPapelTimbradoNuvem,
   salvarResponsaveisNuvem,
+  salvarTodosItensNuvem,
   sincronizarBancoInicialSeVazio,
 } from './firebase/firestoreService';
 
@@ -316,12 +317,14 @@ export default function App() {
 
   // Gerenciamento de Itens
   const handleAdicionarItem = (novoItem: Omit<ItemLicitacao, 'id'>) => {
-    const novoId = (itens.length > 0 ? Math.max(...itens.map(i => i.id)) : 0) + 1;
+    const maiorIdExistente = itens.length > 0 ? Math.max(...itens.map(i => Number(i.id) || 0)) : 0;
+    const novoId = Math.max(Date.now(), maiorIdExistente + 1);
     // Quantidade estritamente inteira
     const qtdInteira = Math.max(1, Math.round(novoItem.quantidade));
     const itemCriado: ItemLicitacao = {
       ...novoItem,
       id: novoId,
+      licitacao_id: Number(novoItem.licitacao_id),
       quantidade: qtdInteira,
       valor_total: qtdInteira * novoItem.valor_unitario,
       selecionado: novoItem.selecionado !== undefined ? novoItem.selecionado : true,
@@ -329,14 +332,16 @@ export default function App() {
     const listaAtualizada = [...itens, itemCriado];
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
-    salvarItemNuvem(itemCriado).catch(() => {});
+    salvarItemNuvem(itemCriado).catch(err => {
+      console.warn('Item salvo localmente, aviso ao enviar para a nuvem:', err);
+    });
 
     mostrarToast(`Item #${novoItem.num_item} adicionado à proposta.`);
   };
 
   const handleAlternarSelecaoItem = (itemId: number) => {
     const listaAtualizada = itens.map(i => {
-      if (i.id === itemId) {
+      if (Number(i.id) === Number(itemId)) {
         const itemModificado = { ...i, selecionado: i.selecionado === false ? true : false };
         salvarItemNuvem(itemModificado).catch(() => {});
         return itemModificado;
@@ -349,7 +354,7 @@ export default function App() {
 
   const handleAlternarTodosItens = (licId: number, selecionarTodos: boolean) => {
     const listaAtualizada = itens.map(i => {
-      if (i.licitacao_id === licId) {
+      if (Number(i.licitacao_id) === Number(licId)) {
         const itemModificado = { ...i, selecionado: selecionarTodos };
         salvarItemNuvem(itemModificado).catch(() => {});
         return itemModificado;
@@ -366,12 +371,45 @@ export default function App() {
   };
 
   const handleAtualizarItem = (itemAtualizado: ItemLicitacao) => {
-    const listaAtualizada = itens.map(i => (i.id === itemAtualizado.id ? itemAtualizado : i));
+    const itemNormalizado: ItemLicitacao = {
+      ...itemAtualizado,
+      id: Number(itemAtualizado.id),
+      licitacao_id: Number(itemAtualizado.licitacao_id),
+      quantidade: Math.max(1, Math.round(itemAtualizado.quantidade)),
+      valor_total: Math.max(1, Math.round(itemAtualizado.quantidade)) * itemAtualizado.valor_unitario,
+    };
+    const listaAtualizada = itens.map(i => (Number(i.id) === Number(itemNormalizado.id) ? itemNormalizado : i));
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
-    salvarItemNuvem(itemAtualizado).catch(() => {});
+    salvarItemNuvem(itemNormalizado).catch(err => {
+      console.warn('Item atualizado localmente, aviso ao enviar para a nuvem:', err);
+    });
 
-    mostrarToast(`Item #${itemAtualizado.num_item} atualizado.`);
+    mostrarToast(`Item #${itemNormalizado.num_item} atualizado.`);
+  };
+
+  // Forçar salvamento completo de garantia da proposta e catálogo
+  const handleForcarSalvarProposta = async (licId: number): Promise<boolean> => {
+    const itensDestaLic = itens.filter(i => Number(i.licitacao_id) === Number(licId));
+    // 1. Salva imediatamente em localStorage
+    salvarItens(itens);
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (licAtual) {
+      salvarLicitacaoNuvem(licAtual).catch(() => {});
+    }
+
+    // 2. Gravação em lote forçada no Firestore
+    try {
+      if (itensDestaLic.length > 0) {
+        await salvarTodosItensNuvem(itensDestaLic);
+      }
+      mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens gravados.`);
+      return true;
+    } catch (err) {
+      console.warn('Aviso ao sincronizar na nuvem, garantido no cache local:', err);
+      mostrarToast(`Dados salvos com segurança no cache local (${itensDestaLic.length} itens).`);
+      return false;
+    }
   };
 
   const handleExcluirItem = async (itemId: number) => {
@@ -546,6 +584,7 @@ export default function App() {
             onGerarPdf={handleGerarPdf}
             onVisualizarPdf={() => setAbaAtiva('preview')}
             onIrParaTimbrado={() => setAbaAtiva('timbrado')}
+            onForcarSalvarProposta={handleForcarSalvarProposta}
           />
         )}
 

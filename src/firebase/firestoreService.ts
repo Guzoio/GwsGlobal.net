@@ -65,19 +65,19 @@ export function ouvirItensNuvem(
       snapshot.forEach((d) => {
         const data = d.data();
         lista.push({
-          id: data.id,
-          licitacao_id: data.licitacao_id,
-          num_item: data.num_item,
-          descricao_curta: data.descricao_curta,
-          descricao_tecnica: data.descricao_tecnica,
-          marca: data.marca,
-          quantidade: data.quantidade,
-          valor_unitario: data.valor_unitario,
-          valor_total: data.valor_total,
-          lance_minimo: data.lance_minimo,
-          lance_lote: data.lance_lote,
-          link_produto: data.link_produto,
-          caminho_imagem: data.caminho_imagem,
+          id: Number(data.id ?? d.id),
+          licitacao_id: Number(data.licitacao_id),
+          num_item: Number(data.num_item),
+          descricao_curta: data.descricao_curta || '',
+          descricao_tecnica: data.descricao_tecnica || '',
+          marca: data.marca || '',
+          quantidade: Number(data.quantidade) || 0,
+          valor_unitario: Number(data.valor_unitario) || 0,
+          valor_total: Number(data.valor_total) || 0,
+          lance_minimo: Number(data.lance_minimo) || 0,
+          lance_lote: Number(data.lance_lote) || 0,
+          link_produto: data.link_produto || '',
+          caminho_imagem: data.caminho_imagem || '',
           selecionado: data.selecionado !== false,
           observacoes: data.observacoes || '',
         });
@@ -90,6 +90,38 @@ export function ouvirItensNuvem(
       if (onError) onError(error);
     }
   );
+}
+
+// Salvar múltiplos itens em lote (Batch write) para garantir persistência atômica e forçar salvamento
+export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<void> {
+  if (!itens || itens.length === 0) return;
+  const chunkSize = 400;
+  for (let i = 0; i < itens.length; i += chunkSize) {
+    const chunk = itens.slice(i, i + chunkSize);
+    const batch = writeBatch(db);
+    for (const item of chunk) {
+      const docRef = doc(db, ITENS_COL, String(item.id));
+      batch.set(docRef, {
+        id: Number(item.id),
+        licitacao_id: Number(item.licitacao_id),
+        num_item: Number(item.num_item),
+        descricao_curta: item.descricao_curta || '',
+        descricao_tecnica: item.descricao_tecnica || '',
+        marca: item.marca || '',
+        quantidade: Number(item.quantidade) || 0,
+        valor_unitario: Number(item.valor_unitario) || 0,
+        valor_total: Number(item.valor_total) || 0,
+        lance_minimo: Number(item.lance_minimo) || 0,
+        lance_lote: Number(item.lance_lote) || 0,
+        link_produto: item.link_produto || '',
+        caminho_imagem: item.caminho_imagem || '',
+        selecionado: item.selecionado !== false,
+        observacoes: item.observacoes || '',
+        updatedAt: new Date().toISOString(),
+      });
+    }
+    await batch.commit();
+  }
 }
 
 // Ouvir papel timbrado em tempo real
