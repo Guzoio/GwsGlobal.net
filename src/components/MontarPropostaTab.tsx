@@ -30,6 +30,7 @@ import {
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
+import { redimensionarEComprimirImagem } from '../utils/storage';
 
 interface MontarPropostaTabProps {
   licitacoes: Licitacao[];
@@ -117,21 +118,21 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       setUltimoSalvoTimestamp(agora);
       setFeedbackSalvar({
         tipo: 'sucesso',
-        mensagem: `✓ Salvo com sucesso às ${agora}! Todos os ${itensAtuais.length} itens gravados.`,
+        mensagem: `✓ Salvo com sucesso às ${agora}! Todos os ${itensAtuais.length} itens gravados na nuvem.`,
       });
       setNotificacao({
         tipo: 'sucesso',
         texto: `✓ Salvo com sucesso às ${agora}!`,
       });
     } catch (err: any) {
-      const msgErro = err?.message || 'Falha de conexão com a nuvem';
+      const msgErro = err?.message || 'Falha de conexão';
       setFeedbackSalvar({
         tipo: 'erro',
-        mensagem: `❌ Erro ao salvar na nuvem: ${msgErro}. Dados salvos localmente.`,
+        mensagem: `❌ Erro ao salvar: ${msgErro}. Verifique a conexão com a internet.`,
       });
       setNotificacao({
         tipo: 'erro',
-        texto: '❌ Erro ao salvar na nuvem.',
+        texto: '❌ Erro ao salvar.',
       });
     } finally {
       setSalvandoManual(false);
@@ -274,8 +275,8 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     return valorPorExtensoPtBr(totalGeral);
   }, [totalGeral]);
 
-  // Image upload handler
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+  // Image upload handler com compressão automática inteligente
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
 
@@ -284,11 +285,16 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       return;
     }
 
-    const reader = new FileReader();
-    reader.onload = () => {
-      setImagemBase64(reader.result as string);
-    };
-    reader.readAsDataURL(file);
+    try {
+      const compactBase64 = await redimensionarEComprimirImagem(file);
+      setImagemBase64(compactBase64);
+    } catch {
+      const reader = new FileReader();
+      reader.onload = () => {
+        setImagemBase64(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   // Form submit (salva novo item ou atualiza item existente)

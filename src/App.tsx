@@ -391,25 +391,25 @@ export default function App() {
   // Forçar salvamento completo de garantia da proposta e catálogo
   const handleForcarSalvarProposta = async (licId: number): Promise<boolean> => {
     const itensDestaLic = itens.filter(i => Number(i.licitacao_id) === Number(licId));
-    // 1. Salva imediatamente em localStorage
-    salvarItens(itens);
+    
+    // 1. Gravação prioritária na NUVEM (Firestore)
+    if (itensDestaLic.length > 0) {
+      await salvarTodosItensNuvem(itensDestaLic);
+    }
     const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
     if (licAtual) {
-      salvarLicitacaoNuvem(licAtual).catch(() => {});
+      await salvarLicitacaoNuvem(licAtual);
     }
 
-    // 2. Gravação em lote forçada no Firestore
+    // 2. Cache local seguro (nunca bloqueia nem quebra por cota de 5MB do navegador)
     try {
-      if (itensDestaLic.length > 0) {
-        await salvarTodosItensNuvem(itensDestaLic);
-      }
-      mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens gravados.`);
-      return true;
-    } catch (err) {
-      console.warn('Aviso ao sincronizar na nuvem, garantido no cache local:', err);
-      mostrarToast(`Dados salvos com segurança no cache local (${itensDestaLic.length} itens).`);
-      return false;
+      salvarItens(itens);
+    } catch (errCache) {
+      console.warn('Aviso ao atualizar cache local:', errCache);
     }
+
+    mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens gravados na nuvem.`);
+    return true;
   };
 
   const handleExcluirItem = async (itemId: number) => {

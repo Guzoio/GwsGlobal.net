@@ -28,7 +28,11 @@ export function obterAcessoConfig(): AcessoConfig {
 }
 
 export function salvarAcessoConfig(config: AcessoConfig): void {
-  localStorage.setItem(ACESSO_KEY, JSON.stringify(config));
+  try {
+    localStorage.setItem(ACESSO_KEY, JSON.stringify(config));
+  } catch (err) {
+    console.warn('Aviso ao salvar acesso no storage local:', err);
+  }
 }
 
 export function estaAutenticado(): boolean {
@@ -423,7 +427,20 @@ export function obterPapelTimbradoConfig(): PapelTimbradoConfig {
 }
 
 export function salvarPapelTimbradoConfig(config: PapelTimbradoConfig): void {
-  localStorage.setItem(TIMBRADO_KEY, JSON.stringify(config));
+  try {
+    localStorage.setItem(TIMBRADO_KEY, JSON.stringify(config));
+  } catch (err) {
+    console.warn('Aviso: Cota do localStorage excedida ao salvar papel timbrado. Otimizando cache local...', err);
+    try {
+      // Salva versão sem imagens base64 gigantes no cache do navegador (nuvem armazena dados completos)
+      const configLeve = {
+        ...config,
+        cabecalhoImagem: config.cabecalhoImagem && config.cabecalhoImagem.length > 1000 ? '' : config.cabecalhoImagem,
+        rodapeImagem: config.rodapeImagem && config.rodapeImagem.length > 1000 ? '' : config.rodapeImagem,
+      };
+      localStorage.setItem(TIMBRADO_KEY, JSON.stringify(configLeve));
+    } catch {}
+  }
 }
 
 const RESPONSAVEIS_KEY = 'responsaveis_licitacoes_db_v1';
@@ -448,7 +465,11 @@ export function obterResponsaveis(): string[] {
 }
 
 export function salvarResponsaveis(responsaveis: string[]): void {
-  localStorage.setItem(RESPONSAVEIS_KEY, JSON.stringify(responsaveis));
+  try {
+    localStorage.setItem(RESPONSAVEIS_KEY, JSON.stringify(responsaveis));
+  } catch (err) {
+    console.warn('Aviso ao salvar responsáveis no storage:', err);
+  }
 }
 
 export function obterLicitacoes(): Licitacao[] {
@@ -474,7 +495,11 @@ export function obterLicitacoes(): Licitacao[] {
 }
 
 export function salvarLicitacoes(licitacoes: Licitacao[]): void {
-  localStorage.setItem(LICITACOES_KEY, JSON.stringify(licitacoes));
+  try {
+    localStorage.setItem(LICITACOES_KEY, JSON.stringify(licitacoes));
+  } catch (err) {
+    console.warn('Aviso ao salvar licitações no storage:', err);
+  }
 }
 
 export function obterItens(): ItemLicitacao[] {
@@ -496,5 +521,69 @@ export function obterItens(): ItemLicitacao[] {
 }
 
 export function salvarItens(itens: ItemLicitacao[]): void {
-  localStorage.setItem(ITENS_KEY, JSON.stringify(itens));
+  try {
+    localStorage.setItem(ITENS_KEY, JSON.stringify(itens));
+  } catch (err) {
+    console.warn('Cota do localStorage atingida ao salvar itens completos. Otimizando armazenamento local...', err);
+    try {
+      // Se estourar a cota de 5MB, salva os itens no cache local reduzindo imagens pesadas
+      const itensLeves = itens.map(it => {
+        if (it.caminho_imagem && it.caminho_imagem.length > 500) {
+          return { ...it, caminho_imagem: '' };
+        }
+        return it;
+      });
+      localStorage.setItem(ITENS_KEY, JSON.stringify(itensLeves));
+    } catch (errFallback) {
+      console.warn('Não foi possível gravar itens no localStorage devido ao limite de 5MB do navegador:', errFallback);
+    }
+  }
+}
+
+/**
+ * Redimensiona e comprime imagens enviadas pelo usuário em formato JPEG de alta fidelidade
+ * Reduz arquivos pesados de 5MB para ~30KB-60KB, evitando estouro de cota e lentidão
+ */
+export function redimensionarEComprimirImagem(
+  arquivo: File,
+  larguraMax = 800,
+  alturaMax = 600,
+  qualidade = 0.75
+): Promise<string> {
+  return new Promise((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      const img = new Image();
+      img.onload = () => {
+        let largura = img.width;
+        let altura = img.height;
+
+        if (largura > larguraMax || altura > alturaMax) {
+          const ratio = Math.min(larguraMax / largura, alturaMax / altura);
+          largura = Math.round(largura * ratio);
+          altura = Math.round(altura * ratio);
+        }
+
+        const canvas = document.createElement('canvas');
+        canvas.width = largura;
+        canvas.height = altura;
+        const ctx = canvas.getContext('2d');
+        if (!ctx) {
+          resolve((e.target?.result as string) || '');
+          return;
+        }
+
+        ctx.fillStyle = '#FFFFFF';
+        ctx.fillRect(0, 0, largura, altura);
+        ctx.drawImage(img, 0, 0, largura, altura);
+
+        const dataUrl = canvas.toDataURL('image/jpeg', qualidade);
+        resolve(dataUrl);
+      };
+      img.onerror = () => resolve((e.target?.result as string) || '');
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = () => resolve('');
+    reader.readAsDataURL(arquivo);
+  });
 }
