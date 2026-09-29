@@ -1,0 +1,32 @@
+{
+  "licitacoes": [
+    {
+      "id": 1,
+      "orgao": "Prefeitura Municipal de Rio Grande",
+      "processo_pregao": "Pregão Eletrônico 042/2026",
+      "modalidade": "Pregão Eletrônico",
+      "data_cadastro": "29/09/2026",
+      "responsavel": "Gustavo"
+    }
+  ],
+  "itens": [
+    {
+      "id": 1001,
+      "licitacao_id": 1,
+      "num_item": 1,
+      "descricao_curta": "Item Licitação",
+      "descricao_tecnica": "Especificações completas",
+      "marca": "Dell",
+      "quantidade": 1,
+      "valor_unitario": 1836.98,
+      "valor_total": 1836.98,
+      "selecionado": true
+    }
+  ],
+  "timbrado": null,
+  "responsaveis": [
+    "Gustavo",
+    "Victor"
+  ],
+  "updatedAt": "2026-09-29T14:43:41.198Z"
+}

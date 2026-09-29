@@ -118,7 +118,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       setUltimoSalvoTimestamp(agora);
       setFeedbackSalvar({
         tipo: 'sucesso',
-        mensagem: `✓ Salvo com sucesso às ${agora}! Todos os ${itensAtuais.length} itens gravados na nuvem.`,
+        mensagem: `✓ Salvo com sucesso às ${agora}! Todos os ${itensAtuais.length} itens sincronizados para todos os computadores.`,
       });
       setNotificacao({
         tipo: 'sucesso',

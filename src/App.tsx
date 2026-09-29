@@ -48,6 +48,16 @@ import {
   salvarTodosItensNuvem,
   sincronizarBancoInicialSeVazio,
 } from './firebase/firestoreService';
+import {
+  syncManager,
+  mesclarEstadoComServidor,
+  salvarLicitacaoServidor,
+  removerLicitacaoServidor,
+  salvarItemServidor,
+  salvarItensLoteServidor,
+  removerItemServidor,
+  salvarConfigServidor,
+} from './utils/serverSync';
 
 export default function App() {
   const [autenticado, setAutenticado] = useState<boolean>(() => estaAutenticado());
@@ -82,43 +92,106 @@ export default function App() {
     }
   }, []);
 
-  // Sincronização em tempo real totalmente automática com Firebase Firestore
+  // Sincronização em tempo real totalmente automática com Servidor Central e Firebase
   useEffect(() => {
     setStatusNuvem('conectado');
 
-    // Sincroniza banco inicial na nuvem se estiver vazio
-    const licsAtuais = obterLicitacoes();
-    const itsAtuais = obterItens();
-    const timbAtual = obterPapelTimbradoConfig();
-    const respsAtuais = obterResponsaveis();
-    sincronizarBancoInicialSeVazio(licsAtuais, itsAtuais, timbAtual, respsAtuais).catch(() => {});
+    // 1. Inicia conexão SSE em tempo real com o servidor central multi-usuário
+    syncManager.start();
 
-    // Ativa ouvintes em tempo real para sincronização instantânea e automática entre computadores
+    // 2. Inscreve ouvinte para receber eventos de qualquer computador em tempo real
+    const unsubServer = syncManager.subscribe((payload) => {
+      setStatusNuvem('conectado');
+      if (payload.tipo === 'full') {
+        if (payload.licitacoes && payload.licitacoes.length > 0) {
+          setLicitacoes(payload.licitacoes);
+          salvarLicitacoes(payload.licitacoes);
+          setLicitacaoSelecionadaId(prev => {
+            if (prev && payload.licitacoes?.some(l => l.id === prev)) return prev;
+            return payload.licitacoes ? payload.licitacoes[0].id : null;
+          });
+        }
+        if (payload.itens && payload.itens.length > 0) {
+          setItens(payload.itens);
+          salvarItens(payload.itens);
+        }
+        if (payload.timbrado) {
+          setTimbradoConfig(payload.timbrado);
+          salvarPapelTimbradoConfig(payload.timbrado);
+        }
+        if (payload.responsaveis && payload.responsaveis.length > 0) {
+          setResponsaveis(payload.responsaveis);
+          salvarResponsaveis(payload.responsaveis);
+        }
+      } else if (payload.tipo === 'licitacoes' && payload.licitacoes) {
+        setLicitacoes(payload.licitacoes);
+        salvarLicitacoes(payload.licitacoes);
+      } else if (payload.tipo === 'itens' && payload.itens) {
+        setItens(payload.itens);
+        salvarItens(payload.itens);
+      } else if (payload.tipo === 'timbrado' && payload.timbrado) {
+        setTimbradoConfig(payload.timbrado);
+        salvarPapelTimbradoConfig(payload.timbrado);
+      } else if (payload.tipo === 'responsaveis' && payload.responsaveis) {
+        setResponsaveis(payload.responsaveis);
+        salvarResponsaveis(payload.responsaveis);
+      }
+    });
+
+    // 3. Mescla dados locais com o servidor central (garante que dados criados em outro computador ou offline subam para todos)
+    const licsLocais = obterLicitacoes();
+    const itsLocais = obterItens();
+    const timbLocal = obterPapelTimbradoConfig();
+    const respsLocais = obterResponsaveis();
+
+    mesclarEstadoComServidor({
+      licitacoes: licsLocais,
+      itens: itsLocais,
+      timbrado: timbLocal,
+      responsaveis: respsLocais,
+    }).then((estado) => {
+      if (estado) {
+        if (estado.licitacoes && estado.licitacoes.length > 0) {
+          setLicitacoes(estado.licitacoes);
+          salvarLicitacoes(estado.licitacoes);
+          setLicitacaoSelecionadaId(prev => {
+            if (prev && estado.licitacoes.some(l => l.id === prev)) return prev;
+            return estado.licitacoes[0].id;
+          });
+        }
+        if (estado.itens && estado.itens.length > 0) {
+          setItens(estado.itens);
+          salvarItens(estado.itens);
+        }
+      }
+    }).catch(() => {});
+
+    // 4. Também sincroniza banco na nuvem Firebase caso haja cota disponível
+    sincronizarBancoInicialSeVazio(licsLocais, itsLocais, timbLocal, respsLocais).catch(() => {});
+
     const unsubLics = ouvirLicitacoesNuvem(
       (licsNuvem) => {
-        setStatusNuvem('conectado');
-        setLicitacoes(licsNuvem);
-        salvarLicitacoes(licsNuvem);
-        setLicitacaoSelecionadaId(prev => {
-          if (!licsNuvem || licsNuvem.length === 0) return null;
-          if (prev && licsNuvem.some(l => l.id === prev)) return prev;
-          return licsNuvem[0].id;
-        });
+        if (licsNuvem && licsNuvem.length > 0) {
+          setStatusNuvem('conectado');
+          setLicitacoes(licsNuvem);
+          salvarLicitacoes(licsNuvem);
+          setLicitacaoSelecionadaId(prev => {
+            if (prev && licsNuvem.some(l => l.id === prev)) return prev;
+            return licsNuvem[0].id;
+          });
+        }
       },
-      (err) => {
-        console.warn('Status nuvem: desconectado ou aviso ao escutar licitações', err);
-        setStatusNuvem('desconectado');
-      }
+      () => {}
     );
 
     const unsubItens = ouvirItensNuvem(
       (itensNuvem) => {
-        setItens(itensNuvem);
-        salvarItens(itensNuvem);
+        if (itensNuvem && itensNuvem.length > 0) {
+          setItens(itensNuvem);
+          salvarItens(itensNuvem);
+        }
       },
-      (err) => {
-        console.warn('Aviso ao escutar itens da nuvem', err);
-      }
+      () => {}
     );
 
     const unsubTimbrado = ouvirPapelTimbradoNuvem((timbradoNuvem) => {
@@ -143,6 +216,8 @@ export default function App() {
     });
 
     return () => {
+      unsubServer();
+      syncManager.stop();
       unsubLics();
       unsubItens();
       unsubTimbrado();
@@ -172,6 +247,7 @@ export default function App() {
   const handleSalvarAcesso = async (novoAcesso: AcessoConfig) => {
     setAcessoConfig(novoAcesso);
     salvarAcessoConfig(novoAcesso);
+    salvarConfigServidor('seguranca', novoAcesso);
     try {
       await salvarAcessoConfigNuvem(novoAcesso);
     } catch (err) {
@@ -195,6 +271,7 @@ export default function App() {
     const novaLista = [...responsaveis, nomeLimpo];
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
+    salvarConfigServidor('responsaveis', novaLista);
     salvarResponsaveisNuvem(novaLista).catch(() => {});
     mostrarToast(`Responsável "${nomeLimpo}" adicionado com sucesso!`);
     return true;
@@ -210,6 +287,7 @@ export default function App() {
     const novaLista = responsaveis.filter(r => r !== nomeParaExcluir);
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
+    salvarConfigServidor('responsaveis', novaLista);
     salvarResponsaveisNuvem(novaLista).catch(() => {});
 
     // Reatribuir licitações vinculadas a esse nome
@@ -219,6 +297,7 @@ export default function App() {
       if ((lic.responsavel || '').toLowerCase() === nomeParaExcluir.toLowerCase()) {
         alteradas++;
         const licAtualizada = { ...lic, responsavel: destino };
+        salvarLicitacaoServidor(licAtualizada);
         salvarLicitacaoNuvem(licAtualizada).catch(() => {});
         return licAtualizada;
       }
@@ -238,6 +317,7 @@ export default function App() {
   const handleSalvarTimbrado = (novaConfig: PapelTimbradoConfig) => {
     setTimbradoConfig(novaConfig);
     salvarPapelTimbradoConfig(novaConfig);
+    salvarConfigServidor('timbrado', novaConfig);
     salvarPapelTimbradoNuvem(novaConfig).catch(() => {});
     mostrarToast('Configurações de papel timbrado salvas com sucesso!');
   };
@@ -249,11 +329,13 @@ export default function App() {
       const novaLista = [...responsaveis, novoResponsavel];
       setResponsaveis(novaLista);
       salvarResponsaveis(novaLista);
+      salvarConfigServidor('responsaveis', novaLista);
       salvarResponsaveisNuvem(novaLista).catch(() => {});
     }
     const atualizadas = licitacoes.map(l => {
       if (l.id === id) {
         const atual = { ...l, responsavel: novoResponsavel };
+        salvarLicitacaoServidor(atual);
         salvarLicitacaoNuvem(atual).catch(() => {});
         return atual;
       }
@@ -272,6 +354,8 @@ export default function App() {
     salvarLicitacoes(licsAtualizadas);
     salvarItens(itensAtualizados);
 
+    removerLicitacaoServidor(id);
+
     if (licitacaoSelecionadaId === id) {
       setLicitacaoSelecionadaId(licsAtualizadas.length > 0 ? licsAtualizadas[0].id : null);
     }
@@ -289,6 +373,7 @@ export default function App() {
     const licsAtualizadas = licitacoes.map(l => {
       if (l.id === licId) {
         const atualizada: Licitacao = { ...l, data_proposta: novaData };
+        salvarLicitacaoServidor(atualizada);
         salvarLicitacaoNuvem(atualizada).catch(err => {
           console.warn('Aviso ao sincronizar data da proposta na nuvem:', err);
         });
@@ -308,6 +393,7 @@ export default function App() {
     const listaAtualizada = [itemCriado, ...licitacoes];
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
+    salvarLicitacaoServidor(itemCriado);
     salvarLicitacaoNuvem(itemCriado).catch(() => {});
 
     setLicitacaoSelecionadaId(novoId);
@@ -332,6 +418,7 @@ export default function App() {
     const listaAtualizada = [...itens, itemCriado];
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    salvarItemServidor(itemCriado);
     salvarItemNuvem(itemCriado).catch(err => {
       console.warn('Item salvo localmente, aviso ao enviar para a nuvem:', err);
     });
@@ -343,6 +430,7 @@ export default function App() {
     const listaAtualizada = itens.map(i => {
       if (Number(i.id) === Number(itemId)) {
         const itemModificado = { ...i, selecionado: i.selecionado === false ? true : false };
+        salvarItemServidor(itemModificado);
         salvarItemNuvem(itemModificado).catch(() => {});
         return itemModificado;
       }
@@ -356,6 +444,7 @@ export default function App() {
     const listaAtualizada = itens.map(i => {
       if (Number(i.licitacao_id) === Number(licId)) {
         const itemModificado = { ...i, selecionado: selecionarTodos };
+        salvarItemServidor(itemModificado);
         salvarItemNuvem(itemModificado).catch(() => {});
         return itemModificado;
       }
@@ -363,6 +452,8 @@ export default function App() {
     });
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    const itensDestaLic = listaAtualizada.filter(i => Number(i.licitacao_id) === Number(licId));
+    salvarItensLoteServidor(itensDestaLic);
     mostrarToast(
       selecionarTodos
         ? 'Todos os itens foram marcados para o PDF.'
@@ -381,6 +472,7 @@ export default function App() {
     const listaAtualizada = itens.map(i => (Number(i.id) === Number(itemNormalizado.id) ? itemNormalizado : i));
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    salvarItemServidor(itemNormalizado);
     salvarItemNuvem(itemNormalizado).catch(err => {
       console.warn('Item atualizado localmente, aviso ao enviar para a nuvem:', err);
     });
@@ -388,27 +480,37 @@ export default function App() {
     mostrarToast(`Item #${itemNormalizado.num_item} atualizado.`);
   };
 
-  // Forçar salvamento completo de garantia da proposta e catálogo
+  // Forçar salvamento completo de garantia da proposta e catálogo (Sincroniza Servidor Central SSE + Firestore)
   const handleForcarSalvarProposta = async (licId: number): Promise<boolean> => {
     const itensDestaLic = itens.filter(i => Number(i.licitacao_id) === Number(licId));
-    
-    // 1. Gravação prioritária na NUVEM (Firestore)
-    if (itensDestaLic.length > 0) {
-      await salvarTodosItensNuvem(itensDestaLic);
-    }
     const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+
+    // 1. Sincronização prioritária com o Servidor Central (Atualiza todos os outros computadores instantaneamente)
+    if (itensDestaLic.length > 0) {
+      await salvarItensLoteServidor(itensDestaLic);
+    }
     if (licAtual) {
-      await salvarLicitacaoNuvem(licAtual);
+      await salvarLicitacaoServidor(licAtual);
     }
 
-    // 2. Cache local seguro (nunca bloqueia nem quebra por cota de 5MB do navegador)
+    // 2. Gravação em lote na NUVEM (Firestore)
+    try {
+      if (itensDestaLic.length > 0) {
+        salvarTodosItensNuvem(itensDestaLic).catch(() => {});
+      }
+      if (licAtual) {
+        salvarLicitacaoNuvem(licAtual).catch(() => {});
+      }
+    } catch {}
+
+    // 3. Cache local seguro
     try {
       salvarItens(itens);
     } catch (errCache) {
       console.warn('Aviso ao atualizar cache local:', errCache);
     }
 
-    mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens gravados na nuvem.`);
+    mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens sincronizados para todos.`);
     return true;
   };
 
@@ -416,6 +518,7 @@ export default function App() {
     const listaAtualizada = itens.filter(i => i.id !== itemId);
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
+    removerItemServidor(itemId);
     try {
       await removerItemNuvem(itemId);
       mostrarToast('Item excluído da proposta.');
