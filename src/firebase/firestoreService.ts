@@ -35,6 +35,7 @@ export function ouvirLicitacoesNuvem(
           processo_pregao: data.processo_pregao,
           modalidade: data.modalidade,
           data_cadastro: data.data_cadastro,
+          data_proposta: data.data_proposta || undefined,
           responsavel: data.responsavel || 'Gustavo',
           status: data.status,
         });
@@ -78,6 +79,7 @@ export function ouvirItensNuvem(
           link_produto: data.link_produto,
           caminho_imagem: data.caminho_imagem,
           selecionado: data.selecionado !== false,
+          observacoes: data.observacoes || '',
         });
       });
       // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
@@ -149,6 +151,7 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       processo_pregao: lic.processo_pregao || '',
       modalidade: lic.modalidade || 'Pregão Eletrônico',
       data_cadastro: lic.data_cadastro || '',
+      data_proposta: lic.data_proposta || '',
       responsavel: lic.responsavel || 'Gustavo',
       status: lic.status || 'Ativa',
       updatedAt: new Date().toISOString(),
@@ -209,6 +212,7 @@ export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
       link_produto: item.link_produto || '',
       caminho_imagem: item.caminho_imagem || '',
       selecionado: item.selecionado !== false,
+      observacoes: item.observacoes || '',
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {

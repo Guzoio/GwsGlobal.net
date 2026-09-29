@@ -241,7 +241,12 @@ export async function gerarArquivoPdf(
   const prazoValidade = timbrado.prazoValidade || '90 Dias';
   const declaracaoTrab = timbrado.declaracaoTrabalhista || 'Declaro que a proposta apresentada compreende a integralidade dos custos para atendimento dos direitos trabalhistas assegurados na Constituição Federal, nas leis trabalhistas, nas normas infralegais, nas convenções coletivas de trabalho e nos termos de ajustamento de conduta vigentes na data de entrega das propostas.';
   const cidadeEmissao = timbrado.cidadeEmissao || 'Timóteo - MG';
-  const dataEmissaoTexto = formatarDataExtensoPtBr(timbrado.dataEmissao || licitacao.data_cadastro, cidadeEmissao);
+  // Prioridade de Data para o Documento Oficial da Proposta:
+  // 1. Data individualizada definida para esta licitação (data_proposta)
+  // 2. Data de cadastro desta licitação (data_cadastro)
+  // 3. Data de emissão do papel timbrado
+  const dataReferencia = licitacao.data_proposta || licitacao.data_cadastro || timbrado.dataEmissao;
+  const dataEmissaoTexto = formatarDataExtensoPtBr(dataReferencia, cidadeEmissao);
 
   const temAssinatura = !!(timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image'));
   const espacoAssinatura = temAssinatura ? 44 : 28;

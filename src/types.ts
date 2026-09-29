@@ -13,6 +13,7 @@ export interface Licitacao {
   processo_pregao: string;
   modalidade: ModalidadeLic;
   data_cadastro: string; // DD/MM/AAAA
+  data_proposta?: string; // Data específica da proposta no documento PDF desta licitação (YYYY-MM-DD ou DD/MM/AAAA)
   responsavel: string; // 'Gustavo' | 'Victor' | nome personalizado
   status?: string; // Mantido como opcional para compatibilidade
 }
@@ -32,6 +33,7 @@ export interface ItemLicitacao {
   lance_minimo?: number; // Lance mínimo unitário aceitável para disputa (alinhamento interno)
   lance_lote?: number; // Lance mínimo total do lote (alinhamento interno)
   selecionado?: boolean; // Se marcado, vai para o PDF da proposta comercial e catálogo (default: true)
+  observacoes?: string; // Diretório de links reservas (apenas uso interno, não sai no PDF)
 }
 
 export interface EmpresaDados {

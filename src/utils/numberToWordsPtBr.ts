@@ -143,3 +143,16 @@ export function formatarDataExtensoPtBr(dataInput?: string, cidade = 'Timóteo -
   const nomeMes = MESES_PT_BR[mesIndex] || 'janeiro';
   return cidade ? `${cidade}, ${dia} de ${nomeMes} de ${ano}` : `${dia} de ${nomeMes} de ${ano}`;
 }
+
+/**
+ * Converte qualquer formato de data (DD/MM/AAAA ou YYYY-MM-DD) para YYYY-MM-DD aceito pelo <input type="date">
+ */
+export function converterParaFormatoInputDate(dataInput?: string): string {
+  if (!dataInput) return new Date().toISOString().split('T')[0];
+  if (/^\d{4}-\d{2}-\d{2}$/.test(dataInput)) return dataInput;
+  if (/^\d{2}\/\d{2}\/\d{4}$/.test(dataInput)) {
+    const [d, m, y] = dataInput.split('/');
+    return `${y}-${m.padStart(2, '0')}-${d.padStart(2, '0')}`;
+  }
+  return new Date().toISOString().split('T')[0];
+}

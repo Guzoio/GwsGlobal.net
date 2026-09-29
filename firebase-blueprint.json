@@ -10,6 +10,7 @@
         "processo_pregao": { "type": "string", "maxLength": 500, "description": "Número do pregão ou edital" },
         "modalidade": { "type": "string", "maxLength": 200, "description": "Modalidade da licitação" },
         "data_cadastro": { "type": "string", "maxLength": 100, "description": "Data do cadastro DD/MM/AAAA" },
+        "data_proposta": { "type": "string", "maxLength": 100, "description": "Data específica do documento da proposta desta licitação" },
         "responsavel": { "type": "string", "maxLength": 200, "description": "Nome do responsável (Gustavo, Victor, etc)" },
         "status": { "type": "string", "maxLength": 100, "description": "Status da licitação" },
         "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
@@ -35,6 +36,7 @@
         "link_produto": { "type": "string", "maxLength": 1000, "description": "Link do produto de referência" },
         "caminho_imagem": { "type": "string", "description": "Imagem do produto ou data URL" },
         "selecionado": { "type": "boolean", "description": "Se está selecionado para o PDF" },
+        "observacoes": { "type": "string", "maxLength": 10000, "description": "Anotações internas e links reservas de uso interno" },
         "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
       },
       "required": ["id", "licitacao_id", "num_item", "descricao_curta", "marca", "quantidade", "valor_unitario"]

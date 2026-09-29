@@ -252,13 +252,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <Calendar className="w-3 h-3" /> {normalizarData(filtroData)}
                 </span>
               )}
-              {filtroResponsavel !== 'Todos' ? (
+              {filtroResponsavel !== 'Todos' && (
                 <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
                   👤 {filtroResponsavel}
-                </span>
-              ) : (
-                <span className="text-[10px] font-semibold text-emerald-700 bg-emerald-100/60 px-1.5 py-0.5 rounded">
-                  Quadrinho Marcado
                 </span>
               )}
             </div>

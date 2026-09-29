@@ -22,7 +22,8 @@ service cloud.firestore {
         && data.processo_pregao is string && data.processo_pregao.size() <= 500
         && data.modalidade is string && data.modalidade.size() <= 200
         && data.data_cadastro is string && data.data_cadastro.size() <= 100
-        && data.responsavel is string && data.responsavel.size() <= 200;
+        && data.responsavel is string && data.responsavel.size() <= 200
+        && (!('data_proposta' in data) || (data.data_proposta is string && data.data_proposta.size() <= 100));
     }
 
     function isValidItem(data) {
@@ -33,7 +34,8 @@ service cloud.firestore {
         && data.descricao_curta is string && data.descricao_curta.size() <= 5000
         && data.marca is string && data.marca.size() <= 500
         && data.quantidade is number
-        && data.valor_unitario is number;
+        && data.valor_unitario is number
+        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 10000));
     }
 
     function isValidTimbrado(data) {

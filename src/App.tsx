@@ -30,6 +30,7 @@ import {
   deslogar,
 } from './utils/storage';
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
+import { converterParaFormatoInputDate } from './utils/numberToWordsPtBr';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import {
   ouvirLicitacoesNuvem,
@@ -283,9 +284,26 @@ export default function App() {
     }
   };
 
+  const handleAtualizarDataProposta = (licId: number, novaData: string) => {
+    const licsAtualizadas = licitacoes.map(l => {
+      if (l.id === licId) {
+        const atualizada: Licitacao = { ...l, data_proposta: novaData };
+        salvarLicitacaoNuvem(atualizada).catch(err => {
+          console.warn('Aviso ao sincronizar data da proposta na nuvem:', err);
+        });
+        return atualizada;
+      }
+      return l;
+    });
+    setLicitacoes(licsAtualizadas);
+    salvarLicitacoes(licsAtualizadas);
+    mostrarToast('Data da proposta salva para esta licitação.');
+  };
+
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
     const novoId = (licitacoes.length > 0 ? Math.max(...licitacoes.map(l => l.id)) : 0) + 1;
-    const itemCriado: Licitacao = { ...novaLic, id: novoId };
+    const dataPropostaInicial = novaLic.data_proposta || converterParaFormatoInputDate(novaLic.data_cadastro);
+    const itemCriado: Licitacao = { ...novaLic, id: novoId, data_proposta: dataPropostaInicial };
     const listaAtualizada = [itemCriado, ...licitacoes];
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
@@ -524,6 +542,7 @@ export default function App() {
             onAlternarSelecaoItem={handleAlternarSelecaoItem}
             onAlternarTodosItens={handleAlternarTodosItens}
             onExcluirItem={handleExcluirItem}
+            onAtualizarDataProposta={handleAtualizarDataProposta}
             onGerarPdf={handleGerarPdf}
             onVisualizarPdf={() => setAbaAtiva('preview')}
             onIrParaTimbrado={() => setAbaAtiva('timbrado')}
@@ -541,6 +560,7 @@ export default function App() {
             onGerarPdf={handleGerarPdf}
             onIrParaTimbrado={() => setAbaAtiva('timbrado')}
             onSalvarConfig={handleSalvarTimbrado}
+            onAtualizarDataProposta={handleAtualizarDataProposta}
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
           />
         )}

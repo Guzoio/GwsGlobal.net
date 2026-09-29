@@ -17,9 +17,15 @@ import {
   CheckSquare,
   Square,
   Filter,
+  Calendar,
+  StickyNote,
+  FileText,
+  Link as LinkIcon,
+  ExternalLink,
+  Copy,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
-import { formatarMoeda, valorPorExtensoPtBr } from '../utils/numberToWordsPtBr';
+import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 
 interface MontarPropostaTabProps {
@@ -32,6 +38,7 @@ interface MontarPropostaTabProps {
   onAlternarSelecaoItem?: (itemId: number) => void;
   onAlternarTodosItens?: (licId: number, selecionarTodos: boolean) => void;
   onExcluirItem: (itemId: number) => void;
+  onAtualizarDataProposta?: (licId: number, novaData: string) => void;
   onGerarPdf: () => void;
   onVisualizarPdf: () => void;
   onIrParaTimbrado?: () => void;
@@ -47,6 +54,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onAlternarSelecaoItem,
   onAlternarTodosItens,
   onExcluirItem,
+  onAtualizarDataProposta,
   onGerarPdf,
   onVisualizarPdf,
   onIrParaTimbrado,
@@ -80,7 +88,78 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [lanceMinimo, setLanceMinimo] = useState<string>('');
   const [lanceLote, setLanceLote] = useState<string>('');
   const [imagemBase64, setImagemBase64] = useState<string>('');
+  const [observacoes, setObservacoes] = useState<string>('');
+  const [mostrarObservacoes, setMostrarObservacoes] = useState<boolean>(false);
+  const [novoLinkInput, setNovoLinkInput] = useState<string>('');
+  const [mostrarCampoColarMultiplos, setMostrarCampoColarMultiplos] = useState<boolean>(false);
+  const [modalObservacaoItem, setModalObservacaoItem] = useState<ItemLicitacao | null>(null);
+  const [linkCopiadoFeedback, setLinkCopiadoFeedback] = useState<string | null>(null);
   const [notificacao, setNotificacao] = useState<{ tipo: 'sucesso' | 'erro'; texto: string } | null>(null);
+
+  // Copiar link para área de transferência com feedback visual temporário
+  const handleCopiarLink = (url: string) => {
+    navigator.clipboard.writeText(url);
+    setLinkCopiadoFeedback(url);
+    setTimeout(() => {
+      setLinkCopiadoFeedback(prev => (prev === url ? null : prev));
+    }, 2200);
+  };
+
+  // Extrai nome amigável/domínio do link para exibição ultra-compacta
+  const extrairDominio = (url: string): string => {
+    try {
+      const semProtocolo = url.trim();
+      const urlObj = new URL(semProtocolo.startsWith('http') ? semProtocolo : `https://${semProtocolo}`);
+      let host = urlObj.hostname.replace(/^www\./, '');
+      if (host.length > 22) {
+        host = host.slice(0, 20) + '…';
+      }
+      return host;
+    } catch {
+      return 'Link';
+    }
+  };
+
+  // Extrai lista única de links válidos da string armazenada
+  const extrairListaLinks = (texto?: string): string[] => {
+    if (!texto) return [];
+    const urlRegex = /(https?:\/\/[^\s]+)/g;
+    const matches = texto.match(urlRegex);
+    if (!matches) return [];
+    return Array.from(new Set(matches.map(l => l.trim())));
+  };
+
+  const linksAtuaisFormulario = useMemo(() => {
+    return extrairListaLinks(observacoes);
+  }, [observacoes]);
+
+  const handleAdicionarLink = () => {
+    let linkLimpo = novoLinkInput.trim();
+    if (!linkLimpo) return;
+    if (!linkLimpo.startsWith('http://') && !linkLimpo.startsWith('https://')) {
+      linkLimpo = `https://${linkLimpo}`;
+    }
+    const linksExistentes = extrairListaLinks(observacoes);
+    if (!linksExistentes.includes(linkLimpo)) {
+      const novos = [...linksExistentes, linkLimpo];
+      setObservacoes(novos.join('\n'));
+    }
+    setNovoLinkInput('');
+  };
+
+  const handleRemoverLink = (linkParaRemover: string) => {
+    const linksExistentes = extrairListaLinks(observacoes);
+    const filtrados = linksExistentes.filter(l => l !== linkParaRemover);
+    setObservacoes(filtrados.join('\n'));
+  };
+
+  const handleColarMultiplosLinks = (textoColado: string) => {
+    const linksDetectados = extrairListaLinks(textoColado);
+    if (linksDetectados.length === 0) return;
+    const linksExistentes = extrairListaLinks(observacoes);
+    const combinados = Array.from(new Set([...linksExistentes, ...linksDetectados]));
+    setObservacoes(combinados.join('\n'));
+  };
 
   // Referência para rolar até o formulário ao clicar em editar
   const formularioItemRef = useRef<HTMLDivElement>(null);
@@ -107,6 +186,10 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setLanceMinimo('');
     setLanceLote('');
     setImagemBase64('');
+    setObservacoes('');
+    setNovoLinkInput('');
+    setMostrarCampoColarMultiplos(false);
+    setMostrarObservacoes(false);
   };
 
   // Carregar os dados completos do item no formulário para edição
@@ -122,6 +205,11 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setLanceMinimo(item.lance_minimo !== undefined ? String(item.lance_minimo) : '');
     setLanceLote(item.lance_lote !== undefined ? String(item.lance_lote) : '');
     setImagemBase64(item.caminho_imagem || '');
+    setObservacoes(item.observacoes || '');
+    setNovoLinkInput('');
+    setMostrarCampoColarMultiplos(false);
+    const temLinks = extrairListaLinks(item.observacoes).length > 0;
+    setMostrarObservacoes(temLinks);
 
     // Rola suavemente até o formulário
     formularioItemRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' });
@@ -197,6 +285,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           caminho_imagem: imagemBase64 || undefined,
           lance_minimo: parsedMinimo !== undefined && !isNaN(parsedMinimo) ? parsedMinimo : undefined,
           lance_lote: parsedLote !== undefined && !isNaN(parsedLote) ? parsedLote : undefined,
+          observacoes: observacoes.trim() || undefined,
         });
 
         setNotificacao({
@@ -223,6 +312,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       lance_minimo: parsedMinimo !== undefined && !isNaN(parsedMinimo) ? parsedMinimo : undefined,
       lance_lote: parsedLote !== undefined && !isNaN(parsedLote) ? parsedLote : undefined,
       selecionado: true, // Por padrão quando salvar proposta esse quadrinho já vem marcado
+      observacoes: observacoes.trim() || undefined,
     });
 
     // Reset for next item
@@ -234,30 +324,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setLanceMinimo('');
     setLanceLote('');
     setImagemBase64('');
+    setObservacoes('');
+    setMostrarObservacoes(false);
     setNotificacao({ tipo: 'sucesso', texto: `Item #${numItem} salvo com sucesso na licitação!` });
-  };
-
-  const handleInserirTopico = () => {
-    setDescricaoTecnica(prev => {
-      const trimmed = prev.trimEnd();
-      return trimmed ? `${trimmed}\n• ` : '• ';
-    });
-  };
-
-  const handleOrganizarEmTopicos = () => {
-    setDescricaoTecnica(prev => {
-      if (!prev.trim()) return prev;
-      const lines = prev.replace(/\r\n/g, '\n').replace(/\r/g, '\n').split('\n');
-      const formatted = lines.map(line => {
-        const trimmed = line.trim();
-        if (!trimmed) return '';
-        if (trimmed.startsWith('•') || trimmed.startsWith('-') || trimmed.startsWith('*')) {
-          return `• ${trimmed.replace(/^[•\-*]\s*/, '')}`;
-        }
-        return `• ${trimmed}`;
-      });
-      return formatted.join('\n');
-    });
   };
 
   const abrirModalEditarLances = (item: ItemLicitacao) => {
@@ -316,10 +385,11 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       )}
 
       {/* ==================================================================== */}
-      {/* CARD 1: SELETOR DE LICITAÇÃO ATIVA */}
+      {/* CARD 1: SELETOR DE LICITAÇÃO ATIVA & DATA DA PROPOSTA */}
       {/* ==================================================================== */}
       <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+        <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
+          {/* Seletor de Licitação */}
           <div className="flex-1">
             <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
               1. Selecione a Licitação para Montar a Proposta:
@@ -343,8 +413,25 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </div>
           </div>
 
+          {/* Campo de Data Específica Desta Licitação para o PDF */}
           {licitacaoAtual && (
-            <div className="flex items-center gap-4 text-xs text-slate-600 border-l border-slate-200 pl-4">
+            <div className="w-full lg:w-60 bg-slate-50 border border-slate-200 rounded-lg p-2.5 shrink-0">
+              <label className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                <Calendar className="w-3.5 h-3.5 text-[#0F2C59]" />
+                Data no Documento PDF:
+              </label>
+              <input
+                type="date"
+                value={converterParaFormatoInputDate(licitacaoAtual.data_proposta || licitacaoAtual.data_cadastro)}
+                onChange={e => onAtualizarDataProposta?.(licitacaoAtual.id, e.target.value)}
+                className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                title="Data específica impressa na proposta desta licitação"
+              />
+            </div>
+          )}
+
+          {licitacaoAtual && (
+            <div className="flex items-center gap-4 text-xs text-slate-600 border-t lg:border-t-0 lg:border-l border-slate-200 pt-3 lg:pt-0 lg:pl-4">
               <div>
                 <span className="font-semibold text-slate-900 block">Modalidade:</span>
                 <span>{licitacaoAtual.modalidade}</span>
@@ -484,37 +571,177 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
               <label className="text-xs font-semibold text-slate-700">
                 Descrição Técnica Completa (Para o Catálogo Ilustrativo e Termo de Referência) *
               </label>
-              <div className="flex items-center gap-1.5">
-                <button
-                  type="button"
-                  onClick={handleInserirTopico}
-                  className="px-2 py-0.5 text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-[#0F2C59] border border-slate-300 rounded cursor-pointer transition-colors"
-                  title="Inserir marcador de tópico na próxima linha"
-                >
-                  + Tópico (•)
-                </button>
-                <button
-                  type="button"
-                  onClick={handleOrganizarEmTopicos}
-                  className="px-2 py-0.5 text-[11px] font-semibold bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-300 rounded cursor-pointer transition-colors"
-                  title="Colocar marcador de tópico em cada linha escrita"
-                >
-                  Formatar Linhas em Tópicos
-                </button>
-              </div>
+              <button
+                type="button"
+                onClick={() => setMostrarObservacoes(prev => !prev)}
+                className={`px-2.5 py-1 text-xs font-semibold rounded-md border transition-all flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                  mostrarObservacoes || linksAtuaisFormulario.length > 0
+                    ? 'bg-blue-100 hover:bg-blue-200 border-blue-300 text-blue-900 font-bold'
+                    : 'bg-slate-100 hover:bg-slate-200 border-slate-300 text-slate-700'
+                }`}
+                title="Abrir diretório de links reservas deste item"
+              >
+                <LinkIcon className="w-3.5 h-3.5 text-blue-600" />
+                <span>Links Reservas</span>
+                {linksAtuaisFormulario.length > 0 && (
+                  <span className="inline-flex items-center justify-center px-1.5 py-0.2 text-[10px] font-bold rounded-full bg-blue-600 text-white leading-tight">
+                    {linksAtuaisFormulario.length}
+                  </span>
+                )}
+              </button>
             </div>
             <textarea
               required
               rows={5}
               value={descricaoTecnica}
               onChange={e => setDescricaoTecnica(limparTextoDescricaoTecnica(e.target.value))}
-              placeholder={"Exemplo em tópicos:\n• Processador: Intel Core i5 1335U (10 núcleos, até 4.60 GHz)\n• Memória RAM: 16 GB DDR4 3200MHz\n• Armazenamento: SSD 512 GB M.2 NVMe PCIe\n• Tela: 14\" WUXGA Antirreflexo\n• Garantia: 12 meses com atendimento on-site"}
+              placeholder="Cole aqui a descrição técnica formatada do produto para o catálogo ilustrado..."
               className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 leading-relaxed font-sans"
             />
-            <p className="text-[11px] text-slate-500 mt-1 flex items-center gap-1">
-              <span className="font-semibold text-emerald-700">✓ Dica:</span>
-              Você pode pular linhas e listar tópicos livremente. No PDF e no catálogo, eles sairão organizados com marcadores e recuos independentes.
-            </p>
+
+            {/* Diretório de Links Reservas */}
+            {mostrarObservacoes && (
+              <div className="bg-slate-50 border border-blue-200 rounded-xl p-3.5 mt-2.5 animate-in fade-in duration-150">
+                <div className="flex items-center gap-1.5 mb-2 pb-1.5 border-b border-slate-200">
+                  <LinkIcon className="w-4 h-4 text-blue-600" />
+                  <span className="text-xs font-bold text-slate-900">
+                    Diretório de Links Reservas (Fornecedores & Cotações)
+                  </span>
+                </div>
+
+                {/* Barra de Adicionar Link */}
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="relative flex-1">
+                    <input
+                      type="text"
+                      value={novoLinkInput}
+                      onChange={e => setNovoLinkInput(e.target.value)}
+                      onKeyDown={e => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault();
+                          handleAdicionarLink();
+                        }
+                      }}
+                      placeholder="Cole aqui o link do fornecedor reserva (ex: Mercado Livre, Amazon, Distribuidor...)"
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-slate-300 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 text-slate-900 placeholder:text-slate-400 shadow-2xs font-mono"
+                    />
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleAdicionarLink}
+                    disabled={!novoLinkInput.trim()}
+                    className="px-3.5 py-1.5 text-xs font-bold text-white bg-blue-600 hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed rounded-lg shadow-2xs transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+                  >
+                    <Plus className="w-3.5 h-3.5" />
+                    <span>Adicionar</span>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setMostrarCampoColarMultiplos(prev => !prev)}
+                    className="px-2.5 py-1.5 text-[11px] font-medium text-slate-600 hover:text-slate-900 bg-white border border-slate-300 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer shrink-0"
+                    title="Colar vários links de uma vez"
+                  >
+                    {mostrarCampoColarMultiplos ? 'Fechar lote' : 'Colar em lote'}
+                  </button>
+                </div>
+
+                {/* Área opcional para colar múltiplos links de uma só vez */}
+                {mostrarCampoColarMultiplos && (
+                  <div className="mb-2.5 p-2.5 bg-blue-50/80 border border-blue-200 rounded-lg animate-in fade-in duration-150">
+                    <span className="text-[11px] font-bold text-blue-950 block mb-1">
+                      Colar múltiplos links de uma vez:
+                    </span>
+                    <textarea
+                      rows={3}
+                      placeholder={"Cole aqui uma lista de links (um por linha ou no meio de um texto):\nhttps://produto.mercadolivre.com.br/...\nhttps://kabum.com.br/..."}
+                      onChange={e => {
+                        handleColarMultiplosLinks(e.target.value);
+                        e.target.value = '';
+                      }}
+                      className="w-full px-3 py-1.5 text-xs bg-white border border-blue-300 rounded-md focus:outline-hidden text-slate-900 font-mono shadow-2xs"
+                    />
+                    <span className="text-[10px] text-blue-700 mt-1 block">
+                      Os links serão identificados e adicionados imediatamente à lista abaixo.
+                    </span>
+                  </div>
+                )}
+
+                {/* Lista de Links Catalogados no Diretório */}
+                {linksAtuaisFormulario.length === 0 ? (
+                  <div className="p-3 text-center text-slate-400 text-xs bg-white border border-dashed border-slate-200 rounded-lg">
+                    Nenhum link reserva adicionado ainda. Cole uma URL acima para catalogar fornecedores reservas.
+                  </div>
+                ) : (
+                  <div className="space-y-1.5 max-h-44 overflow-y-auto pr-1">
+                    {linksAtuaisFormulario.map((link, idx) => {
+                      const dominio = extrairDominio(link);
+                      const foiCopiado = linkCopiadoFeedback === link;
+
+                      return (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2 p-2 bg-white border border-slate-200 rounded-lg shadow-2xs hover:border-blue-300 transition-colors"
+                        >
+                          <div className="flex items-center gap-2 min-w-0">
+                            <span className="w-5 h-5 rounded bg-blue-100 text-blue-800 flex items-center justify-center text-[10px] font-bold shrink-0">
+                              {idx + 1}
+                            </span>
+                            <span className="text-xs font-bold text-slate-900 shrink-0">
+                              {dominio}
+                            </span>
+                            <span className="text-[11px] text-slate-400 font-mono truncate max-w-sm sm:max-w-md" title={link}>
+                              {link}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1 shrink-0">
+                            <a
+                              href={link}
+                              target="_blank"
+                              rel="noopener noreferrer"
+                              className="px-2 py-1 text-[11px] font-semibold text-blue-700 hover:text-blue-900 bg-blue-50 hover:bg-blue-100 rounded border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="Abrir link no navegador"
+                            >
+                              <ExternalLink className="w-3 h-3 text-blue-500" />
+                              <span>Abrir</span>
+                            </a>
+                            <button
+                              type="button"
+                              onClick={() => handleCopiarLink(link)}
+                              className={`px-2 py-1 text-[11px] font-semibold rounded border cursor-pointer flex items-center gap-1 transition-colors ${
+                                foiCopiado
+                                  ? 'text-emerald-700 bg-emerald-50 border-emerald-300 font-bold'
+                                  : 'text-slate-600 bg-slate-50 hover:bg-slate-100 border-slate-200'
+                              }`}
+                              title="Copiar link"
+                            >
+                              {foiCopiado ? (
+                                <>
+                                  <Check className="w-3 h-3 text-emerald-600" />
+                                  <span>Copiado!</span>
+                                </>
+                              ) : (
+                                <>
+                                  <Copy className="w-3 h-3 text-slate-500" />
+                                  <span>Copiar</span>
+                                </>
+                              )}
+                            </button>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoverLink(link)}
+                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer ml-0.5"
+                              title="Remover este link do diretório"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+              </div>
+            )}
           </div>
 
           {/* Cálculos por Linha e Imagem */}
@@ -964,6 +1191,20 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
+                          {(() => {
+                            const linksDoItem = extrairListaLinks(it.observacoes);
+                            if (linksDoItem.length === 0) return null;
+                            return (
+                              <button
+                                type="button"
+                                onClick={() => setModalObservacaoItem(it)}
+                                className="p-1.5 text-blue-600 hover:text-blue-800 hover:bg-blue-50 rounded transition-colors cursor-pointer"
+                                title={`Diretório de Links Reservas do Item #${it.num_item} (${linksDoItem.length} link${linksDoItem.length > 1 ? 's' : ''})`}
+                              >
+                                <LinkIcon className="w-3.5 h-3.5" />
+                              </button>
+                            );
+                          })()}
                           {onAtualizarItem && (
                             <button
                               type="button"
@@ -1129,6 +1370,175 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           </div>
         </div>
       )}
+
+      {/* ==================================================================== */}
+      {/* MODAL: DIRETÓRIO DE LINKS RESERVAS (USO INTERNO)                     */}
+      {/* ==================================================================== */}
+      {modalObservacaoItem && (() => {
+        const linksDoItem = extrairListaLinks(modalObservacaoItem.observacoes);
+
+        const handleCopiarTodos = () => {
+          if (linksDoItem.length === 0) return;
+          const texto = linksDoItem.join('\n');
+          handleCopiarLink(texto);
+        };
+
+        return (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+            <div className="bg-white rounded-xl shadow-xl max-w-xl w-full overflow-hidden border border-slate-200 animate-in zoom-in-95 duration-150">
+              <div className="px-5 py-4 bg-slate-50 border-b border-slate-200 flex items-center justify-between">
+                <div className="flex items-center gap-2.5">
+                  <div className="w-8 h-8 rounded-lg bg-blue-100 flex items-center justify-center text-blue-700">
+                    <LinkIcon className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <h4 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+                      <span>Diretório de Links Reservas</span>
+                      <span className="text-[10px] text-blue-800 bg-blue-100/70 border border-blue-200 px-1.5 py-0.2 rounded font-bold">
+                        Item #{modalObservacaoItem.num_item}
+                      </span>
+                    </h4>
+                    <p className="text-[11px] text-slate-500">
+                      Fornecedores e distribuidores alternativos catalogados para este item
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => setModalObservacaoItem(null)}
+                  className="text-slate-400 hover:text-slate-600 cursor-pointer p-1 rounded-md"
+                >
+                  <X className="w-4 h-4" />
+                </button>
+              </div>
+
+              <div className="p-5 space-y-3.5">
+                <div className="p-3 bg-slate-50 border border-slate-200 rounded-lg">
+                  <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider block mb-0.5">
+                    Item de Referência:
+                  </span>
+                  <p className="text-xs font-bold text-slate-900">
+                    {modalObservacaoItem.descricao_curta}
+                  </p>
+                  <p className="text-[11px] text-slate-500 font-mono mt-0.5">
+                    Marca: {modalObservacaoItem.marca} • Qtd: {modalObservacaoItem.quantidade} • Valor Unit: {formatarMoeda(modalObservacaoItem.valor_unitario)}
+                  </p>
+                </div>
+
+                <div>
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="text-xs font-bold text-slate-800 flex items-center gap-1.5">
+                      <LinkIcon className="w-3.5 h-3.5 text-blue-600" />
+                      Links Catalogados ({linksDoItem.length}):
+                    </span>
+                    {linksDoItem.length > 1 && (
+                      <button
+                        type="button"
+                        onClick={handleCopiarTodos}
+                        className="text-[11px] font-semibold text-blue-600 hover:text-blue-800 hover:underline cursor-pointer flex items-center gap-1"
+                        title="Copiar todos os links da lista"
+                      >
+                        <Copy className="w-3 h-3" />
+                        <span>Copiar todos os links</span>
+                      </button>
+                    )}
+                  </div>
+
+                  {linksDoItem.length === 0 ? (
+                    <div className="p-6 text-center text-slate-400 text-xs bg-slate-50 border border-dashed border-slate-200 rounded-lg">
+                      Nenhum link reserva foi catalogado para este item ainda.
+                    </div>
+                  ) : (
+                    <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
+                      {linksDoItem.map((link, idx) => {
+                        const dominio = extrairDominio(link);
+                        const foiCopiado = linkCopiadoFeedback === link;
+
+                        return (
+                          <div
+                            key={idx}
+                            className="flex items-center justify-between gap-3 p-2.5 bg-white border border-slate-200 hover:border-blue-300 rounded-lg shadow-2xs transition-all"
+                          >
+                            <div className="flex items-center gap-2.5 min-w-0">
+                              <span className="w-6 h-6 rounded-md bg-blue-50 text-blue-700 flex items-center justify-center text-xs font-bold shrink-0">
+                                {idx + 1}
+                              </span>
+                              <div className="min-w-0">
+                                <div className="text-xs font-bold text-slate-900 truncate">
+                                  {dominio}
+                                </div>
+                                <div className="text-[11px] text-slate-400 font-mono truncate max-w-sm" title={link}>
+                                  {link}
+                                </div>
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5 shrink-0">
+                              <a
+                                href={link}
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="px-2.5 py-1.5 text-xs font-bold text-blue-700 bg-blue-50 hover:bg-blue-100 rounded-md border border-blue-200 flex items-center gap-1.5 transition-colors cursor-pointer"
+                                title="Abrir link no navegador"
+                              >
+                                <span>Abrir</span>
+                                <ExternalLink className="w-3 h-3 text-blue-500" />
+                              </a>
+                              <button
+                                type="button"
+                                onClick={() => handleCopiarLink(link)}
+                                className={`px-2.5 py-1.5 text-xs font-semibold rounded-md border cursor-pointer flex items-center gap-1.5 transition-colors ${
+                                  foiCopiado
+                                    ? 'text-emerald-700 bg-emerald-50 border-emerald-300 font-bold'
+                                    : 'text-slate-600 bg-slate-50 hover:bg-slate-100 border-slate-200'
+                                }`}
+                                title="Copiar URL"
+                              >
+                                {foiCopiado ? (
+                                  <>
+                                    <Check className="w-3.5 h-3.5 text-emerald-600" />
+                                    <span>Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Copy className="w-3.5 h-3.5 text-slate-500" />
+                                    <span>Copiar</span>
+                                  </>
+                                )}
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="px-5 py-3 bg-slate-50 border-t border-slate-200 flex items-center justify-between">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const it = modalObservacaoItem;
+                    setModalObservacaoItem(null);
+                    handleCarregarItemParaEdicao(it);
+                  }}
+                  className="px-3.5 py-1.5 text-xs font-semibold text-blue-900 bg-blue-100 hover:bg-blue-200 border border-blue-300 rounded-lg transition-colors cursor-pointer flex items-center gap-1.5"
+                >
+                  <Edit3 className="w-3.5 h-3.5 text-blue-700" />
+                  Gerenciar Links no Formulário
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setModalObservacaoItem(null)}
+                  className="px-4 py-1.5 text-xs font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 rounded-lg transition-colors cursor-pointer shadow-2xs"
+                >
+                  Fechar
+                </button>
+              </div>
+            </div>
+          </div>
+        );
+      })()}
     </div>
   );
 };

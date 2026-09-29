@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { FileDown, FileText, Building2, Printer, Sliders, Calendar, Clock, ShieldCheck, MapPin, Image as ImageIcon, FolderOpen, PlusCircle } from 'lucide-react';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
-import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr } from '../utils/numberToWordsPtBr';
+import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { TIMBRADO_PADRAO } from '../utils/storage';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 
@@ -15,6 +15,7 @@ interface VisualizarPdfTabProps {
   onGerarPdf: () => void;
   onIrParaTimbrado: () => void;
   onSalvarConfig?: (config: PapelTimbradoConfig) => void;
+  onAtualizarDataProposta?: (licId: number, novaData: string) => void;
   onNovaLicitacao?: () => void;
 }
 
@@ -28,14 +29,27 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
   onGerarPdf,
   onIrParaTimbrado,
   onSalvarConfig,
+  onAtualizarDataProposta,
   onNovaLicitacao,
 }) => {
-  const [dataEmissaoLocal, setDataEmissaoLocal] = useState<string>(
-    timbrado.dataEmissao || new Date().toISOString().split('T')[0]
-  );
+  const [dataEmissaoLocal, setDataEmissaoLocal] = useState<string>(() => {
+    return converterParaFormatoInputDate(
+      licitacao?.data_proposta || licitacao?.data_cadastro || timbrado.dataEmissao
+    );
+  });
   const [cidadeLocal, setCidadeLocal] = useState<string>(
     timbrado.cidadeEmissao || 'Timóteo - MG'
   );
+
+  useEffect(() => {
+    if (licitacao) {
+      setDataEmissaoLocal(
+        converterParaFormatoInputDate(
+          licitacao.data_proposta || licitacao.data_cadastro || timbrado.dataEmissao
+        )
+      );
+    }
+  }, [licitacao?.id, licitacao?.data_proposta, licitacao?.data_cadastro, timbrado.dataEmissao]);
 
   const itensDaLic = licitacao
     ? itens.filter(i => i.licitacao_id === licitacao.id && i.selecionado !== false).sort((a, b) => a.num_item - b.num_item)
@@ -73,11 +87,8 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
 
   const handleAlterarData = (novaData: string) => {
     setDataEmissaoLocal(novaData);
-    if (onSalvarConfig) {
-      onSalvarConfig({
-        ...timbrado,
-        dataEmissao: novaData,
-      });
+    if (licitacao && onAtualizarDataProposta) {
+      onAtualizarDataProposta(licitacao.id, novaData);
     }
   };
 
