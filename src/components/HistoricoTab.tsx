@@ -20,6 +20,8 @@ import {
   Layers,
   Calendar,
   Shield,
+  Eye,
+  Check,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda } from '../utils/numberToWordsPtBr';
@@ -58,6 +60,8 @@ interface HistoricoTabProps {
   onNovaLicitacao: () => void;
   onNavegarPara?: (aba: string) => void;
   onAbrirSeguranca?: () => void;
+  onToggleAcompanhamento?: (id: number) => void;
+  onToggleHomologada?: (id: number) => void;
 }
 
 export const HistoricoTab: React.FC<HistoricoTabProps> = ({
@@ -72,10 +76,13 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   onNovaLicitacao,
   onNavegarPara,
   onAbrirSeguranca,
+  onToggleAcompanhamento,
+  onToggleHomologada,
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState<string>('Todos');
   const [filtroData, setFiltroData] = useState<string>(''); // formato YYYY-MM-DD
+  const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>('todos');
   const [licitacaoParaExcluir, setLicitacaoParaExcluir] = useState<Licitacao | null>(null);
 
   // Menu Dropdown da Engrenagem de Configurações
@@ -108,9 +115,25 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         matchData = inputDaLic === filtroData || brDaLic === brDoFiltro;
       }
 
-      return matchTexto && matchResponsavel && matchData;
+      let matchAcompanhamento = true;
+      if (filtroAcompanhamento === 'acompanhar') {
+        matchAcompanhamento = !!lic.acompanhamento;
+      } else if (filtroAcompanhamento === 'homologadas') {
+        matchAcompanhamento = !!lic.homologada;
+      }
+
+      return matchTexto && matchResponsavel && matchData && matchAcompanhamento;
     });
-  }, [licitacoes, busca, filtroResponsavel, filtroData]);
+  }, [licitacoes, busca, filtroResponsavel, filtroData, filtroAcompanhamento]);
+
+  // Contagem de licitações por acompanhamento e concluídas
+  const contagemAcompanhar = useMemo(() => {
+    return licitacoes.filter(l => !!l.acompanhamento).length;
+  }, [licitacoes]);
+
+  const contagemHomologadas = useMemo(() => {
+    return licitacoes.filter(l => !!l.homologada).length;
+  }, [licitacoes]);
 
   // Contagem de licitações por responsável
   const contagemPorResponsavel = useMemo(() => {
@@ -352,6 +375,48 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             Gerenciar Nomes
           </button>
 
+          {/* Filtro Rápido por Status: Todas / Acompanhar / Homologadas */}
+          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setFiltroAcompanhamento('todos')}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                filtroAcompanhamento === 'todos'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+              title="Mostrar todas as licitações"
+            >
+              Todas ({licitacoes.length})
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroAcompanhamento('acompanhar')}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                filtroAcompanhamento === 'acompanhar'
+                  ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-amber-800'
+              }`}
+              title="Filtrar licitações marcadas para acompanhamento"
+            >
+              <Eye className="w-3.5 h-3.5 text-amber-600" />
+              <span>Acompanhar ({contagemAcompanhar})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroAcompanhamento('homologadas')}
+              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+                filtroAcompanhamento === 'homologadas'
+                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs font-bold'
+                  : 'text-slate-600 hover:text-emerald-800'
+              }`}
+              title="Filtrar licitações concluídas ou homologadas"
+            >
+              <Check className="w-3.5 h-3.5 text-emerald-600 stroke-[2.5]" />
+              <span>Homologadas ({contagemHomologadas})</span>
+            </button>
+          </div>
+
           {/* Engrenagem de Configuração (Papel Timbrado e Código Python) */}
           <div className="relative w-full sm:w-auto">
             <button
@@ -502,6 +567,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <th className="py-3 px-4">Data Cad.</th>
                   <th className="py-3 px-4">Itens / Total</th>
                   <th className="py-3 px-4">Quem Fez</th>
+                  <th className="py-3 px-4 text-center w-28">Acompanhamento</th>
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
               </thead>
@@ -556,6 +622,46 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                               </option>
                             ))}
                           </select>
+                        </div>
+                      </td>
+                      {/* Coluna de Acompanhamento (👁 Acompanhar e ✓ Concluída/Homologada) */}
+                      <td className="py-3.5 px-4 text-center whitespace-nowrap">
+                        <div className="flex items-center justify-center gap-1.5">
+                          {/* Botão Acompanhar (Olho) */}
+                          <button
+                            type="button"
+                            onClick={() => onToggleAcompanhamento?.(lic.id)}
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                              lic.acompanhamento
+                                ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-xs ring-1 ring-amber-300'
+                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200'
+                            }`}
+                            title={
+                              lic.acompanhamento
+                                ? 'Licitação em acompanhamento (aguardando homologação / resultado) — Clique para desmarcar'
+                                : 'Marcar para acompanhamento (aguardando homologação / resultado)'
+                            }
+                          >
+                            <Eye className="w-4 h-4" />
+                          </button>
+
+                          {/* Botão Concluída / Homologada (Check) */}
+                          <button
+                            type="button"
+                            onClick={() => onToggleHomologada?.(lic.id)}
+                            className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                              lic.homologada
+                                ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200 shadow-xs ring-1 ring-emerald-300'
+                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
+                            }`}
+                            title={
+                              lic.homologada
+                                ? 'Licitação concluída / homologada — Clique para desmarcar'
+                                : 'Marcar como concluída / homologada'
+                            }
+                          >
+                            <Check className="w-4 h-4 stroke-[2.5]" />
+                          </button>
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">

@@ -386,6 +386,38 @@ export default function App() {
     mostrarToast('Data da proposta salva para esta licitação.');
   };
 
+  // Alternar Status de Acompanhamento (👁 Olho Amarelo)
+  const handleToggleAcompanhamento = (id: number) => {
+    const listaAtualizada = licitacoes.map(l => {
+      if (l.id === id) {
+        const novoStatus = !l.acompanhamento;
+        const atual = { ...l, acompanhamento: novoStatus };
+        salvarLicitacaoServidor(atual);
+        salvarLicitacaoNuvem(atual).catch(() => {});
+        return atual;
+      }
+      return l;
+    });
+    setLicitacoes(listaAtualizada);
+    salvarLicitacoes(listaAtualizada);
+  };
+
+  // Alternar Status de Concluída / Homologada (✓ Check Verde)
+  const handleToggleHomologada = (id: number) => {
+    const listaAtualizada = licitacoes.map(l => {
+      if (l.id === id) {
+        const novoStatus = !l.homologada;
+        const atual = { ...l, homologada: novoStatus };
+        salvarLicitacaoServidor(atual);
+        salvarLicitacaoNuvem(atual).catch(() => {});
+        return atual;
+      }
+      return l;
+    });
+    setLicitacoes(listaAtualizada);
+    salvarLicitacoes(listaAtualizada);
+  };
+
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
     const novoId = (licitacoes.length > 0 ? Math.max(...licitacoes.map(l => l.id)) : 0) + 1;
     const dataPropostaInicial = novaLic.data_proposta || converterParaFormatoInputDate(novaLic.data_cadastro);
@@ -631,8 +663,8 @@ export default function App() {
         </div>
       )}
 
-      {/* Conteúdo Principal */}
-      <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Conteúdo Principal com largura expandida para comportar perfeitamente novas colunas e análise */}
+      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {abaAtiva === 'historico' && (
           <HistoricoTab
             licitacoes={licitacoes}
@@ -649,6 +681,8 @@ export default function App() {
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
             onNavegarPara={setAbaAtiva}
             onAbrirSeguranca={() => setSegurancaModalAberto(true)}
+            onToggleAcompanhamento={handleToggleAcompanhamento}
+            onToggleHomologada={handleToggleHomologada}
           />
         )}
 
@@ -710,7 +744,7 @@ export default function App() {
 
       {/* Footer simples e limpo */}
       <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        <div className="max-w-7xl mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
+        <div className="max-w-[1600px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
           <span>
             Gestão de Licitações & Gerador de Propostas Comerciais em PDF com Catálogo de Produtos
           </span>

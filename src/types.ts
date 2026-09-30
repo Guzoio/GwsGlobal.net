@@ -16,6 +16,8 @@ export interface Licitacao {
   data_proposta?: string; // Data específica da proposta no documento PDF desta licitação (YYYY-MM-DD ou DD/MM/AAAA)
   responsavel: string; // 'Gustavo' | 'Victor' | nome personalizado
   status?: string; // Mantido como opcional para compatibilidade
+  acompanhamento?: boolean; // 👁 Marcada para acompanhamento (amarelo)
+  homologada?: boolean; // ✓ Concluída / Homologada (verde)
 }
 
 export interface ItemLicitacao {
@@ -34,6 +36,7 @@ export interface ItemLicitacao {
   lance_lote?: number; // Lance mínimo total do lote (alinhamento interno)
   selecionado?: boolean; // Se marcado, vai para o PDF da proposta comercial e catálogo (default: true)
   observacoes?: string; // Diretório de links reservas (apenas uso interno, não sai no PDF)
+  custo_fornecedor?: number; // Preço/custo do fornecedor para análise de lucro
 }
 
 export interface EmpresaDados {
@@ -90,6 +93,9 @@ export interface PapelTimbradoConfig {
   // Campos de compatibilidade
   nomeEmpresa?: string;
   telefoneEmail?: string;
+
+  // Tributação & Análise de Lucro
+  percentualImposto?: number; // Percentual de imposto configurado para análise de lucro (ex: 10.00 para 10%)
 }
 
 export interface AcessoConfig {

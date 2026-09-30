@@ -385,6 +385,7 @@ export const TIMBRADO_PADRAO: PapelTimbradoConfig = {
   declaracaoTrabalhista: 'Declaro que a proposta apresentada compreende a integralidade dos custos para atendimento dos direitos trabalhistas assegurados na Constituição Federal, nas leis trabalhistas, nas normas infralegais, nas convenções coletivas de trabalho e nos termos de ajustamento de conduta vigentes na data de entrega das propostas.',
   cidadeEmissao: 'Timóteo - MG',
   dataEmissao: new Date().toISOString().split('T')[0],
+  percentualImposto: 10.00,
 };
 
 export function obterPapelTimbradoConfig(): PapelTimbradoConfig {
@@ -418,6 +419,7 @@ export function obterPapelTimbradoConfig(): PapelTimbradoConfig {
       declaracaoTrabalhista: parsed.declaracaoTrabalhista || TIMBRADO_PADRAO.declaracaoTrabalhista,
       cidadeEmissao: parsed.cidadeEmissao || TIMBRADO_PADRAO.cidadeEmissao,
       dataEmissao: parsed.dataEmissao || TIMBRADO_PADRAO.dataEmissao,
+      percentualImposto: parsed.percentualImposto !== undefined ? Number(parsed.percentualImposto) : TIMBRADO_PADRAO.percentualImposto,
     };
     return merged;
   } catch (err) {

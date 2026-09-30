@@ -117,6 +117,7 @@ export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<voi
         caminho_imagem: item.caminho_imagem || '',
         selecionado: item.selecionado !== false,
         observacoes: item.observacoes || '',
+        custo_fornecedor: Number(item.custo_fornecedor) || 0,
         updatedAt: new Date().toISOString(),
       });
     }
@@ -186,6 +187,8 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       data_proposta: lic.data_proposta || '',
       responsavel: lic.responsavel || 'Gustavo',
       status: lic.status || 'Ativa',
+      acompanhamento: !!lic.acompanhamento,
+      homologada: !!lic.homologada,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
@@ -245,6 +248,7 @@ export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
       caminho_imagem: item.caminho_imagem || '',
       selecionado: item.selecionado !== false,
       observacoes: item.observacoes || '',
+      custo_fornecedor: Number(item.custo_fornecedor) || 0,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {

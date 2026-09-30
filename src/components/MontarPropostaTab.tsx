@@ -26,6 +26,10 @@ import {
   Save,
   Loader2,
   CheckCircle2,
+  TrendingUp,
+  DollarSign,
+  Calculator,
+  Percent,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
