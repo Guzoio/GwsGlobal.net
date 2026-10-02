@@ -13,6 +13,8 @@
         "data_proposta": { "type": "string", "maxLength": 100, "description": "Data específica do documento da proposta desta licitação" },
         "responsavel": { "type": "string", "maxLength": 200, "description": "Nome do responsável (Gustavo, Victor, etc)" },
         "status": { "type": "string", "maxLength": 100, "description": "Status da licitação" },
+        "acompanhamento": { "type": "boolean", "description": "Se a licitação está marcada para acompanhamento" },
+        "homologada": { "type": "boolean", "description": "Se a licitação foi homologada ou concluída" },
         "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
       },
       "required": ["id", "orgao", "processo_pregao", "modalidade", "data_cadastro", "responsavel"]

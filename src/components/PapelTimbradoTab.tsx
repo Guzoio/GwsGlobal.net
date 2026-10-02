@@ -289,7 +289,7 @@ export const PapelTimbradoTab: React.FC<PapelTimbradoTabProps> = ({
         </div>
 
         {/* REPRODUÇÃO FIEL DA IMAGEM DO USUÁRIO */}
-        <div className="p-6 sm:p-8 bg-white font-sans text-slate-950">
+        <div className="p-6 sm:p-8 bg-white font-sans text-slate-950 manter-branco">
           {/* Topo do Processo */}
           <div className="mb-4">
             <p className="text-base text-slate-900 leading-tight">
@@ -597,69 +597,6 @@ export const PapelTimbradoTab: React.FC<PapelTimbradoTabProps> = ({
             </div>
           </div>
         )}
-      </div>
-
-      {/* ==================================================================== */}
-      {/* CONFIGURAÇÃO DO IMPOSTO (ANÁLISE DE LUCRO AUTOMÁTICA) */}
-      {/* ==================================================================== */}
-      <div className="bg-white border border-slate-200 rounded-xl p-6 shadow-2xs space-y-4">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-          <div className="flex items-center gap-2">
-            <div className="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center text-emerald-700">
-              <Percent className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="text-xs font-bold text-slate-900 uppercase tracking-wider">
-                Configuração de Imposto (Análise de Lucro)
-              </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
-                Alíquota percentual utilizada automaticamente para apuração de impostos e lucro líquido na tela Montar Proposta.
-              </p>
-            </div>
-          </div>
-
-          <button
-            type="button"
-            onClick={() => salvarDados()}
-            className="text-xs text-[#0F2C59] bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-md font-semibold transition-colors flex items-center gap-1.5 cursor-pointer self-start sm:self-auto"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5 text-[#0F2C59]" />
-            Salvar Imposto
-          </button>
-        </div>
-
-        <div className="max-w-xl">
-          <label className="block text-xs font-semibold text-slate-700 mb-1.5">
-            Percentual de imposto:
-          </label>
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="relative">
-              <input
-                type="number"
-                step="0.01"
-                min="0"
-                max="100"
-                value={percentualImposto}
-                onChange={e => {
-                  const val = parseFloat(e.target.value) || 0;
-                  setPercentualImposto(val);
-                  salvarDados({ percentualImposto: val });
-                }}
-                className="w-32 px-3 py-2 text-xs font-mono font-bold bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20"
-              />
-              <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">
-                %
-              </span>
-            </div>
-            <span className="text-xs text-slate-600 font-medium">
-              Alíquota configurada: <strong>{percentualImposto.toFixed(2).replace('.', ',')}%</strong>
-            </span>
-          </div>
-
-          <p className="text-[11px] text-slate-500 mt-2.5 leading-relaxed bg-slate-50 border border-slate-200 p-3 rounded-lg">
-            💡 <strong>Como funciona:</strong> Ao marcar um ou mais itens na tabela de <em>Montar Proposta</em>, o sistema calcula automaticamente <strong>Receita Total × {percentualImposto.toFixed(2).replace('.', ',')}%</strong> para deduzir o imposto e fornecer seu <strong>Lucro Líquido Real</strong> instantaneamente, sem precisar preencher a alíquota toda vez.
-          </p>
-        </div>
       </div>
 
       {/* ==================================================================== */}

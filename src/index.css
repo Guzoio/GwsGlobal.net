@@ -1,1 +1,222 @@
 @import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/* Transição suave ao alternar entre tema claro e escuro */
+html, body {
+  transition: background-color 0.2s ease, color 0.2s ease;
+}
+
+html.dark {
+  color-scheme: dark;
+}
+
+html.dark body {
+  background-color: #030712;
+  color: #f3f4f6;
+}
+
+/* Modo escuro: Conversão harmoniosa dos cards, painéis e contêineres */
+html.dark .bg-white:not(.manter-branco):not([data-keep-white="true"]) {
+  background-color: #0f172a;
+  color: #f8fafc;
+}
+
+html.dark .bg-slate-50:not(.manter-branco) {
+  background-color: #090e1a;
+  color: #f1f5f9;
+}
+
+html.dark .bg-slate-100:not(.manter-branco) {
+  background-color: #1e293b;
+  color: #f8fafc;
+}
+
+/* Tratar variações com opacidade do Tailwind (evita véu esbranquiçado/cinza no modo escuro) */
+html.dark [class*="bg-slate-50/"]:not(.manter-branco):not(.manter-branco *) {
+  background-color: #0c1424 !important;
+}
+
+html.dark [class*="bg-slate-100/"]:not(.manter-branco):not(.manter-branco *) {
+  background-color: rgba(30, 41, 59, 0.45) !important;
+}
+
+html.dark [class*="bg-slate-200/"]:not(.manter-branco):not(.manter-branco *) {
+  background-color: rgba(30, 41, 59, 0.75) !important;
+}
+
+/* Quadro de lances de pregão e caixas de destaque âmbar no modo escuro (substitui cinza por âmbar escuro executivo e dourado) */
+html.dark .bg-amber-50:not(.manter-branco):not(.manter-branco *),
+html.dark [class*="bg-amber-50/"]:not(.manter-branco):not(.manter-branco *) {
+  background-color: rgba(69, 26, 3, 0.25) !important;
+}
+
+html.dark .border-amber-200:not(.manter-branco):not(.manter-branco *),
+html.dark [class*="border-amber-200/"]:not(.manter-branco):not(.manter-branco *) {
+  border-color: rgba(217, 119, 6, 0.35) !important;
+}
+
+html.dark .text-amber-950:not(.manter-branco):not(.manter-branco *),
+html.dark .text-amber-900:not(.manter-branco):not(.manter-branco *) {
+  color: #fcd34d !important; /* Dourado / Âmbar luminoso de alto contraste */
+}
+
+html.dark .border-slate-200:not(.manter-borda) {
+  border-color: #1e293b;
+}
+
+html.dark .border-slate-100:not(.manter-borda) {
+  border-color: #1e293b;
+}
+
+html.dark .border-slate-300:not(.manter-borda) {
+  border-color: #334155;
+}
+
+html.dark .divide-slate-200 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b;
+}
+
+html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
+  border-color: #1e293b;
+}
+
+/* 
+ * ELEVAÇÃO DE CORES ESCURAS NO MODO ESCURO (Legibilidade Máxima)
+ * Garante que botões e textos executivos (#0F2C59) fiquem em tons de azul claros e brilhantes
+ */
+html.dark .text-\[\#0F2C59\]:not(.manter-branco *) {
+  color: #93c5fd !important; /* Azul claro e vibrante */
+}
+
+html.dark .bg-\[\#0F2C59\]:not(.manter-branco *) {
+  background-color: #2563eb !important; /* Azul royal vivo e nítido */
+  color: #ffffff !important;
+}
+
+html.dark .hover\:bg-\[\#163c78\]:hover:not(.manter-branco *) {
+  background-color: #1d4ed8 !important; /* Azul intenso no hover */
+}
+
+html.dark .bg-\[\#0F2C59\]\/5:not(.manter-branco *) {
+  background-color: rgba(96, 165, 250, 0.22) !important;
+  color: #bfdbfe !important;
+}
+
+html.dark .bg-\[\#0F2C59\]\/10:not(.manter-branco *) {
+  background-color: rgba(96, 165, 250, 0.28) !important;
+  color: #bfdbfe !important;
+}
+
+html.dark .hover\:bg-\[\#0F2C59\]\/10:hover:not(.manter-branco *) {
+  background-color: rgba(96, 165, 250, 0.38) !important;
+}
+
+html.dark .border-\[\#0F2C59\]:not(.manter-branco *) {
+  border-color: #3b82f6 !important;
+}
+
+html.dark .border-\[\#0F2C59\]\/20:not(.manter-branco *) {
+  border-color: rgba(96, 165, 250, 0.4) !important;
+}
+
+html.dark .focus\:border-\[\#0F2C59\]:focus:not(.manter-branco *) {
+  border-color: #60a5fa !important;
+}
+
+/* Cores de textos adaptadas no tema escuro para contraste excelente */
+html.dark .text-slate-900:not(.manter-branco *):not(.manter-texto) {
+  color: #ffffff !important;
+}
+
+html.dark .text-slate-800:not(.manter-branco *):not(.manter-texto) {
+  color: #f8fafc !important;
+}
+
+html.dark .text-slate-700:not(.manter-branco *):not(.manter-texto) {
+  color: #e2e8f0 !important;
+}
+
+html.dark .text-slate-600:not(.manter-branco *):not(.manter-texto) {
+  color: #cbd5e1 !important;
+}
+
+html.dark .text-slate-500:not(.manter-branco *):not(.manter-texto) {
+  color: #94a3b8 !important;
+}
+
+/* Efeitos hover no modo escuro */
+html.dark .hover\:bg-slate-50:hover {
+  background-color: #1a2438 !important;
+}
+
+html.dark .hover\:bg-slate-100:hover {
+  background-color: #1e293b !important;
+}
+
+/* Inputs, textareas e selects estilizados no modo escuro */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(.manter-input):not(.manter-branco *),
+html.dark textarea:not(.manter-input):not(.manter-branco *),
+html.dark select:not(.manter-input):not(.manter-branco *) {
+  background-color: #0b1120 !important;
+  color: #f8fafc !important;
+  border-color: #334155 !important;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #64748b !important;
+}
+
+html.dark select option {
+  background-color: #0b1120;
+  color: #f8fafc;
+}
+
+/* Sombras refinadas para tema escuro */
+html.dark .shadow-2xl,
+html.dark .shadow-xl {
+  box-shadow: 0 20px 30px -10px rgba(0, 0, 0, 0.7);
+}
+
+/* Proteção do Papel A4 físico nos modos de visualização / impressão */
+.manter-branco,
+.manter-branco * {
+  color-scheme: light;
+}
+html.dark .manter-branco {
+  background-color: #ffffff !important;
+  color: #0f172a !important;
+}
+html.dark .manter-branco .text-black,
+html.dark .manter-branco .text-slate-900,
+html.dark .manter-branco .text-slate-950 {
+  color: #000000 !important;
+}
+html.dark .manter-branco .text-slate-700,
+html.dark .manter-branco .text-slate-600,
+html.dark .manter-branco .text-slate-500 {
+  color: #475569 !important;
+}
+html.dark .manter-branco .border-black {
+  border-color: #000000 !important;
+}
+html.dark .manter-branco .border-slate-300 {
+  border-color: #cbd5e1 !important;
+}
+
+/* Barra de rolagem elegante no modo escuro */
+html.dark ::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+html.dark ::-webkit-scrollbar-track {
+  background: #030712;
+}
+html.dark ::-webkit-scrollbar-thumb {
+  background: #1e293b;
+  border-radius: 4px;
+}
+html.dark ::-webkit-scrollbar-thumb:hover {
+  background: #334155;
+}

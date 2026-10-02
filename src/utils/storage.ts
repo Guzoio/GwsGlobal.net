@@ -488,7 +488,14 @@ export function obterLicitacoes(): Licitacao[] {
       if (mod === ('Dispensa de Licitação' as any)) mod = 'Dispensa Eletrônica';
       else if (mod === ('Concorrência' as any)) mod = 'Concorrência Eletrônica';
       const responsavel = l.responsavel || (idx % 2 === 0 ? 'Gustavo' : 'Victor');
-      return { ...l, modalidade: mod, responsavel };
+      return {
+        ...l,
+        id: Number(l.id),
+        modalidade: mod,
+        responsavel,
+        acompanhamento: Boolean(l.acompanhamento),
+        homologada: Boolean(l.homologada),
+      };
     });
   } catch (err) {
     console.error('Erro ao ler licitações do storage:', err);
@@ -547,10 +554,10 @@ export function salvarItens(itens: ItemLicitacao[]): void {
  * Reduz arquivos pesados de 5MB para ~30KB-60KB, evitando estouro de cota e lentidão
  */
 export function redimensionarEComprimirImagem(
-  arquivo: File,
-  larguraMax = 800,
-  alturaMax = 600,
-  qualidade = 0.75
+  arquivo: File | Blob,
+  larguraMax = 1200,
+  alturaMax = 1200,
+  qualidade = 0.88
 ): Promise<string> {
   return new Promise((resolve) => {
     const reader = new FileReader();
@@ -575,11 +582,18 @@ export function redimensionarEComprimirImagem(
           return;
         }
 
-        ctx.fillStyle = '#FFFFFF';
-        ctx.fillRect(0, 0, largura, altura);
+        const ehPng = arquivo.type === 'image/png';
+        if (!ehPng) {
+          ctx.fillStyle = '#FFFFFF';
+          ctx.fillRect(0, 0, largura, altura);
+        } else {
+          ctx.clearRect(0, 0, largura, altura);
+        }
+
         ctx.drawImage(img, 0, 0, largura, altura);
 
-        const dataUrl = canvas.toDataURL('image/jpeg', qualidade);
+        const mime = ehPng ? 'image/png' : 'image/jpeg';
+        const dataUrl = canvas.toDataURL(mime, ehPng ? undefined : qualidade);
         resolve(dataUrl);
       };
       img.onerror = () => resolve((e.target?.result as string) || '');

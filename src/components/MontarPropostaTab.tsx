@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef } from 'react';
+import React, { useState, useMemo, useRef, useEffect } from 'react';
 import {
   Layers,
   Globe,
@@ -30,6 +30,7 @@ import {
   DollarSign,
   Calculator,
   Percent,
+  ClipboardPaste,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
@@ -279,7 +280,26 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     return valorPorExtensoPtBr(totalGeral);
   }, [totalGeral]);
 
-  // Image upload handler com compressão automática inteligente
+  // Função centralizada para processar e comprimir qualquer imagem (upload ou colada via Ctrl+V)
+  const processarArquivoImagem = async (file: File | Blob) => {
+    try {
+      const compactBase64 = await redimensionarEComprimirImagem(file);
+      setImagemBase64(compactBase64);
+      return true;
+    } catch {
+      return new Promise<boolean>((resolve) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          setImagemBase64(reader.result as string);
+          resolve(true);
+        };
+        reader.onerror = () => resolve(false);
+        reader.readAsDataURL(file);
+      });
+    }
+  };
+
+  // Image upload handler para arquivos selecionados do computador
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -289,17 +309,76 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       return;
     }
 
+    await processarArquivoImagem(file);
+    setNotificacao({ tipo: 'sucesso', texto: 'Foto do produto anexada com sucesso!' });
+    // Reseta o input para permitir selecionar o mesmo arquivo novamente se necessário
+    e.target.value = '';
+  };
+
+  // Handler para colar imagem diretamente da Área de Transferência (botão Colar)
+  const handleColarImagemClipboard = async () => {
     try {
-      const compactBase64 = await redimensionarEComprimirImagem(file);
-      setImagemBase64(compactBase64);
-    } catch {
-      const reader = new FileReader();
-      reader.onload = () => {
-        setImagemBase64(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      if (navigator.clipboard && navigator.clipboard.read) {
+        const items = await navigator.clipboard.read();
+        for (const item of items) {
+          const imgType = item.types.find(t => t.startsWith('image/'));
+          if (imgType) {
+            const blob = await item.getType(imgType);
+            await processarArquivoImagem(blob);
+            setNotificacao({
+              tipo: 'sucesso',
+              texto: 'Foto do produto colada com sucesso da área de transferência!',
+            });
+            return;
+          }
+        }
+        setNotificacao({
+          tipo: 'erro',
+          texto: 'Nenhuma imagem copiada encontrada na área de transferência. Copie uma imagem primeiro (com botão direito "Copiar Imagem" ou PrintScreen / Snipping Tool / Ctrl+C).',
+        });
+      } else {
+        setNotificacao({
+          tipo: 'erro',
+          texto: 'Use o atalho Ctrl+V no teclado para colar a imagem diretamente nesta tela.',
+        });
+      }
+    } catch (err) {
+      console.warn('Clipboard read error:', err);
+      setNotificacao({
+        tipo: 'erro',
+        texto: 'Para colar direto pelo navegador, você também pode pressionar Ctrl+V no teclado.',
+      });
     }
   };
+
+  // Listener global de teclado (Ctrl + V) para colar imagem de forma instantânea
+  useEffect(() => {
+    const handlePaste = async (e: ClipboardEvent) => {
+      if (!e.clipboardData) return;
+      const items = e.clipboardData.items;
+
+      for (let i = 0; i < items.length; i++) {
+        const item = items[i];
+        if (item.type.startsWith('image/')) {
+          const file = item.getAsFile();
+          if (file) {
+            e.preventDefault();
+            await processarArquivoImagem(file);
+            setNotificacao({
+              tipo: 'sucesso',
+              texto: 'Foto do produto colada com sucesso via atalho Ctrl+V!',
+            });
+            break;
+          }
+        }
+      }
+    };
+
+    window.addEventListener('paste', handlePaste);
+    return () => {
+      window.removeEventListener('paste', handlePaste);
+    };
+  }, []);
 
   // Form submit (salva novo item ou atualiza item existente)
   const handleSalvarItem = (e: React.FormEvent) => {
@@ -876,41 +955,55 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </div>
 
             <div className="sm:col-span-3">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Foto do Produto (Catálogo)
               </label>
-              <label className="flex items-center justify-center gap-1.5 px-3 py-2 bg-slate-50 hover:bg-slate-100 border border-dashed border-slate-300 rounded-lg cursor-pointer text-xs text-slate-700 transition-colors">
-                <Upload className="w-3.5 h-3.5 text-slate-500" />
-                <span>{imagemBase64 ? 'Alterar Foto' : 'Upload PNG/JPG'}</span>
-                <input
-                  type="file"
-                  accept="image/png,image/jpeg,image/jpg"
-                  onChange={handleImageUpload}
-                  className="hidden"
-                />
-              </label>
+              <div className="grid grid-cols-2 gap-1.5">
+                <label
+                  className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-slate-50 dark:bg-slate-800/80 hover:bg-slate-100 dark:hover:bg-slate-700 border border-dashed border-slate-300 dark:border-slate-700 rounded-lg cursor-pointer text-xs text-slate-700 dark:text-slate-300 transition-colors"
+                  title="Selecionar imagem salva no computador"
+                >
+                  <Upload className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" />
+                  <span className="truncate">{imagemBase64 ? 'Arquivo' : 'Upload'}</span>
+                  <input
+                    type="file"
+                    accept="image/png,image/jpeg,image/jpg"
+                    onChange={handleImageUpload}
+                    className="hidden"
+                  />
+                </label>
+                <button
+                  type="button"
+                  onClick={handleColarImagemClipboard}
+                  className="flex items-center justify-center gap-1.5 px-2.5 py-2 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 border border-blue-200 dark:border-blue-800/60 rounded-lg cursor-pointer text-xs font-semibold text-[#0F2C59] dark:text-blue-300 transition-colors"
+                  title="Colar imagem diretamente da área de transferência (Ctrl+V) sem precisar salvar arquivo no computador"
+                >
+                  <ClipboardPaste className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <span className="truncate">Colar</span>
+                </button>
+              </div>
             </div>
           </div>
 
           {/* ==================================================================== */}
           {/* CAMPOS: LANCE MÍNIMO E LANCE LOTE (LANCES DE PREGÃO) */}
           {/* ==================================================================== */}
-          <div className="bg-amber-50/70 border border-amber-200/90 rounded-xl p-3.5 space-y-2.5">
-            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-950">
-              <Target className="w-4 h-4 text-amber-600" />
+          <div className="bg-amber-50/70 dark:bg-amber-950/20 border border-amber-200/90 dark:border-amber-700/40 rounded-xl p-3.5 space-y-2.5">
+            <div className="flex items-center gap-1.5 text-xs font-bold text-amber-900 dark:text-amber-400">
+              <Target className="w-4 h-4 text-amber-600 dark:text-amber-400" />
               Lances de Pregão
             </div>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Lance Mínimo (R$){' '}
-                  <span className="text-slate-400 font-normal">
+                  <span className="text-slate-400 dark:text-slate-500 font-normal">
                     (Unitário mínimo aceito no pregão)
                   </span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono font-semibold">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
                   </span>
                   <input
@@ -929,20 +1022,20 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       }
                     }}
                     placeholder="Ex: 120,00"
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                   Lance Lote (R$){' '}
-                  <span className="text-slate-400 font-normal">
+                  <span className="text-slate-400 dark:text-slate-500 font-normal">
                     (Total do lote mínimo aceito)
                   </span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono font-semibold">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
                   </span>
                   <input
@@ -952,7 +1045,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     value={lanceLote}
                     onChange={e => setLanceLote(e.target.value)}
                     placeholder="Ex: 3000,00"
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-white border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
               </div>
@@ -961,23 +1054,36 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
           {/* Imagem prévia caso exista */}
           {imagemBase64 && (
-            <div className="flex items-center gap-3 p-3 bg-slate-50 border border-slate-200 rounded-lg">
-              <div className="w-16 h-14 bg-slate-200 rounded overflow-hidden flex items-center justify-center">
-                <img src={imagemBase64} alt="Prévia" className="w-full h-full object-cover" />
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 p-3 bg-slate-50 dark:bg-slate-900/80 border border-slate-200 dark:border-slate-800 rounded-lg animate-in fade-in duration-150">
+              <div className="flex items-center gap-3">
+                <div className="w-16 h-14 bg-slate-200 dark:bg-slate-800 rounded overflow-hidden flex items-center justify-center shrink-0 border border-slate-300 dark:border-slate-700">
+                  <img src={imagemBase64} alt="Prévia" className="w-full h-full object-cover" />
+                </div>
+                <div className="text-xs">
+                  <span className="font-semibold text-slate-700 dark:text-slate-200 block">Foto do Produto Anexada</span>
+                  <span className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Será incluída no Catálogo de Especificações Técnicas do PDF oficial. Você também pode colar outra com <strong>Ctrl+V</strong> a qualquer momento.
+                  </span>
+                </div>
               </div>
-              <div className="flex-1 text-xs">
-                <span className="font-semibold text-slate-700 block">Foto do Produto Anexada</span>
-                <span className="text-[11px] text-slate-500">
-                  Será incluída no Catálogo de Especificações Técnicas do PDF oficial
-                </span>
+              <div className="flex items-center gap-2 self-end sm:self-auto shrink-0">
+                <button
+                  type="button"
+                  onClick={handleColarImagemClipboard}
+                  className="px-2.5 py-1.5 text-xs text-blue-700 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 rounded-lg border border-blue-200 dark:border-blue-800 font-semibold cursor-pointer flex items-center gap-1.5 transition-colors"
+                  title="Substituir foto colando da área de transferência (Ctrl+V)"
+                >
+                  <ClipboardPaste className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  Colar outra
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setImagemBase64('')}
+                  className="px-2.5 py-1.5 text-xs text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-lg border border-rose-200 dark:border-rose-800 font-medium cursor-pointer transition-colors"
+                >
+                  Remover foto
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => setImagemBase64('')}
-                className="text-xs text-rose-600 hover:text-rose-700 font-medium cursor-pointer"
-              >
-                Remover foto
-              </button>
             </div>
           )}
 
@@ -996,7 +1102,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
               className={`px-5 py-2.5 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 ${
                 idItemEditando
                   ? 'bg-amber-600 hover:bg-amber-700'
-                  : 'bg-[#0F2C59] hover:bg-[#163c78]'
+                  : 'bg-[#0F2C59] hover:bg-[#163c78] dark:bg-blue-600 dark:hover:bg-blue-500'
               }`}
             >
               {idItemEditando ? (
@@ -1121,7 +1227,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                   <th className="py-3 px-4 text-right w-16">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 text-xs">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {itensAtuais.map((it, idx) => {
                   const estaMarcado = it.selecionado !== false;
 
@@ -1130,13 +1236,13 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       key={it.id}
                       className={`transition-colors ${
                         idItemEditando === it.id
-                          ? 'bg-amber-50 ring-2 ring-amber-400/60 font-medium'
+                          ? 'bg-amber-50 dark:bg-amber-950/40 ring-2 ring-amber-400/60 dark:ring-amber-500/60 font-medium'
                           : !estaMarcado
-                          ? 'bg-slate-100/60 opacity-60 text-slate-500'
+                          ? 'bg-slate-100/60 dark:bg-slate-950/40 opacity-60 text-slate-500 dark:text-slate-400'
                           : idx % 2 === 1
-                          ? 'bg-slate-50/70'
-                          : 'bg-white'
-                      } hover:bg-slate-100/80`}
+                          ? 'bg-slate-50/70 dark:bg-[#0c1424]'
+                          : 'bg-white dark:bg-slate-900'
+                      } hover:bg-slate-100/80 dark:hover:bg-[#162238]`}
                     >
                       {/* QUADRINHO INDIVIDUAL POR ITEM */}
                       <td className="py-3 px-3 text-center">
@@ -1149,21 +1255,21 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                               ? 'Desmarcar item (não irá para o PDF da proposta)'
                               : 'Marcar item para incluir no PDF da proposta'
                           }
-                          className="w-4 h-4 rounded text-[#0F2C59] accent-[#0F2C59] border-slate-300 focus:ring-2 focus:ring-[#0F2C59] cursor-pointer"
+                          className="w-4 h-4 rounded text-[#0F2C59] accent-[#0F2C59] border-slate-300 dark:border-slate-700 focus:ring-2 focus:ring-[#0F2C59] cursor-pointer"
                         />
                       </td>
 
-                      <td className={`py-3 px-4 text-center font-mono font-medium tabular-nums ${!estaMarcado ? 'text-slate-400 line-through' : 'text-slate-500'}`}>
+                      <td className={`py-3 px-4 text-center font-mono font-medium tabular-nums ${!estaMarcado ? 'text-slate-400 dark:text-slate-500 line-through' : 'text-slate-500 dark:text-slate-400'}`}>
                         {it.num_item}
                       </td>
 
                       <td className="py-3 px-4">
                         <div className="flex items-center gap-2">
-                          <span className={`font-semibold ${!estaMarcado ? 'text-slate-500 line-through' : 'text-slate-900'}`}>
+                          <span className={`font-semibold ${!estaMarcado ? 'text-slate-500 dark:text-slate-500 line-through' : 'text-slate-900 dark:text-white'}`}>
                             {it.descricao_curta}
                           </span>
                           {!estaMarcado && (
-                            <span className="inline-flex items-center text-[10px] font-bold text-rose-700 bg-rose-50 border border-rose-200 px-1.5 py-0.2 rounded shrink-0">
+                            <span className="inline-flex items-center text-[10px] font-bold text-rose-700 dark:text-rose-400 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800/60 px-1.5 py-0.2 rounded shrink-0">
                               Não vai para o PDF
                             </span>
                           )}
@@ -1174,7 +1280,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                             href={it.link_produto}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="text-[11px] text-blue-600 hover:underline truncate max-w-xs block mt-0.5"
+                            className="text-[11px] text-blue-600 dark:text-blue-400 hover:underline truncate max-w-xs block mt-0.5"
                           >
                             {it.link_produto}
                           </a>
@@ -1183,23 +1289,23 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                         {/* Exibição discreta dos Lances Salvos em baixo do produto */}
                         {(it.lance_minimo !== undefined && it.lance_minimo > 0) ||
                         (it.lance_lote !== undefined && it.lance_lote > 0) ? (
-                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5 pt-1 border-t border-slate-100">
-                            <span className="text-[10px] font-semibold text-slate-400">Lances:</span>
+                          <div className="flex flex-wrap items-center gap-1.5 mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
+                            <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400">Lances:</span>
                             {it.lance_minimo !== undefined && it.lance_minimo > 0 ? (
                               <span
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-900 bg-amber-50 border border-amber-200 px-1.5 py-0.5 rounded shadow-2xs"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded shadow-2xs"
                                 title="Lance Mínimo Unitário Aceito"
                               >
-                                <Target className="w-2.5 h-2.5 text-amber-600" />
+                                <Target className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
                                 Mín: {formatarMoeda(it.lance_minimo)}
                               </span>
                             ) : null}
                             {it.lance_lote !== undefined && it.lance_lote > 0 ? (
                               <span
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-blue-900 bg-blue-50 border border-blue-200 px-1.5 py-0.5 rounded shadow-2xs"
+                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-blue-900 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded shadow-2xs"
                                 title="Lance Mínimo por Lote"
                               >
-                                <Layers className="w-2.5 h-2.5 text-blue-600" />
+                                <Layers className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
                                 Lote: {formatarMoeda(it.lance_lote)}
                               </span>
                             ) : null}
@@ -1207,7 +1313,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                               <button
                                 type="button"
                                 onClick={() => abrirModalEditarLances(it)}
-                                className="text-[10px] text-slate-400 hover:text-[#0F2C59] cursor-pointer ml-1 inline-flex items-center gap-0.5 hover:underline"
+                                className="text-[10px] text-slate-400 hover:text-[#0F2C59] dark:hover:text-blue-400 cursor-pointer ml-1 inline-flex items-center gap-0.5 hover:underline"
                                 title="Editar Lances"
                               >
                                 <Edit3 className="w-2.5 h-2.5" />
@@ -1220,25 +1326,25 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                             <button
                               type="button"
                               onClick={() => abrirModalEditarLances(it)}
-                              className="text-[10px] text-slate-400 hover:text-amber-700 cursor-pointer mt-1 inline-flex items-center gap-1 hover:underline"
+                              className="text-[10px] text-slate-400 hover:text-amber-700 dark:hover:text-amber-400 cursor-pointer mt-1 inline-flex items-center gap-1 hover:underline"
                               title="Definir Lance Mínimo e Lance Lote para este item"
                             >
-                              <Target className="w-2.5 h-2.5 text-amber-600" />
+                              <Target className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
                               + definir lances
                             </button>
                           )
                         )}
                       </td>
 
-                      <td className="py-3 px-4 text-slate-700 font-medium">{it.marca}</td>
-                      <td className="py-3 px-4 text-center font-mono tabular-nums">{it.quantidade}</td>
+                      <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">{it.marca}</td>
+                      <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-800 dark:text-slate-200">{it.quantidade}</td>
 
                       {/* Valor Unitário com Lance Mínimo pequeno embaixo */}
-                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700">
+                      <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
                         <div>{formatarMoeda(it.valor_unitario)}</div>
                         {it.lance_minimo !== undefined && it.lance_minimo > 0 && (
                           <div
-                            className="text-[10px] text-amber-700 font-semibold font-mono tracking-tight mt-0.5"
+                            className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold font-mono tracking-tight mt-0.5"
                             title="Lance Mínimo Unitário"
                           >
                             Mín: {formatarMoeda(it.lance_minimo)}
@@ -1247,11 +1353,11 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       </td>
 
                       {/* Valor Total com Lance Lote pequeno embaixo */}
-                      <td className="py-3 px-4 text-right font-mono font-semibold tabular-nums text-slate-900">
+                      <td className="py-3 px-4 text-right font-mono font-semibold tabular-nums text-slate-900 dark:text-white">
                         <div>{formatarMoeda(it.valor_total)}</div>
                         {it.lance_lote !== undefined && it.lance_lote > 0 && (
                           <div
-                            className="text-[10px] text-blue-700 font-semibold font-mono tracking-tight mt-0.5"
+                            className="text-[10px] text-blue-700 dark:text-blue-400 font-semibold font-mono tracking-tight mt-0.5"
                             title="Lance Total do Lote"
                           >
                             Lote: {formatarMoeda(it.lance_lote)}
@@ -1261,11 +1367,11 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
                       <td className="py-3 px-4 text-center">
                         {it.caminho_imagem ? (
-                          <span className="inline-flex items-center text-[10px] font-medium text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded">
+                          <span className="inline-flex items-center text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
                             <ImageIcon className="w-3 h-3 mr-1" /> Com Foto
                           </span>
                         ) : (
-                          <span className="text-[10px] text-slate-400">Sem Foto</span>
+                          <span className="text-[10px] text-slate-400 dark:text-slate-500">Sem Foto</span>
                         )}
                       </td>
 
@@ -1319,21 +1425,21 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                 })}
 
                 {/* LINHA DE DESTAQUE: TOTAL GERAL DOS ITENS MARCADOS */}
-                <tr className="bg-slate-200/80 border-t-2 border-slate-300 font-bold">
-                  <td colSpan={6} className="py-3.5 px-4 text-right text-xs uppercase tracking-wider text-slate-800">
+                <tr className="bg-slate-200/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-700 font-bold">
+                  <td colSpan={6} className="py-3.5 px-4 text-right text-xs uppercase tracking-wider text-slate-800 dark:text-slate-200">
                     VALOR TOTAL DA PROPOSTA ({itensSelecionados.length} DE {itensAtuais.length} ITENS MARCADOS):
                   </td>
-                  <td className="py-3.5 px-4 text-right font-mono text-sm text-[#0F2C59] tabular-nums">
+                  <td className="py-3.5 px-4 text-right font-mono text-sm text-[#0F2C59] dark:text-blue-400 tabular-nums">
                     {formatarMoeda(totalGeral)}
                   </td>
                   <td colSpan={2} className="py-3.5 px-4"></td>
                 </tr>
 
                 {/* LINHA DE VALOR POR EXTENSO */}
-                <tr className="bg-slate-100 border-t border-slate-200 text-xs">
-                  <td colSpan={9} className="py-3 px-4 text-slate-700">
-                    <span className="font-bold text-slate-900 mr-2">Valor por Extenso (Itens Marcados):</span>
-                    <span className="italic font-medium text-[#0F2C59]">{extensoGeral}</span>
+                <tr className="bg-slate-100 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 text-xs">
+                  <td colSpan={9} className="py-3 px-4 text-slate-700 dark:text-slate-300">
+                    <span className="font-bold text-slate-900 dark:text-white mr-2">Valor por Extenso (Itens Marcados):</span>
+                    <span className="italic font-medium text-[#0F2C59] dark:text-blue-300">{extensoGeral}</span>
                   </td>
                 </tr>
               </tbody>
@@ -1344,7 +1450,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
         {/* ==================================================================== */}
         {/* RODAPÉ DA PRÉ-VISUALIZAÇÃO: BOTÃO MAIOR DE SALVAR NO CANTO DIREITO   */}
         {/* ==================================================================== */}
-        <div className="p-4 sm:p-5 bg-slate-50 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-4">
+        <div className="p-4 sm:p-5 bg-slate-50 dark:bg-slate-900/90 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-4">
           {/* Mensagem de Confirmação ou Erro */}
           <div className="flex-1 w-full sm:w-auto">
             {feedbackSalvar?.tipo === 'sucesso' && (
@@ -1395,42 +1501,42 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           onClick={() => setItemEditandoLances(null)}
         >
           <div
-            className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-slate-900 rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative animate-in fade-in zoom-in-95 duration-150"
             onClick={e => e.stopPropagation()}
           >
             <button
               onClick={() => setItemEditandoLances(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Target className="w-5 h-5 text-amber-600" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Target className="w-5 h-5 text-amber-600 dark:text-amber-400" />
               Lances de Pregão — Item #{itemEditandoLances.num_item}
             </h3>
-            <p className="text-xs text-slate-600 mt-1 truncate">
+            <p className="text-xs text-slate-600 dark:text-slate-400 mt-1 truncate">
               {itemEditandoLances.descricao_curta}
             </p>
 
             <form onSubmit={handleSalvarEdicaoLances} className="mt-4 space-y-4">
               <div className="grid grid-cols-2 gap-3">
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Qtd.</span>
-                  <span className="text-xs font-bold text-slate-800 font-mono">{itemEditandoLances.quantidade}</span>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Qtd.</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-white font-mono">{itemEditandoLances.quantidade}</span>
                 </div>
-                <div className="bg-slate-50 p-2.5 rounded-lg border border-slate-200">
-                  <span className="text-[10px] uppercase font-bold text-slate-400 block">Total Cotado</span>
-                  <span className="text-xs font-bold text-[#0F2C59] font-mono">{formatarMoeda(itemEditandoLances.valor_total)}</span>
+                <div className="bg-slate-50 dark:bg-slate-800/60 p-2.5 rounded-lg border border-slate-200 dark:border-slate-700">
+                  <span className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 block">Total Cotado</span>
+                  <span className="text-xs font-bold text-[#0F2C59] dark:text-blue-400 font-mono">{formatarMoeda(itemEditandoLances.valor_total)}</span>
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Lance Mínimo (R$) <span className="text-slate-400 font-normal">(Unitário)</span>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Lance Mínimo (R$) <span className="text-slate-400 dark:text-slate-500 font-normal">(Unitário)</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono font-semibold">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
                   </span>
                   <input
@@ -1449,17 +1555,17 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       }
                     }}
                     placeholder="Ex: 120,00"
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 mb-1">
-                  Lance Lote (R$) <span className="text-slate-400 font-normal">(Total do Lote)</span>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Lance Lote (R$) <span className="text-slate-400 dark:text-slate-500 font-normal">(Total do Lote)</span>
                 </label>
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono font-semibold">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
                   </span>
                   <input
@@ -1469,7 +1575,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     value={editLanceLote}
                     onChange={e => setEditLanceLote(e.target.value)}
                     placeholder="Ex: 3000,00"
-                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-300 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500"
+                    className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
               </div>
@@ -1478,13 +1584,13 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setItemEditandoLances(null)}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-lg transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163c78] rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                  className="px-4 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163c78] dark:bg-blue-600 dark:hover:bg-blue-500 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
                 >
                   <Check className="w-3.5 h-3.5 text-amber-400" />
                   Salvar Lances

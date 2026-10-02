@@ -13,6 +13,7 @@ import { PapelTimbradoTab } from './components/PapelTimbradoTab';
 import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
 import { LoginScreen } from './components/LoginScreen';
 import { SegurancaModal } from './components/SegurancaModal';
+import { ModalDeclaracaoUnificada } from './components/ModalDeclaracaoUnificada';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from './types';
 import {
   obterLicitacoes,
@@ -32,6 +33,7 @@ import {
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
 import { converterParaFormatoInputDate } from './utils/numberToWordsPtBr';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
+import { obterTema, aplicarTema, alternarTema, ThemeMode } from './utils/theme';
 import {
   ouvirLicitacoesNuvem,
   ouvirItensNuvem,
@@ -72,8 +74,26 @@ export default function App() {
     obterPapelTimbradoConfig()
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
+  const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState<boolean>(false);
+  const [licitacaoParaDeclaracao, setLicitacaoParaDeclaracao] = useState<Licitacao | null>(null);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
+  const [tema, setTema] = useState<ThemeMode>(() => obterTema());
+
+  // Aplica o tema na árvore DOM sempre que o estado mudar
+  useEffect(() => {
+    aplicarTema(tema);
+  }, [tema]);
+
+  const handleAlternarTema = (novo?: ThemeMode) => {
+    if (novo) {
+      aplicarTema(novo);
+      setTema(novo);
+    } else {
+      const t = alternarTema();
+      setTema(t);
+    }
+  };
 
   // Carrega dados iniciais do banco local imediatamente
   useEffect(() => {
@@ -173,8 +193,19 @@ export default function App() {
       (licsNuvem) => {
         if (licsNuvem && licsNuvem.length > 0) {
           setStatusNuvem('conectado');
-          setLicitacoes(licsNuvem);
-          salvarLicitacoes(licsNuvem);
+          setLicitacoes(prevLics => {
+            const mapaPrev = new Map(prevLics.map(l => [l.id, l]));
+            const mescladas = licsNuvem.map(nuv => {
+              const prev = mapaPrev.get(nuv.id);
+              return {
+                ...nuv,
+                acompanhamento: nuv.acompanhamento !== undefined ? Boolean(nuv.acompanhamento) : Boolean(prev?.acompanhamento),
+                homologada: nuv.homologada !== undefined ? Boolean(nuv.homologada) : Boolean(prev?.homologada),
+              };
+            });
+            salvarLicitacoes(mescladas);
+            return mescladas;
+          });
           setLicitacaoSelecionadaId(prev => {
             if (prev && licsNuvem.some(l => l.id === prev)) return prev;
             return licsNuvem[0].id;
@@ -388,34 +419,50 @@ export default function App() {
 
   // Alternar Status de Acompanhamento (👁 Olho Amarelo)
   const handleToggleAcompanhamento = (id: number) => {
+    let licModificada: Licitacao | null = null;
     const listaAtualizada = licitacoes.map(l => {
       if (l.id === id) {
         const novoStatus = !l.acompanhamento;
-        const atual = { ...l, acompanhamento: novoStatus };
-        salvarLicitacaoServidor(atual);
-        salvarLicitacaoNuvem(atual).catch(() => {});
+        const atual: Licitacao = { ...l, acompanhamento: novoStatus };
+        licModificada = atual;
         return atual;
       }
       return l;
     });
+
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
+
+    if (licModificada) {
+      salvarLicitacaoServidor(licModificada);
+      salvarLicitacaoNuvem(licModificada).catch(err => {
+        console.warn('Aviso ao sincronizar acompanhamento na nuvem:', err);
+      });
+    }
   };
 
   // Alternar Status de Concluída / Homologada (✓ Check Verde)
   const handleToggleHomologada = (id: number) => {
+    let licModificada: Licitacao | null = null;
     const listaAtualizada = licitacoes.map(l => {
       if (l.id === id) {
         const novoStatus = !l.homologada;
-        const atual = { ...l, homologada: novoStatus };
-        salvarLicitacaoServidor(atual);
-        salvarLicitacaoNuvem(atual).catch(() => {});
+        const atual: Licitacao = { ...l, homologada: novoStatus };
+        licModificada = atual;
         return atual;
       }
       return l;
     });
+
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
+
+    if (licModificada) {
+      salvarLicitacaoServidor(licModificada);
+      salvarLicitacaoNuvem(licModificada).catch(err => {
+        console.warn('Aviso ao sincronizar homologada na nuvem:', err);
+      });
+    }
   };
 
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
@@ -620,15 +667,22 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 flex flex-col font-sans">
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
       {/* Barra de navegação do topo */}
       <Header
         abaAtiva={abaAtiva}
         setAbaAtiva={setAbaAtiva}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
         onAbrirSeguranca={() => setSegurancaModalAberto(true)}
+        onAbrirDeclaracao={() => {
+          const lic = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0] || null;
+          setLicitacaoParaDeclaracao(lic);
+          setModalDeclaracaoAberto(true);
+        }}
         onLogout={handleLogout}
         statusNuvem={statusNuvem}
+        tema={tema}
+        onAlternarTema={handleAlternarTema}
       />
 
       {/* Painel lateral deslizante da Calculadora de Limite de Oferta */}
@@ -643,6 +697,18 @@ export default function App() {
         onFechar={() => setSegurancaModalAberto(false)}
         acessoAtual={acessoConfig}
         onSalvarAcesso={handleSalvarAcesso}
+      />
+
+      {/* Modal de Declaração Unificada (Lei 14.133/2021) */}
+      <ModalDeclaracaoUnificada
+        aberto={modalDeclaracaoAberto}
+        onFechar={() => {
+          setModalDeclaracaoAberto(false);
+          setLicitacaoParaDeclaracao(null);
+        }}
+        licitacoes={licitacoes}
+        licitacaoInicial={licitacaoParaDeclaracao}
+        timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
 
       {/* Toast flutuante */}
@@ -663,13 +729,14 @@ export default function App() {
         </div>
       )}
 
-      {/* Conteúdo Principal com largura expandida para comportar perfeitamente novas colunas e análise */}
+      {/* Conteúdo Principal mantido com largura padrão consistente */}
       <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {abaAtiva === 'historico' && (
           <HistoricoTab
             licitacoes={licitacoes}
             itens={itens}
             responsaveis={responsaveis}
+            timbradoConfig={timbradoConfig}
             onAdicionarResponsavel={handleAdicionarResponsavel}
             onExcluirResponsavel={handleExcluirResponsavel}
             onAtualizarResponsavel={handleAtualizarResponsavel}
@@ -683,6 +750,11 @@ export default function App() {
             onAbrirSeguranca={() => setSegurancaModalAberto(true)}
             onToggleAcompanhamento={handleToggleAcompanhamento}
             onToggleHomologada={handleToggleHomologada}
+            onAbrirCalculadora={() => setCalculadoraAberta(true)}
+            onAbrirDeclaracao={lic => {
+              setLicitacaoParaDeclaracao(lic || null);
+              setModalDeclaracaoAberto(true);
+            }}
           />
         )}
 
@@ -742,15 +814,27 @@ export default function App() {
         )}
       </main>
 
-      {/* Footer simples e limpo */}
-      <footer className="bg-white border-t border-slate-200 py-4 text-center text-xs text-slate-500">
-        <div className="max-w-[1600px] mx-auto px-4 flex flex-col sm:flex-row items-center justify-between gap-2">
-          <span>
-            Gestão de Licitações & Gerador de Propostas Comerciais em PDF com Catálogo de Produtos
-          </span>
-          <span className="text-slate-400">
-            Exportação em PDF • Papel Timbrado Dinâmico • ReportLab / WeasyPrint • SQLite • Streamlit
-          </span>
+      {/* Rodapé com mensagem inspiradora e informações do sistema */}
+      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
+        <div className="max-w-[1600px] mx-auto px-4 space-y-3">
+          {/* Mensagem Bíblica de Provérbios 16:3 */}
+          <div className="flex flex-col items-center justify-center gap-1">
+            <p className="text-xs sm:text-sm font-medium italic text-slate-700 dark:text-slate-300 max-w-2xl leading-relaxed">
+              “Consagre ao Senhor tudo o que você faz, e os seus planos serão bem-sucedidos.”
+            </p>
+            <span className="text-[11px] font-semibold tracking-wider uppercase text-amber-700 dark:text-amber-400">
+              Provérbios 16:3
+            </span>
+          </div>
+
+          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
+            <span>
+              Gestão de Licitações & Gerador de Propostas Comerciais em PDF com Catálogo de Produtos
+            </span>
+            <span>
+              Exportação em PDF • Papel Timbrado Dinâmico • Sistema Operacional Seguro
+            </span>
+          </div>
         </div>
       </footer>
     </div>

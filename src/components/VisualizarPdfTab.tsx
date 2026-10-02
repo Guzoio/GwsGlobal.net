@@ -344,7 +344,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
 
           {/* Simulated A4 Page (Padrão Oficial: Arial Tamanho 12) */}
           <div
-            className="bg-white border-2 border-slate-300 rounded-lg shadow-md overflow-hidden"
+            className="bg-white border-2 border-slate-300 rounded-lg shadow-md overflow-hidden manter-branco"
             style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
           >
             {/* CABEÇALHO GRÁFICO (se houver imagem) */}

@@ -30,14 +30,16 @@ export function ouvirLicitacoesNuvem(
       snapshot.forEach((d) => {
         const data = d.data();
         lista.push({
-          id: data.id,
-          orgao: data.orgao,
-          processo_pregao: data.processo_pregao,
-          modalidade: data.modalidade,
-          data_cadastro: data.data_cadastro,
+          id: Number(data.id ?? d.id),
+          orgao: data.orgao || '',
+          processo_pregao: data.processo_pregao || '',
+          modalidade: data.modalidade || 'Pregão Eletrônico',
+          data_cadastro: data.data_cadastro || '',
           data_proposta: data.data_proposta || undefined,
           responsavel: data.responsavel || 'Gustavo',
           status: data.status,
+          acompanhamento: data.acompanhamento !== undefined ? Boolean(data.acompanhamento) : undefined,
+          homologada: data.homologada !== undefined ? Boolean(data.homologada) : undefined,
         });
       });
       // Ordena por ID decrescente
@@ -80,6 +82,7 @@ export function ouvirItensNuvem(
           caminho_imagem: data.caminho_imagem || '',
           selecionado: data.selecionado !== false,
           observacoes: data.observacoes || '',
+          custo_fornecedor: data.custo_fornecedor !== undefined ? Number(data.custo_fornecedor) : undefined,
         });
       });
       // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
@@ -187,10 +190,10 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       data_proposta: lic.data_proposta || '',
       responsavel: lic.responsavel || 'Gustavo',
       status: lic.status || 'Ativa',
-      acompanhamento: !!lic.acompanhamento,
-      homologada: !!lic.homologada,
+      acompanhamento: Boolean(lic.acompanhamento),
+      homologada: Boolean(lic.homologada),
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }

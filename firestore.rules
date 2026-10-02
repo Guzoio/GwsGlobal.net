@@ -23,7 +23,10 @@ service cloud.firestore {
         && data.modalidade is string && data.modalidade.size() <= 200
         && data.data_cadastro is string && data.data_cadastro.size() <= 100
         && data.responsavel is string && data.responsavel.size() <= 200
-        && (!('data_proposta' in data) || (data.data_proposta is string && data.data_proposta.size() <= 100));
+        && (!('data_proposta' in data) || (data.data_proposta is string && data.data_proposta.size() <= 100))
+        && (!('status' in data) || (data.status is string && data.status.size() <= 100))
+        && (!('acompanhamento' in data) || data.acompanhamento is bool)
+        && (!('homologada' in data) || data.homologada is bool);
     }
 
     function isValidItem(data) {

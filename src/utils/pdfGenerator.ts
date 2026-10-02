@@ -3,6 +3,7 @@ import autoTable from 'jspdf-autotable';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr } from './numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from './sanitizarDescricao';
+import { renderizarImagemProporcional } from './pdfImageHelper';
 
 /**
  * Gera um arquivo PDF de alta fidelidade contendo:
@@ -313,15 +314,13 @@ export async function gerarArquivoPdf(
     // Assinatura 1
     if (timbrado.assinaturaImagem) {
       try {
-        doc.addImage(
+        renderizarImagemProporcional(
+          doc,
           timbrado.assinaturaImagem,
-          'PNG',
           col1Center - sigW / 2,
           currentY + 1,
           sigW,
-          sigH,
-          undefined,
-          'FAST'
+          sigH
         );
       } catch (e) {
         console.error('Erro ao renderizar assinatura 1 no PDF:', e);
@@ -331,15 +330,13 @@ export async function gerarArquivoPdf(
     // Assinatura 2
     if (timbrado.assinaturaImagem2) {
       try {
-        doc.addImage(
+        renderizarImagemProporcional(
+          doc,
           timbrado.assinaturaImagem2,
-          'PNG',
           col2Center - sigW / 2,
           currentY + 1,
           sigW,
-          sigH,
-          undefined,
-          'FAST'
+          sigH
         );
       } catch (e) {
         console.error('Erro ao renderizar assinatura 2 no PDF:', e);
@@ -386,19 +383,17 @@ export async function gerarArquivoPdf(
     // ASSINATURA ÚNICA CENTRALIZADA
     if (temAssinatura && timbrado.assinaturaImagem) {
       try {
-        const sigWidth = 62; // mm (ampliada para excelente nitidez e visibilidade)
+        const sigWidth = 64; // mm
         const sigHeight = 20; // mm
         const sigX = (pageWidth - sigWidth) / 2;
         const sigY = currentY + 1;
-        doc.addImage(
+        renderizarImagemProporcional(
+          doc,
           timbrado.assinaturaImagem,
-          'PNG',
           sigX,
           sigY,
           sigWidth,
-          sigHeight,
-          undefined,
-          'FAST'
+          sigHeight
         );
         currentY += sigHeight + 1;
       } catch (e) {
@@ -511,15 +506,13 @@ export async function gerarArquivoPdf(
 
         if (item.caminho_imagem && item.caminho_imagem.startsWith('data:image')) {
           try {
-            doc.addImage(
+            renderizarImagemProporcional(
+              doc,
               item.caminho_imagem,
-              'PNG',
               photoX + 2,
               photoY + 2,
               photoBoxWidth - 4,
-              photoBoxHeight - 4,
-              undefined,
-              'FAST'
+              photoBoxHeight - 4
             );
           } catch {
             desenharPlaceholderFoto(doc, photoX + 2, photoY + 2, photoBoxWidth - 4, photoBoxHeight - 4);
@@ -585,15 +578,13 @@ export async function gerarArquivoPdf(
 
         if (item.caminho_imagem && item.caminho_imagem.startsWith('data:image')) {
           try {
-            doc.addImage(
+            renderizarImagemProporcional(
+              doc,
               item.caminho_imagem,
-              'PNG',
               photoX + 2,
               photoY + 2,
               photoBoxWidth - 4,
-              photoBoxHeight - 4,
-              undefined,
-              'FAST'
+              photoBoxHeight - 4
             );
           } catch {
             desenharPlaceholderFoto(doc, photoX + 2, photoY + 2, photoBoxWidth - 4, photoBoxHeight - 4);
