@@ -45,15 +45,13 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
   // Inicializa os campos sempre que o modal abre para um determinado item
   useEffect(() => {
     if (item && aberto) {
-      // Prioridade do valor ganho: valor_ganho salvo -> lance_minimo -> valor_unitario
-      const ganhoInicial =
-        item.valor_ganho !== undefined
-          ? item.valor_ganho
-          : item.lance_minimo !== undefined && item.lance_minimo > 0
-          ? item.lance_minimo
-          : item.valor_unitario;
+      // Inicia apenas com o valor ganho explicitamente salvo pelo usuário (não chuta valor aleatório)
+      const ganhoSalvo =
+        item.valor_ganho !== undefined && item.valor_ganho > 0
+          ? item.valor_ganho.toString()
+          : '';
 
-      setValorGanhoStr(ganhoInicial ? ganhoInicial.toString() : '');
+      setValorGanhoStr(ganhoSalvo);
       setCustoFornecedorStr(
         item.custo_fornecedor !== undefined && item.custo_fornecedor > 0
           ? item.custo_fornecedor.toString()
@@ -63,7 +61,9 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
         item.aliquota_imposto !== undefined ? item.aliquota_imposto.toString() : '10'
       );
       setOutrosCustosStr(
-        item.outros_custos !== undefined ? item.outros_custos.toString() : '0'
+        item.outros_custos !== undefined && item.outros_custos > 0
+          ? item.outros_custos.toString()
+          : '0'
       );
     }
   }, [item, aberto]);
@@ -170,7 +170,6 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    required
                     value={valorGanhoStr}
                     onChange={e => setValorGanhoStr(e.target.value)}
                     placeholder="0,00"
@@ -189,7 +188,7 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
               <div>
                 <div className="flex items-center justify-between mb-1">
                   <label className="text-xs font-semibold text-slate-700 dark:text-slate-300">
-                    Custo Fornecedor (Unit.) *
+                    Custo Fornecedor (Unit.)
                   </label>
                   <span className="text-[10px] text-slate-400">Preço de compra</span>
                 </div>
@@ -201,7 +200,6 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
                     type="number"
                     step="0.01"
                     min="0"
-                    required
                     value={custoFornecedorStr}
                     onChange={e => setCustoFornecedorStr(e.target.value)}
                     placeholder="0,00"

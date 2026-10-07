@@ -249,33 +249,6 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     }
   };
 
-  // Cálculo individual de lucro líquido de um item
-  const calcularLucroItem = (it: ItemLicitacao) => {
-    if (it.custo_fornecedor === undefined || it.custo_fornecedor <= 0) return null;
-    const qtd = Math.max(1, it.quantidade || 1);
-    const vGanho =
-      it.valor_ganho !== undefined && it.valor_ganho > 0
-        ? it.valor_ganho
-        : it.lance_minimo !== undefined && it.lance_minimo > 0
-        ? it.lance_minimo
-        : it.valor_unitario;
-
-    const totalGanho = vGanho * qtd;
-    const totalCusto = (it.custo_fornecedor || 0) * qtd;
-    const aliq = it.aliquota_imposto !== undefined ? it.aliquota_imposto : 10;
-    const totalImposto = totalGanho * (aliq / 100);
-    const outros = it.outros_custos || 0;
-    const lucroLiq = totalGanho - totalCusto - totalImposto - outros;
-    const margemPct = totalGanho > 0 ? (lucroLiq / totalGanho) * 100 : 0;
-    return {
-      lucroLiq,
-      margemPct,
-      totalGanho,
-      totalCusto,
-      totalImposto,
-    };
-  };
-
   // Cancelar a edição do item e restaurar formulário para cadastro
   const handleCancelarEdicao = () => {
     setIdItemEditando(null);
@@ -335,32 +308,6 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const extensoGeral = useMemo(() => {
     return valorPorExtensoPtBr(totalGeral);
   }, [totalGeral]);
-
-  // Resumo consolidado de lucro para todos os itens da proposta que tiverem custo lançado
-  const resumoLucroGeral = useMemo(() => {
-    const itensComCalculo = itensAtuais.filter(
-      i => i.custo_fornecedor !== undefined && i.custo_fornecedor > 0
-    );
-    if (itensComCalculo.length === 0) return null;
-
-    let totalGanhoGeral = 0;
-    let totalLucroGeral = 0;
-
-    itensComCalculo.forEach(it => {
-      const res = calcularLucroItem(it);
-      if (res) {
-        totalGanhoGeral += res.totalGanho;
-        totalLucroGeral += res.lucroLiq;
-      }
-    });
-
-    const margemMedia = totalGanhoGeral > 0 ? (totalLucroGeral / totalGanhoGeral) * 100 : 0;
-    return {
-      totalItensCalculados: itensComCalculo.length,
-      lucroTotal: totalLucroGeral,
-      margemMedia,
-    };
-  }, [itensAtuais]);
 
   // Função centralizada para processar e comprimir qualquer imagem (upload ou colada via Ctrl+V)
   const processarArquivoImagem = async (file: File | Blob) => {
@@ -1445,31 +1392,6 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                             Lote: {formatarMoeda(it.lance_lote)}
                           </div>
                         )}
-                        {/* Exibição do Lucro Líquido se já foi calculado */}
-                        {(() => {
-                          const resumoLucro = calcularLucroItem(it);
-                          if (!resumoLucro) return null;
-                          const ehPositivo = resumoLucro.lucroLiq >= 0;
-                          return (
-                            <button
-                              type="button"
-                              onClick={() => setItemParaCalculoLucro(it)}
-                              className="mt-1 block ml-auto group cursor-pointer text-right"
-                              title={`Lucro Líquido: ${formatarMoeda(resumoLucro.lucroLiq)} (${resumoLucro.margemPct.toFixed(1)}%). Clique para editar.`}
-                            >
-                              <span
-                                className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow-2xs group-hover:scale-105 transition-transform ${
-                                  ehPositivo
-                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
-                                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
-                                }`}
-                              >
-                                <Percent className="w-2.5 h-2.5" />
-                                {ehPositivo ? '+' : ''}{resumoLucro.margemPct.toFixed(1)}% ({formatarMoeda(resumoLucro.lucroLiq)})
-                              </span>
-                            </button>
-                          );
-                        })()}
                       </td>
 
                       <td className="py-3 px-4 text-center">
@@ -1548,27 +1470,6 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     </tr>
                   );
                 })}
-
-                {/* LINHA DE RESUMO CONSOLIDADO DE LUCRO LÍQUIDO SE HOUVER ITENS CALCULADOS */}
-                {resumoLucroGeral && (
-                  <tr className="bg-emerald-50/90 dark:bg-emerald-950/50 border-t-2 border-emerald-300 dark:border-emerald-800 text-xs">
-                    <td colSpan={6} className="py-3 px-4 text-emerald-950 dark:text-emerald-200 font-bold">
-                      <div className="flex items-center gap-2">
-                        <span className="p-1 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
-                          <Percent className="w-3.5 h-3.5" />
-                        </span>
-                        <span>LUCRO LÍQUIDO TOTAL ESTIMADO ({resumoLucroGeral.totalItensCalculados} item(ns) com custo lançado):</span>
-                      </div>
-                    </td>
-                    <td className="py-3 px-4 text-right font-mono font-black text-sm text-emerald-800 dark:text-emerald-300 tabular-nums">
-                      {formatarMoeda(resumoLucroGeral.lucroTotal)}
-                      <span className="block text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
-                        Margem Média: +{resumoLucroGeral.margemMedia.toFixed(1)}%
-                      </span>
-                    </td>
-                    <td colSpan={2} className="py-3 px-4"></td>
-                  </tr>
-                )}
 
                 {/* LINHA DE DESTAQUE: TOTAL GERAL DOS ITENS MARCADOS */}
                 <tr className="bg-slate-200/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-700 font-bold">

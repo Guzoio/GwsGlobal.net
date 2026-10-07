@@ -82,7 +82,10 @@ export function ouvirItensNuvem(
           caminho_imagem: data.caminho_imagem || '',
           selecionado: data.selecionado !== false,
           observacoes: data.observacoes || '',
-          custo_fornecedor: data.custo_fornecedor !== undefined ? Number(data.custo_fornecedor) : undefined,
+          custo_fornecedor: data.custo_fornecedor !== undefined && data.custo_fornecedor > 0 ? Number(data.custo_fornecedor) : undefined,
+          valor_ganho: data.valor_ganho !== undefined && data.valor_ganho > 0 ? Number(data.valor_ganho) : undefined,
+          aliquota_imposto: data.aliquota_imposto !== undefined ? Number(data.aliquota_imposto) : undefined,
+          outros_custos: data.outros_custos !== undefined ? Number(data.outros_custos) : undefined,
         });
       });
       // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
@@ -121,6 +124,9 @@ export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<voi
         selecionado: item.selecionado !== false,
         observacoes: item.observacoes || '',
         custo_fornecedor: Number(item.custo_fornecedor) || 0,
+        valor_ganho: Number(item.valor_ganho) || 0,
+        aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
+        outros_custos: Number(item.outros_custos) || 0,
         updatedAt: new Date().toISOString(),
       });
     }
@@ -252,6 +258,9 @@ export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
       selecionado: item.selecionado !== false,
       observacoes: item.observacoes || '',
       custo_fornecedor: Number(item.custo_fornecedor) || 0,
+      valor_ganho: Number(item.valor_ganho) || 0,
+      aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
+      outros_custos: Number(item.outros_custos) || 0,
       updatedAt: new Date().toISOString(),
     });
   } catch (error) {
