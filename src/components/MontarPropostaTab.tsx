@@ -36,6 +36,7 @@ import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 import { redimensionarEComprimirImagem } from '../utils/storage';
+import { ModalLucroItem } from './ModalLucroItem';
 
 interface MontarPropostaTabProps {
   licitacoes: Licitacao[];
@@ -220,6 +221,61 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [editLanceMinimo, setEditLanceMinimo] = useState<string>('');
   const [editLanceLote, setEditLanceLote] = useState<string>('');
 
+  // Modal para análise de Lucro Líquido & Margem (%) de um item da proposta
+  const [itemParaCalculoLucro, setItemParaCalculoLucro] = useState<ItemLicitacao | null>(null);
+
+  const handleSalvarLucroItem = (
+    itemId: number,
+    dados: {
+      valor_ganho: number;
+      custo_fornecedor: number;
+      aliquota_imposto: number;
+      outros_custos?: number;
+    }
+  ) => {
+    const itemExistente = itens.find(i => i.id === itemId);
+    if (itemExistente && onAtualizarItem) {
+      onAtualizarItem({
+        ...itemExistente,
+        valor_ganho: dados.valor_ganho > 0 ? dados.valor_ganho : undefined,
+        custo_fornecedor: dados.custo_fornecedor > 0 ? dados.custo_fornecedor : undefined,
+        aliquota_imposto: dados.aliquota_imposto,
+        outros_custos: dados.outros_custos,
+      });
+      setNotificacao({
+        tipo: 'sucesso',
+        texto: `Análise de lucro do Item #${itemExistente.num_item} salva com sucesso!`,
+      });
+    }
+  };
+
+  // Cálculo individual de lucro líquido de um item
+  const calcularLucroItem = (it: ItemLicitacao) => {
+    if (it.custo_fornecedor === undefined || it.custo_fornecedor <= 0) return null;
+    const qtd = Math.max(1, it.quantidade || 1);
+    const vGanho =
+      it.valor_ganho !== undefined && it.valor_ganho > 0
+        ? it.valor_ganho
+        : it.lance_minimo !== undefined && it.lance_minimo > 0
+        ? it.lance_minimo
+        : it.valor_unitario;
+
+    const totalGanho = vGanho * qtd;
+    const totalCusto = (it.custo_fornecedor || 0) * qtd;
+    const aliq = it.aliquota_imposto !== undefined ? it.aliquota_imposto : 10;
+    const totalImposto = totalGanho * (aliq / 100);
+    const outros = it.outros_custos || 0;
+    const lucroLiq = totalGanho - totalCusto - totalImposto - outros;
+    const margemPct = totalGanho > 0 ? (lucroLiq / totalGanho) * 100 : 0;
+    return {
+      lucroLiq,
+      margemPct,
+      totalGanho,
+      totalCusto,
+      totalImposto,
+    };
+  };
+
   // Cancelar a edição do item e restaurar formulário para cadastro
   const handleCancelarEdicao = () => {
     setIdItemEditando(null);
@@ -279,6 +335,32 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const extensoGeral = useMemo(() => {
     return valorPorExtensoPtBr(totalGeral);
   }, [totalGeral]);
+
+  // Resumo consolidado de lucro para todos os itens da proposta que tiverem custo lançado
+  const resumoLucroGeral = useMemo(() => {
+    const itensComCalculo = itensAtuais.filter(
+      i => i.custo_fornecedor !== undefined && i.custo_fornecedor > 0
+    );
+    if (itensComCalculo.length === 0) return null;
+
+    let totalGanhoGeral = 0;
+    let totalLucroGeral = 0;
+
+    itensComCalculo.forEach(it => {
+      const res = calcularLucroItem(it);
+      if (res) {
+        totalGanhoGeral += res.totalGanho;
+        totalLucroGeral += res.lucroLiq;
+      }
+    });
+
+    const margemMedia = totalGanhoGeral > 0 ? (totalLucroGeral / totalGanhoGeral) * 100 : 0;
+    return {
+      totalItensCalculados: itensComCalculo.length,
+      lucroTotal: totalLucroGeral,
+      margemMedia,
+    };
+  }, [itensAtuais]);
 
   // Função centralizada para processar e comprimir qualquer imagem (upload ou colada via Ctrl+V)
   const processarArquivoImagem = async (file: File | Blob) => {
@@ -518,18 +600,18 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       {/* ==================================================================== */}
       {/* CARD 1: SELETOR DE LICITAÇÃO ATIVA & DATA DA PROPOSTA */}
       {/* ==================================================================== */}
-      <div className="bg-white border border-slate-200 rounded-xl p-5 shadow-2xs">
+      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs">
         <div className="flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           {/* Seletor de Licitação */}
           <div className="flex-1">
-            <label className="block text-xs font-bold text-slate-800 uppercase tracking-wider mb-1.5">
+            <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider mb-1.5">
               1. Selecione a Licitação para Montar a Proposta:
             </label>
             <div className="relative">
               <select
                 value={licitacaoSelecionadaId ?? ''}
                 onChange={e => onSelecionarLicitacao(Number(e.target.value))}
-                className="w-full bg-slate-50 border border-slate-300 rounded-lg px-3.5 py-2.5 text-xs font-semibold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white shadow-2xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
               >
                 {licitacoes.map(lic => {
                   const itensDesta = itens.filter(i => Number(i.licitacao_id) === Number(lic.id));
@@ -546,36 +628,36 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
           {/* Campo de Data Específica Desta Licitação para o PDF */}
           {licitacaoAtual && (
-            <div className="w-full lg:w-56 bg-slate-50 border border-slate-200 rounded-lg p-2.5 shrink-0">
-              <label className="text-[11px] font-bold text-slate-800 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
-                <Calendar className="w-3.5 h-3.5 text-[#0F2C59]" />
+            <div className="w-full lg:w-56 bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-2.5 shrink-0">
+              <label className="text-[11px] font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wider flex items-center gap-1.5 mb-1.5">
+                <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                 Data no Documento PDF:
               </label>
               <input
                 type="date"
                 value={converterParaFormatoInputDate(licitacaoAtual.data_proposta || licitacaoAtual.data_cadastro)}
                 onChange={e => onAtualizarDataProposta?.(licitacaoAtual.id, e.target.value)}
-                className="w-full bg-white border border-slate-300 rounded-md px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                className="w-full bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg px-2.5 py-1.5 font-mono text-xs font-semibold text-slate-900 dark:text-white shadow-2xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                 title="Data específica impressa na proposta desta licitação"
               />
             </div>
           )}
 
           {licitacaoAtual && (
-            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 border-t lg:border-t-0 lg:border-l border-slate-200 pt-3 lg:pt-0 lg:pl-4">
+            <div className="flex flex-wrap items-center gap-4 text-xs text-slate-600 dark:text-slate-300 border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 pt-3 lg:pt-0 lg:pl-4">
               <div>
-                <span className="font-semibold text-slate-900 block">Modalidade:</span>
+                <span className="font-semibold text-slate-900 dark:text-white block">Modalidade:</span>
                 <span>{licitacaoAtual.modalidade}</span>
               </div>
               <div>
-                <span className="font-semibold text-slate-900 block">Responsável:</span>
-                <span className="font-semibold text-[#0F2C59] flex items-center gap-1">
+                <span className="font-semibold text-slate-900 dark:text-white block">Responsável:</span>
+                <span className="font-semibold text-blue-600 dark:text-blue-400 flex items-center gap-1">
                   👤 {licitacaoAtual.responsavel || 'Gustavo'}
                 </span>
               </div>
               <div>
-                <span className="font-semibold text-slate-900 block">No PDF da Proposta:</span>
-                <span className="font-mono tabular-nums font-bold text-slate-900">
+                <span className="font-semibold text-slate-900 dark:text-white block">No PDF da Proposta:</span>
+                <span className="font-mono tabular-nums font-bold text-slate-900 dark:text-white">
                   {itensSelecionados.length} de {itensAtuais.length} itens
                 </span>
               </div>
@@ -586,7 +668,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                   type="button"
                   onClick={handleForcarSalvar}
                   disabled={salvandoManual}
-                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-lg shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75 whitespace-nowrap"
+                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75 whitespace-nowrap active:scale-98"
                   title="Garante que todos os itens e especificações da proposta estejam gravados na nuvem e no armazenamento local"
                 >
                   {salvandoManual ? (
@@ -602,7 +684,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                   )}
                 </button>
                 {ultimoSalvoTimestamp && (
-                  <span className="text-[10px] text-emerald-700 font-semibold flex items-center gap-1">
+                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
                     ✓ Salvo às {ultimoSalvoTimestamp}
                   </span>
                 )}
@@ -617,10 +699,10 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       {/* ==================================================================== */}
       <div
         ref={formularioItemRef}
-        className={`bg-white border rounded-xl p-5 shadow-2xs transition-all ${
+        className={`bg-white dark:bg-[#0A162B] border rounded-2xl p-6 shadow-xs transition-all ${
           idItemEditando
             ? 'border-amber-400 ring-2 ring-amber-400/20 shadow-md'
-            : 'border-slate-200'
+            : 'border-slate-200/80 dark:border-slate-800'
         }`}
       >
         <div className="border-b border-slate-100 pb-3 mb-4 flex flex-col sm:flex-row sm:items-center justify-between gap-3">
@@ -1124,13 +1206,13 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       {/* ==================================================================== */}
       {/* TABELA DE PRÉ-VISUALIZAÇÃO DA PROPOSTA EM TEMPO REAL COM QUADRINHOS */}
       {/* ==================================================================== */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
-        <div className="p-5 border-b border-slate-100 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
+      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+        <div className="p-5 border-b border-slate-100 dark:border-slate-800 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <div>
-            <h3 className="text-sm font-bold text-slate-900 flex items-center gap-2">
+            <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               Tabela de Pré-visualização da Proposta Comercial
             </h3>
-            <p className="text-xs text-slate-500 mt-0.5">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
               Marque ou desmarque os itens para definir exatamente o que sairá no PDF após o pregão.
             </p>
           </div>
@@ -1139,24 +1221,24 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             {onIrParaTimbrado && (
               <button
                 onClick={onIrParaTimbrado}
-                className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
                 title="Configurar Imagem do Cabeçalho e Rodapé"
               >
-                <Sliders className="w-3.5 h-3.5 text-slate-600" />
+                <Sliders className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
                 Papel Timbrado
               </button>
             )}
             <button
               onClick={onVisualizarPdf}
-              className="px-3 py-1.5 text-xs font-medium text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors flex items-center gap-1.5 cursor-pointer"
+              className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
             >
-              <Eye className="w-3.5 h-3.5 text-slate-600" />
+              <Eye className="w-3.5 h-3.5 text-slate-600 dark:text-slate-400" />
               Ver Modelo PDF
             </button>
             <button
               onClick={onGerarPdf}
               disabled={nenhumEstaSelecionado}
-              className="px-4 py-1.5 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50 uppercase tracking-wider"
+              className="px-4 py-2 text-xs font-bold text-slate-950 bg-amber-400 hover:bg-amber-300 rounded-xl shadow-xs transition-all flex items-center gap-1.5 cursor-pointer disabled:opacity-50 uppercase tracking-wider active:scale-98"
               title={
                 nenhumEstaSelecionado
                   ? 'Marque ao menos um item no quadrinho para gerar o PDF'
@@ -1171,9 +1253,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
         {/* Barra de Aviso quando houver itens desmarcados (após o pregão) */}
         {itensAtuais.length > 0 && itensSelecionados.length < itensAtuais.length && (
-          <div className="px-5 py-2.5 bg-amber-50 border-b border-amber-200 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900 animate-in fade-in duration-150">
+          <div className="px-5 py-2.5 bg-amber-50 dark:bg-amber-950/40 border-b border-amber-200 dark:border-amber-800 flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-xs text-amber-900 dark:text-amber-200 animate-in fade-in duration-150">
             <div className="flex items-center gap-2">
-              <Filter className="w-4 h-4 text-amber-700 shrink-0" />
+              <Filter className="w-4 h-4 text-amber-700 dark:text-amber-400 shrink-0" />
               <span>
                 <strong>{itensAtuais.length - itensSelecionados.length} item(ns) desmarcado(s):</strong> O PDF e o catálogo serão gerados apenas com os <strong>{itensSelecionados.length} itens marcados</strong>.
               </span>
@@ -1181,7 +1263,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             <button
               type="button"
               onClick={() => onAlternarTodosItens?.(licitacaoAtual.id, true)}
-              className="text-xs font-bold text-[#0F2C59] hover:underline cursor-pointer self-start sm:self-auto shrink-0"
+              className="text-xs font-bold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer self-start sm:self-auto shrink-0"
             >
               ✓ Marcar todos novamente
             </button>
@@ -1197,7 +1279,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-[#0F2C59] text-white text-[11px] font-semibold uppercase tracking-wider">
+                <tr className="bg-[#0A1D37] text-white text-[11px] font-semibold uppercase tracking-wider">
                   {/* QUADRINHO GERAL: SELECIONAR TODOS */}
                   <th className="py-3 px-3 text-center w-12" title="Marcar / Desmarcar todos os itens para o PDF">
                     <div className="flex flex-col items-center justify-center gap-0.5">
@@ -1352,7 +1434,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                         )}
                       </td>
 
-                      {/* Valor Total com Lance Lote pequeno embaixo */}
+                      {/* Valor Total com Lance Lote pequeno embaixo e Badge de Lucro se houver */}
                       <td className="py-3 px-4 text-right font-mono font-semibold tabular-nums text-slate-900 dark:text-white">
                         <div>{formatarMoeda(it.valor_total)}</div>
                         {it.lance_lote !== undefined && it.lance_lote > 0 && (
@@ -1363,6 +1445,31 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                             Lote: {formatarMoeda(it.lance_lote)}
                           </div>
                         )}
+                        {/* Exibição do Lucro Líquido se já foi calculado */}
+                        {(() => {
+                          const resumoLucro = calcularLucroItem(it);
+                          if (!resumoLucro) return null;
+                          const ehPositivo = resumoLucro.lucroLiq >= 0;
+                          return (
+                            <button
+                              type="button"
+                              onClick={() => setItemParaCalculoLucro(it)}
+                              className="mt-1 block ml-auto group cursor-pointer text-right"
+                              title={`Lucro Líquido: ${formatarMoeda(resumoLucro.lucroLiq)} (${resumoLucro.margemPct.toFixed(1)}%). Clique para editar.`}
+                            >
+                              <span
+                                className={`inline-flex items-center gap-0.5 text-[10px] font-mono font-bold px-1.5 py-0.5 rounded shadow-2xs group-hover:scale-105 transition-transform ${
+                                  ehPositivo
+                                    ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
+                                    : 'bg-rose-50 dark:bg-rose-950/60 text-rose-800 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60'
+                                }`}
+                              >
+                                <Percent className="w-2.5 h-2.5" />
+                                {ehPositivo ? '+' : ''}{resumoLucro.margemPct.toFixed(1)}% ({formatarMoeda(resumoLucro.lucroLiq)})
+                              </span>
+                            </button>
+                          );
+                        })()}
                       </td>
 
                       <td className="py-3 px-4 text-center">
@@ -1377,6 +1484,24 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
                       <td className="py-3 px-4 text-right whitespace-nowrap">
                         <div className="flex items-center justify-end gap-1">
+                          {/* BOTÃO DE PORCENTAGEM (%) PARA CÁLCULO DE LUCRO LÍQUIDO */}
+                          <button
+                            type="button"
+                            onClick={() => setItemParaCalculoLucro(it)}
+                            className={`p-1.5 rounded transition-all cursor-pointer ${
+                              it.custo_fornecedor && it.custo_fornecedor > 0
+                                ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-100 dark:bg-emerald-950/60 hover:bg-emerald-200 dark:hover:bg-emerald-900 ring-1 ring-emerald-300 dark:ring-emerald-700 font-bold'
+                                : 'text-slate-500 hover:text-emerald-700 dark:hover:text-emerald-400 hover:bg-emerald-50 dark:hover:bg-emerald-950/40'
+                            }`}
+                            title={
+                              it.custo_fornecedor && it.custo_fornecedor > 0
+                                ? `Lucro Configurado: Ver/Editar Análise de Lucro Líquido do Item #${it.num_item}`
+                                : `Calcular Lucro Líquido & Margem do Item #${it.num_item} (%)`
+                            }
+                          >
+                            <Percent className="w-3.5 h-3.5" />
+                          </button>
+
                           {(() => {
                             const linksDoItem = extrairListaLinks(it.observacoes);
                             if (linksDoItem.length === 0) return null;
@@ -1423,6 +1548,27 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     </tr>
                   );
                 })}
+
+                {/* LINHA DE RESUMO CONSOLIDADO DE LUCRO LÍQUIDO SE HOUVER ITENS CALCULADOS */}
+                {resumoLucroGeral && (
+                  <tr className="bg-emerald-50/90 dark:bg-emerald-950/50 border-t-2 border-emerald-300 dark:border-emerald-800 text-xs">
+                    <td colSpan={6} className="py-3 px-4 text-emerald-950 dark:text-emerald-200 font-bold">
+                      <div className="flex items-center gap-2">
+                        <span className="p-1 rounded bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-200">
+                          <Percent className="w-3.5 h-3.5" />
+                        </span>
+                        <span>LUCRO LÍQUIDO TOTAL ESTIMADO ({resumoLucroGeral.totalItensCalculados} item(ns) com custo lançado):</span>
+                      </div>
+                    </td>
+                    <td className="py-3 px-4 text-right font-mono font-black text-sm text-emerald-800 dark:text-emerald-300 tabular-nums">
+                      {formatarMoeda(resumoLucroGeral.lucroTotal)}
+                      <span className="block text-[10px] text-emerald-700 dark:text-emerald-400 font-bold">
+                        Margem Média: +{resumoLucroGeral.margemMedia.toFixed(1)}%
+                      </span>
+                    </td>
+                    <td colSpan={2} className="py-3 px-4"></td>
+                  </tr>
+                )}
 
                 {/* LINHA DE DESTAQUE: TOTAL GERAL DOS ITENS MARCADOS */}
                 <tr className="bg-slate-200/80 dark:bg-slate-800/80 border-t-2 border-slate-300 dark:border-slate-700 font-bold">
@@ -1769,6 +1915,13 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           </div>
         );
       })()}
+      {/* Modal de Análise de Lucro Líquido & Margem (%) */}
+      <ModalLucroItem
+        item={itemParaCalculoLucro}
+        aberto={Boolean(itemParaCalculoLucro)}
+        onFechar={() => setItemParaCalculoLucro(null)}
+        onSalvarLucro={handleSalvarLucroItem}
+      />
     </div>
   );
 };

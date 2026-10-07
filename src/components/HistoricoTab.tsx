@@ -26,6 +26,14 @@ import {
   FileCheck,
   ScrollText,
   Calculator,
+  TrendingUp,
+  Percent,
+  Receipt,
+  DollarSign,
+  Landmark,
+  Coins,
+  ChevronRight,
+  MoreVertical,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
 import { formatarMoeda } from '../utils/numberToWordsPtBr';
@@ -191,6 +199,62 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
     );
   }, [itensVencidosDoFiltro]);
 
+  // Quadro Técnico: Consolidação de Lucro Líquido Real, Impostos e Custo com Fornecedores
+  const metricasTecnicasLucro = useMemo(() => {
+    const itensComLucro = itensDoFiltro.filter(
+      i => i.custo_fornecedor !== undefined && i.custo_fornecedor > 0
+    );
+
+    let totalFaturamentoGanho = 0;
+    let totalCustoFornecedores = 0;
+    let totalImpostos = 0;
+    let totalOutrosCustos = 0;
+    let totalLucroLiquido = 0;
+
+    itensComLucro.forEach(it => {
+      const qtd = Math.max(1, it.quantidade || 1);
+      const valorGanhoUnit =
+        it.valor_ganho !== undefined && it.valor_ganho > 0
+          ? it.valor_ganho
+          : it.lance_minimo !== undefined && it.lance_minimo > 0
+          ? it.lance_minimo
+          : it.valor_unitario;
+
+      const faturamentoItem = valorGanhoUnit * qtd;
+      const custoFornecItem = (it.custo_fornecedor || 0) * qtd;
+      const aliquota = it.aliquota_imposto !== undefined ? it.aliquota_imposto : 10;
+      const impostoItem = faturamentoItem * (aliquota / 100);
+      const outrosItem = it.outros_custos || 0;
+      const lucroItem = faturamentoItem - custoFornecItem - impostoItem - outrosItem;
+
+      totalFaturamentoGanho += faturamentoItem;
+      totalCustoFornecedores += custoFornecItem;
+      totalImpostos += impostoItem;
+      totalOutrosCustos += outrosItem;
+      totalLucroLiquido += lucroItem;
+    });
+
+    const margemLiquidaMedia =
+      totalFaturamentoGanho > 0 ? (totalLucroLiquido / totalFaturamentoGanho) * 100 : 0;
+    const retornoSobreCusto =
+      totalCustoFornecedores > 0 ? (totalLucroLiquido / totalCustoFornecedores) * 100 : 0;
+    const aliquotaMediaPonderada =
+      totalFaturamentoGanho > 0 ? (totalImpostos / totalFaturamentoGanho) * 100 : 10;
+
+    return {
+      quantidadeItensAnalisados: itensComLucro.length,
+      totalFaturamentoGanho,
+      totalCustoFornecedores,
+      totalImpostos,
+      totalOutrosCustos,
+      totalLucroLiquido,
+      margemLiquidaMedia,
+      retornoSobreCusto,
+      aliquotaMediaPonderada,
+      ehLucroPositivo: totalLucroLiquido >= 0,
+    };
+  }, [itensDoFiltro]);
+
   // Handlers do Modal de Gerenciamento
   const handleAdicionarNoModal = (e: React.FormEvent) => {
     e.preventDefault();
@@ -214,115 +278,216 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   };
 
   return (
-    <div className="space-y-4">
-      {/* Cards de Métricas: Total de Licitações, Valores em Disputa e Valores Vencidos (Quadrinho Marcado) */}
+    <div className="space-y-5">
+      {/* Cards de Métricas: Total de Licitações, Valores em Disputa e Valores Vencidos */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: Total de Licitações */}
-        <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold text-slate-500 uppercase tracking-wider flex items-center gap-1.5">
-              <Layers className="w-3.5 h-3.5 text-slate-400" /> Total de Licitações
+        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0 shadow-2xs">
+              <Landmark className="w-6 h-6" />
             </div>
-            <div className="flex items-center gap-1 flex-wrap justify-end">
-              {filtroData && (
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {normalizarData(filtroData)}
-                </span>
-              )}
-              {filtroResponsavel !== 'Todos' && (
-                <span className="text-[10px] font-semibold text-[#0F2C59] bg-[#0F2C59]/10 px-2 py-0.5 rounded-full">
-                  👤 {filtroResponsavel}
-                </span>
-              )}
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                Total de Licitações
+              </div>
+              <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white mt-0.5 tabular-nums">
+                {totalLicitacoesFiltradas}
+              </div>
+              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                {filtroData
+                  ? `Cadastradas em ${normalizarData(filtroData)}`
+                  : filtroResponsavel === 'Todos'
+                  ? `${licitacoes.length} no total da empresa`
+                  : `Processos de ${filtroResponsavel}`}
+              </div>
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-slate-900 tabular-nums">
-            {totalLicitacoesFiltradas}
-          </div>
-          <div className="mt-1 text-xs text-slate-500">
-            {filtroData
-              ? `Cadastradas em ${normalizarData(filtroData)}`
-              : filtroResponsavel === 'Todos'
-              ? `${licitacoes.length} no total da empresa`
-              : `Processos de ${filtroResponsavel}`}
-          </div>
+          <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
         </div>
 
-        {/* Card 2: Valores em Disputa (Itens Cotados) */}
-        <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold text-[#0F2C59] dark:text-blue-400 uppercase tracking-wider flex items-center gap-1.5">
-              <Target className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" /> Valores em Disputa
+        {/* Card 2: Valores em Disputa */}
+        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 shrink-0 shadow-2xs">
+              <Coins className="w-6 h-6" />
             </div>
-            <div className="flex items-center gap-1 flex-wrap justify-end">
-              {filtroData && (
-                <span className="text-[10px] font-semibold text-blue-700 dark:text-blue-300 bg-blue-100 dark:bg-blue-950/60 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {normalizarData(filtroData)}
-                </span>
-              )}
-              {filtroResponsavel !== 'Todos' && (
-                <span className="text-[10px] font-semibold text-[#0F2C59] dark:text-blue-300 bg-[#0F2C59]/10 dark:bg-blue-500/20 px-2 py-0.5 rounded-full">
-                  👤 {filtroResponsavel}
-                </span>
-              )}
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
+                Valores em Disputa
+              </div>
+              <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white mt-0.5 tabular-nums">
+                {formatarMoeda(valorTotalDisputa)}
+              </div>
+              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                {itensDoFiltro.length} itens cotados no total
+              </div>
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-[#0F2C59] dark:text-blue-300 tabular-nums">
-            {formatarMoeda(valorTotalDisputa)}
-          </div>
-          <div className="mt-1 text-xs text-slate-500 dark:text-slate-400">
-            {itensDoFiltro.length} {itensDoFiltro.length === 1 ? 'item cotado' : 'itens cotados'}{' '}
-            {filtroData ? `nesta data` : filtroResponsavel === 'Todos' ? 'no total' : `por ${filtroResponsavel}`}
-          </div>
+          <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
         </div>
 
-        {/* Card 3: Valores Vencidos (Itens Ganhos no Quadrinho) */}
-        <div className="bg-white border border-emerald-200/90 bg-emerald-50/20 rounded-xl p-4 shadow-2xs hover:shadow-xs transition-shadow">
-          <div className="flex items-center justify-between">
-            <div className="text-xs font-semibold text-emerald-800 uppercase tracking-wider flex items-center gap-1.5">
-              <CheckSquare className="w-3.5 h-3.5 text-emerald-600" /> Valores Vencidos (Ganhos)
+        {/* Card 3: Valores Vencidos (Ganhos) */}
+        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+          <div className="flex items-center gap-3.5 min-w-0">
+            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 shrink-0 shadow-2xs">
+              <TrendingUp className="w-6 h-6" />
             </div>
-            <div className="flex items-center gap-1 flex-wrap justify-end">
-              {filtroData && (
-                <span className="text-[10px] font-semibold text-blue-700 bg-blue-100 px-2 py-0.5 rounded-full flex items-center gap-1">
-                  <Calendar className="w-3 h-3" /> {normalizarData(filtroData)}
-                </span>
-              )}
-              {filtroResponsavel !== 'Todos' && (
-                <span className="text-[10px] font-semibold text-emerald-800 bg-emerald-100 px-2 py-0.5 rounded-full">
-                  👤 {filtroResponsavel}
-                </span>
-              )}
+            <div className="min-w-0">
+              <div className="text-[11px] font-semibold text-emerald-700 dark:text-emerald-400 uppercase tracking-wider truncate">
+                Valores Vencidos (Ganhos)
+              </div>
+              <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
+                {formatarMoeda(valorTotalVencidos)}
+              </div>
+              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+                {itensVencidosDoFiltro.length} de {itensDoFiltro.length} itens ganhos
+              </div>
             </div>
           </div>
-          <div className="mt-2 text-2xl font-bold font-mono text-emerald-700 tabular-nums">
-            {formatarMoeda(valorTotalVencidos)}
-          </div>
-          <div className="mt-1 text-xs text-slate-500 flex items-center justify-between">
-            <span>
-              {itensVencidosDoFiltro.length} de {itensDoFiltro.length} itens ganhos
-            </span>
+          <div className="flex items-center gap-2 shrink-0">
             {valorTotalDisputa > 0 && (
-              <span className="font-semibold text-emerald-700 font-mono text-[11px]">
-                {((valorTotalVencidos / valorTotalDisputa) * 100).toFixed(0)}% do valor
+              <span className="hidden sm:inline-block bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+                {((valorTotalVencidos / valorTotalDisputa) * 100).toFixed(0)}%
               </span>
             )}
+            <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600" />
           </div>
         </div>
       </div>
 
-      {/* Barra de Filtros e Busca (Organizada e Limpa) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-3.5 shadow-2xs flex flex-col xl:flex-row gap-3 items-stretch xl:items-center justify-between">
-        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-2.5 flex-1">
+      {/* ==================================================================== */}
+      {/* QUADRO TÉCNICO: ANÁLISE DE LUCRO LÍQUIDO & IMPOSTOS                 */}
+      {/* ==================================================================== */}
+      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors">
+        <div className="space-y-4">
+          {/* Cabeçalho do Quadro Técnico limpo e direto */}
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+            <div className="flex items-center gap-2.5">
+              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0">
+                <Percent className="w-4 h-4" />
+              </div>
+              <h3 className="text-xs sm:text-sm font-bold tracking-wider text-slate-900 dark:text-white uppercase">
+                Quadro Técnico: Lucro Líquido & Impostos
+              </h3>
+            </div>
+
+            <div className="shrink-0">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 font-mono font-medium">
+                {metricasTecnicasLucro.quantidadeItensAnalisados} itens com custo
+              </span>
+            </div>
+          </div>
+
+          {/* Cards de Métricas Técnicas */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
+            {/* 1. Lucro Líquido Total */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+              <div className="p-2 rounded-lg bg-emerald-500 text-white shrink-0 shadow-2xs mt-0.5">
+                <TrendingUp className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Lucro Líquido Total
+                  </span>
+                  <span className="text-[9px] font-semibold text-emerald-700 dark:text-emerald-300 shrink-0">
+                    Líquido
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                  {formatarMoeda(metricasTecnicasLucro.totalLucroLiquido)}
+                </div>
+                <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Margem Média: +{metricasTecnicasLucro.margemLiquidaMedia.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            {/* 2. Total de Impostos Deduzidos */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+              <div className="p-2 rounded-lg bg-amber-500 text-white shrink-0 shadow-2xs mt-0.5">
+                <Receipt className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Impostos Totais
+                  </span>
+                  <span className="text-[9px] font-semibold text-amber-700 dark:text-amber-300 shrink-0">
+                    Tributos
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400">
+                  {formatarMoeda(metricasTecnicasLucro.totalImpostos)}
+                </div>
+                <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Alíquota Efetiva: {metricasTecnicasLucro.aliquotaMediaPonderada.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            {/* 3. Custo com Fornecedores */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+              <div className="p-2 rounded-lg bg-blue-600 text-white shrink-0 shadow-2xs mt-0.5">
+                <Building2 className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Custo Fornecedores
+                  </span>
+                  <span className="text-[9px] font-semibold text-blue-700 dark:text-blue-300 shrink-0">
+                    Compras
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-blue-600 dark:text-blue-400">
+                  {formatarMoeda(metricasTecnicasLucro.totalCustoFornecedores)}
+                </div>
+                <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Retorno s/ Custo (ROI): +{metricasTecnicasLucro.retornoSobreCusto.toFixed(1)}%
+                </div>
+              </div>
+            </div>
+
+            {/* 4. Faturamento Ganho Analisado */}
+            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
+              <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0 shadow-2xs mt-0.5">
+                <CheckSquare className="w-4 h-4" />
+              </div>
+              <div className="min-w-0 flex-1">
+                <div className="flex items-center justify-between gap-1 mb-0.5">
+                  <span className="font-semibold uppercase tracking-wider text-[10px] text-slate-500 dark:text-slate-400 truncate">
+                    Faturamento Ganho
+                  </span>
+                  <span className="text-[9px] font-semibold text-indigo-700 dark:text-indigo-300 shrink-0">
+                    Arrematados
+                  </span>
+                </div>
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-indigo-600 dark:text-indigo-400">
+                  {formatarMoeda(metricasTecnicasLucro.totalFaturamentoGanho)}
+                </div>
+                <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
+                  Outros Custos / Frete: {formatarMoeda(metricasTecnicasLucro.totalOutrosCustos)}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Barra de Filtros e Busca (Organizada e Limpa SaaS) */}
+      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row gap-3.5 items-stretch xl:items-center justify-between">
+        <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 flex-1">
           {/* Caixa de Busca por Órgão ou Processo */}
           <div className="relative w-full sm:w-64 md:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
             <input
               type="text"
               placeholder="Buscar por Órgão ou Processo..."
               value={busca}
               onChange={e => setBusca(e.target.value)}
-              className="w-full pl-9 pr-8 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+              className="w-full pl-9.5 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
             />
             {busca && (
               <button
@@ -339,12 +504,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           {/* Filtro por Data de Cadastro */}
           <div className="relative w-full sm:w-auto flex items-center gap-1.5">
             <div className="relative w-full sm:w-44">
-              <Calendar className="w-4 h-4 text-[#0F2C59] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+              <Calendar className="w-4 h-4 text-blue-600 dark:text-blue-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
               <input
                 type="date"
                 value={filtroData}
                 onChange={e => setFiltroData(e.target.value)}
-                className="w-full pl-9 pr-2.5 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                className="w-full pl-9 pr-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
                 title="Filtrar por data de cadastro da licitação"
               />
             </div>
@@ -352,7 +517,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setFiltroData('')}
-                className="p-2 text-slate-500 hover:text-red-600 bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors cursor-pointer shrink-0"
+                className="p-2 text-slate-500 hover:text-red-600 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
                 title="Limpar filtro de data (mostrar todas as datas)"
               >
                 <X className="w-3.5 h-3.5" />
@@ -362,7 +527,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
 
           {/* Seletor de Quem Fez */}
           <div className="relative w-full sm:w-52">
-            <User className="w-4 h-4 text-[#0F2C59] absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            <User className="w-4 h-4 text-blue-600 dark:text-blue-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             <select
               value={filtroResponsavel}
               onChange={e => {
@@ -373,7 +538,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   setFiltroResponsavel(val);
                 }
               }}
-              className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg text-slate-800 focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer appearance-none"
+              className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer appearance-none"
               title="Filtrar por quem fez a licitação"
             >
               <option value="Todos">👤 Quem fez: Todos</option>
@@ -388,14 +553,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           </div>
 
           {/* Filtro Rápido por Status: Todas / Acompanhar / Homologadas */}
-          <div className="flex items-center gap-1 bg-slate-100 p-1 rounded-lg border border-slate-200 text-xs w-full sm:w-auto">
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('todos')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
                 filtroAcompanhamento === 'todos'
-                  ? 'bg-white text-slate-900 shadow-xs'
-                  : 'text-slate-600 hover:text-slate-900'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="Mostrar todas as licitações"
             >
@@ -404,10 +569,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('acompanhar')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 filtroAcompanhamento === 'acompanhar'
-                  ? 'bg-amber-100 text-amber-900 border border-amber-300 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-amber-800'
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300'
               }`}
               title="Filtrar licitações marcadas para acompanhamento"
             >
@@ -417,10 +582,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('homologadas')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all flex items-center gap-1 cursor-pointer ${
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
                 filtroAcompanhamento === 'homologadas'
-                  ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 shadow-xs font-bold'
-                  : 'text-slate-600 hover:text-emerald-800'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-xs font-bold'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300'
               }`}
               title="Filtrar licitações concluídas ou homologadas"
             >
@@ -434,7 +599,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         <div className="flex items-center shrink-0">
           <button
             onClick={onNovaLicitacao}
-            className="w-full sm:w-auto px-4 py-2 bg-[#0F2C59] hover:bg-[#163c78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer whitespace-nowrap"
+            className="w-full sm:w-auto px-4 py-2 bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:scale-98"
           >
             <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
             Nova Licitação
@@ -443,7 +608,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       </div>
 
       {/* Tabela de Licitações */}
-      <div className="bg-white border border-slate-200 rounded-xl shadow-2xs overflow-hidden">
+      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
         {licitacoesFiltradas.length === 0 ? (
           <div className="p-12 text-center">
             <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
@@ -599,10 +764,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                           <button
                             onClick={() => onSelecionarLicitacao(lic.id)}
                             className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0F2C59] dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-200 dark:border-blue-400/40"
-                            title="Montar ou Editar Proposta"
+                            title="Editar Licitação / Montar Proposta"
                           >
                             <FileEdit className="w-3.5 h-3.5 text-blue-700 dark:text-amber-300" />
-                            <span>Montar Proposta</span>
+                            <span>Editar</span>
                           </button>
                           <button
                             onClick={() => setLicitacaoParaExcluir(lic)}

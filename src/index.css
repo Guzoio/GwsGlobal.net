@@ -83,18 +83,21 @@ html.dark .divide-slate-100 > :not([hidden]) ~ :not([hidden]) {
 
 /* 
  * ELEVAÇÃO DE CORES ESCURAS NO MODO ESCURO (Legibilidade Máxima)
- * Garante que botões e textos executivos (#0F2C59) fiquem em tons de azul claros e brilhantes
+ * Garante que botões e textos executivos navy (#0F2C59, #0A1D37) fiquem em tons de azul claros e brilhantes
  */
-html.dark .text-\[\#0F2C59\]:not(.manter-branco *) {
+html.dark .text-\[\#0F2C59\]:not(.manter-branco *),
+html.dark .text-\[\#0A1D37\]:not(.manter-branco *) {
   color: #93c5fd !important; /* Azul claro e vibrante */
 }
 
-html.dark .bg-\[\#0F2C59\]:not(.manter-branco *) {
+html.dark .bg-\[\#0F2C59\]:not(.manter-branco *),
+html.dark .bg-\[\#0A1D37\]:not(.manter-branco *) {
   background-color: #2563eb !important; /* Azul royal vivo e nítido */
   color: #ffffff !important;
 }
 
-html.dark .hover\:bg-\[\#163c78\]:hover:not(.manter-branco *) {
+html.dark .hover\:bg-\[\#163c78\]:hover:not(.manter-branco *),
+html.dark .hover\:bg-\[\#122A4E\]:hover:not(.manter-branco *) {
   background-color: #1d4ed8 !important; /* Azul intenso no hover */
 }
 

@@ -5,6 +5,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 import { HistoricoTab } from './components/HistoricoTab';
 import { CadastrarLicitacaoTab } from './components/CadastrarLicitacaoTab';
 import { MontarPropostaTab } from './components/MontarPropostaTab';
@@ -20,6 +21,7 @@ import {
   salvarLicitacoes,
   obterItens,
   salvarItens,
+  restaurarImagensIndexedDB,
   obterPapelTimbradoConfig,
   salvarPapelTimbradoConfig,
   obterResponsaveis,
@@ -74,6 +76,7 @@ export default function App() {
     obterPapelTimbradoConfig()
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
+  const [sidebarAberta, setSidebarAberta] = useState<boolean>(false);
   const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState<boolean>(false);
   const [licitacaoParaDeclaracao, setLicitacaoParaDeclaracao] = useState<Licitacao | null>(null);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
@@ -110,6 +113,13 @@ export default function App() {
     if (lics.length > 0) {
       setLicitacaoSelecionadaId(lics[0].id);
     }
+
+    // Restaura fotos com alta fidelidade que possam ter sido omitidas pelo limite de 5MB do navegador
+    restaurarImagensIndexedDB(its).then((itsRestaurados) => {
+      if (itsRestaurados && itsRestaurados.length > 0) {
+        setItens(itsRestaurados);
+      }
+    });
   }, []);
 
   // Sincronização em tempo real totalmente automática com Servidor Central e Firebase
@@ -668,17 +678,11 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Barra de navegação do topo */}
+      {/* Barra de navegação do topo (Logo, Nuvem, Tema, Calcular e Sair) */}
       <Header
-        abaAtiva={abaAtiva}
-        setAbaAtiva={setAbaAtiva}
+        sidebarAberta={sidebarAberta}
+        onToggleSidebar={() => setSidebarAberta(prev => !prev)}
         onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
-        onAbrirSeguranca={() => setSegurancaModalAberto(true)}
-        onAbrirDeclaracao={() => {
-          const lic = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0] || null;
-          setLicitacaoParaDeclaracao(lic);
-          setModalDeclaracaoAberto(true);
-        }}
         onLogout={handleLogout}
         statusNuvem={statusNuvem}
         tema={tema}
@@ -729,8 +733,35 @@ export default function App() {
         </div>
       )}
 
-      {/* Conteúdo Principal mantido com largura padrão consistente */}
-      <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+      {/* Estrutura CRM: Faixa Lateral Esquerda + Conteúdo Central */}
+      <div className="flex-1 flex w-full">
+        {/* Faixa Lateral CRM com os botões de navegação, documentos e configurações */}
+        <Sidebar
+          abaAtiva={abaAtiva}
+          setAbaAtiva={(aba) => {
+            setAbaAtiva(aba);
+            setSidebarAberta(false);
+          }}
+          totalLicitacoes={licitacoes.length}
+          onAbrirDeclaracao={() => {
+            const lic = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0] || null;
+            setLicitacaoParaDeclaracao(lic);
+            setModalDeclaracaoAberto(true);
+            setSidebarAberta(false);
+          }}
+          onAbrirSeguranca={() => {
+            setSegurancaModalAberto(true);
+            setSidebarAberta(false);
+          }}
+          abertaMobile={sidebarAberta}
+          onFecharMobile={() => setSidebarAberta(false)}
+          statusNuvem={statusNuvem}
+        />
+
+        {/* Área Central / Conteúdo Principal e Rodapé */}
+        <div className="flex-1 min-w-0 flex flex-col">
+          {/* Conteúdo Principal mantido com largura padrão consistente */}
+          <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
         {abaAtiva === 'historico' && (
           <HistoricoTab
             licitacoes={licitacoes}
@@ -815,7 +846,7 @@ export default function App() {
       </main>
 
       {/* Rodapé com mensagem inspiradora e informações do sistema */}
-      <footer className="bg-white dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
+      <footer className="bg-white dark:bg-[#0A162B] border-t border-slate-200/80 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
         <div className="max-w-[1600px] mx-auto px-4 space-y-3">
           {/* Mensagem Bíblica de Provérbios 16:3 */}
           <div className="flex flex-col items-center justify-center gap-1">
@@ -829,7 +860,7 @@ export default function App() {
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
             <span>
-              Gestão de Licitações & Gerador de Propostas Comerciais em PDF com Catálogo de Produtos
+              GWS GLOBAL.net • Gestão de Licitações & Gerador de Propostas Comerciais
             </span>
             <span>
               Exportação em PDF • Papel Timbrado Dinâmico • Sistema Operacional Seguro
@@ -837,6 +868,8 @@ export default function App() {
           </div>
         </div>
       </footer>
+        </div>
+      </div>
     </div>
   );
 }

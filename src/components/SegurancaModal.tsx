@@ -103,7 +103,7 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
     <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
       <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
         {/* Cabeçalho do Modal */}
-        <div className="px-6 py-4 bg-[#0F2C59] text-white flex items-center justify-between">
+        <div className="px-6 py-4 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D]">
           <div className="flex items-center gap-2.5">
             <div className="p-2 rounded-lg bg-white/10 text-amber-400">
               <Shield className="w-5 h-5" />

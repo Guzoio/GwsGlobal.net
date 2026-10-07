@@ -255,7 +255,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
         onClick={e => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
-        <div className="bg-gradient-to-r from-[#0F2C59] to-[#163c78] px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0">
+        <div className="bg-[#0A1D37] border-b border-[#152B4D] px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-300 shadow-inner">
               <FileText className="w-5 h-5" />

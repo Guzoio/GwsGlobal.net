@@ -37,6 +37,9 @@ export interface ItemLicitacao {
   selecionado?: boolean; // Se marcado, vai para o PDF da proposta comercial e catálogo (default: true)
   observacoes?: string; // Diretório de links reservas (apenas uso interno, não sai no PDF)
   custo_fornecedor?: number; // Preço/custo do fornecedor para análise de lucro
+  valor_ganho?: number; // Valor unitário final por quanto ganhou a licitação na disputa
+  aliquota_imposto?: number; // Alíquota percentual de imposto (ex: 10% editável)
+  outros_custos?: number; // Custos adicionais de frete ou taxas operacionais
 }
 
 export interface EmpresaDados {
