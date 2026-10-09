@@ -1,4 +1,4 @@
-import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from '../types';
+import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig, ContatoPrefeitura, Cobranca } from '../types';
 import { salvarLicitacoes, salvarItens, salvarPapelTimbradoConfig, salvarResponsaveis, salvarAcessoConfig } from './storage';
 
 export interface SyncState {
@@ -7,15 +7,19 @@ export interface SyncState {
   timbrado: PapelTimbradoConfig;
   responsaveis: string[];
   seguranca?: AcessoConfig;
+  contatos?: ContatoPrefeitura[];
+  cobrancas?: Cobranca[];
   updatedAt?: string;
 }
 
 type SyncCallback = (data: {
-  tipo: 'full' | 'licitacoes' | 'itens' | 'item' | 'licitacao' | 'timbrado' | 'responsaveis';
+  tipo: 'full' | 'licitacoes' | 'itens' | 'item' | 'licitacao' | 'timbrado' | 'responsaveis' | 'contatos' | 'cobrancas';
   licitacoes?: Licitacao[];
   itens?: ItemLicitacao[];
   timbrado?: PapelTimbradoConfig;
   responsaveis?: string[];
+  contatos?: ContatoPrefeitura[];
+  cobrancas?: Cobranca[];
 }) => void;
 
 class ServerSyncManager {
@@ -243,3 +247,99 @@ export async function salvarConfigServidor(tipo: 'timbrado' | 'responsaveis' | '
     return false;
   }
 }
+
+/**
+ * Obtém a lista de contatos de prefeituras gravada no servidor
+ */
+export async function obterContatosServidor(): Promise<ContatoPrefeitura[]> {
+  try {
+    const res = await fetch('/api/contatos');
+    if (!res.ok) throw new Error(`Status ${res.status}`);
+    const data = await res.json();
+    return Array.isArray(data.contatos) ? data.contatos : [];
+  } catch (err) {
+    console.warn('[Sync] Erro ao obter contatos do servidor:', err);
+    return [];
+  }
+}
+
+/**
+ * Salva ou atualiza um contato de prefeitura no servidor
+ */
+export async function salvarContatoServidor(contato: ContatoPrefeitura): Promise<boolean> {
+  try {
+    const res = await fetch('/api/contatos', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(contato),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Sync] Erro ao salvar contato no servidor:', err);
+    return false;
+  }
+}
+
+/**
+ * Exclui um contato de prefeitura no servidor
+ */
+export async function removerContatoServidor(contatoId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/contatos/${encodeURIComponent(contatoId)}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Sync] Erro ao remover contato no servidor:', err);
+    return false;
+  }
+}
+
+/**
+ * Obtém cobranças atualizadas do servidor central
+ */
+export async function obterCobrancasServidor(): Promise<Cobranca[]> {
+  try {
+    const res = await fetch('/api/cobrancas');
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data.cobrancas) ? data.cobrancas : [];
+  } catch (err) {
+    console.warn('[Sync] Aviso ao obter cobranças do servidor:', err);
+    return [];
+  }
+}
+
+/**
+ * Salva ou atualiza uma cobrança no servidor
+ */
+export async function salvarCobrancaServidor(cobranca: Cobranca): Promise<boolean> {
+  try {
+    const res = await fetch('/api/cobrancas', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(cobranca),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Sync] Erro ao salvar cobrança no servidor:', err);
+    return false;
+  }
+}
+
+/**
+ * Exclui uma cobrança no servidor
+ */
+export async function removerCobrancaServidor(cobrancaId: string): Promise<boolean> {
+  try {
+    const res = await fetch(`/api/cobrancas/${encodeURIComponent(cobrancaId)}`, {
+      method: 'DELETE',
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Sync] Erro ao remover cobrança no servidor:', err);
+    return false;
+  }
+}
+
+

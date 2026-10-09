@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Building2, Calendar, FileText, User } from 'lucide-react';
+import { PlusCircle, Building2, Calendar, FileText, User, MapPin } from 'lucide-react';
 import { ModalidadeLic, Licitacao } from '../types';
+import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
 
 interface CadastrarLicitacaoTabProps {
   onCadastrar: (novaLic: Omit<Licitacao, 'id'>) => void;
@@ -24,6 +25,8 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
   const dataHojePadrao = new Date().toLocaleDateString('pt-BR');
 
   const [orgao, setOrgao] = useState('');
+  const [ufSelecionada, setUfSelecionada] = useState<string>('SP');
+  const [ufModificadaManualmente, setUfModificadaManualmente] = useState(false);
   const [processo, setProcesso] = useState('');
   const [modalidade, setModalidade] = useState<ModalidadeLic>('Pregão Eletrônico');
   const [dataCadastro, setDataCadastro] = useState(dataHojePadrao);
@@ -69,11 +72,14 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
       modalidade,
       data_cadastro: dataCadastro || dataHojePadrao,
       responsavel: responsavelFinal,
+      uf: ufSelecionada,
     });
 
     // Reset form
     setOrgao('');
     setProcesso('');
+    setUfSelecionada('SP');
+    setUfModificadaManualmente(false);
     setResponsavelCustom('');
     setIsModoOutro(false);
   };
@@ -102,20 +108,52 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-              Órgão Público Licitante *
-            </label>
-            <div className="relative">
-              <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                required
-                value={orgao}
-                onChange={e => setOrgao(e.target.value)}
-                placeholder="Ex: Tribunal de Justiça de São Paulo / Prefeitura Municipal"
-                className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
-              />
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="sm:col-span-2">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Órgão Público Licitante *
+              </label>
+              <div className="relative">
+                <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={orgao}
+                  onChange={e => {
+                    const novo = e.target.value;
+                    setOrgao(novo);
+                    if (!ufModificadaManualmente && novo.trim().length >= 3) {
+                      const detectada = detectarEstado(novo);
+                      setUfSelecionada(detectada);
+                    }
+                  }}
+                  placeholder="Ex: Tribunal de Justiça de São Paulo / Prefeitura Municipal"
+                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
+                Estado / UF *
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2" />
+                <select
+                  value={ufSelecionada}
+                  onChange={e => {
+                    setUfSelecionada(e.target.value);
+                    setUfModificadaManualmente(true);
+                  }}
+                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-bold font-mono cursor-pointer transition-colors"
+                >
+                  {ESTADOS_BRASIL_OPCOES.map(est => (
+                    <option key={est.sigla} value={est.sigla}>
+                      {est.nome}
+                    </option>
+                  ))}
+                </select>
+              </div>
             </div>
           </div>
 

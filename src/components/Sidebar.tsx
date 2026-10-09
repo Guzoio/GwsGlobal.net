@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import {
   History,
+  Users,
   PlusCircle,
   Layers,
   FileText,
@@ -12,6 +13,8 @@ import {
   Settings,
   FolderKanban,
   CheckCircle2,
+  BarChart3,
+  DollarSign,
 } from 'lucide-react';
 import { PalavraDoDiaCard } from './PalavraDoDiaCard';
 
@@ -19,6 +22,9 @@ interface SidebarProps {
   abaAtiva: string;
   setAbaAtiva: (aba: string) => void;
   totalLicitacoes?: number;
+  totalContatos?: number;
+  totalCobrancas?: number;
+  totalAlertasCobrancas?: number;
   onAbrirDeclaracao?: () => void;
   onAbrirSeguranca?: () => void;
   abertaMobile: boolean;
@@ -30,6 +36,9 @@ export const Sidebar: React.FC<SidebarProps> = ({
   abaAtiva,
   setAbaAtiva,
   totalLicitacoes = 0,
+  totalContatos = 0,
+  totalCobrancas = 0,
+  totalAlertasCobrancas = 0,
   onAbrirDeclaracao,
   onAbrirSeguranca,
   abertaMobile,
@@ -177,6 +186,125 @@ export const Sidebar: React.FC<SidebarProps> = ({
             })}
           </nav>
 
+          {/* Grupo Separado: Contatos */}
+          <div className="pt-2 border-t border-slate-200/80 dark:border-white/10 space-y-1.5">
+            <div className="px-1">
+              <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
+                Contatos
+              </span>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAbaAtiva('contatos');
+                onFecharMobile();
+              }}
+              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+                abaAtiva === 'contatos'
+                  ? 'bg-blue-600 text-white border-blue-500/50 shadow-sm font-medium'
+                  : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    abaAtiva === 'contatos'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/25'
+                  }`}
+                >
+                  <Users className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate leading-tight">
+                    Contatos
+                  </div>
+                  <div
+                    className={`text-[10px] truncate mt-0.5 leading-none ${
+                      abaAtiva === 'contatos'
+                        ? 'text-blue-100'
+                        : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300'
+                    }`}
+                  >
+                    Prefeituras e telefones
+                  </div>
+                </div>
+              </div>
+
+              {totalContatos > 0 && (
+                <span
+                  className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
+                    abaAtiva === 'contatos'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {totalContatos}
+                </span>
+              )}
+            </button>
+
+            {/* Novo Botão: 💰 Cobranças (Controle de faturamento, liquidação e pagamentos) */}
+            <button
+              type="button"
+              onClick={() => {
+                setAbaAtiva('cobrancas');
+                onFecharMobile();
+              }}
+              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+                abaAtiva === 'cobrancas'
+                  ? 'bg-emerald-600 text-white border-emerald-500/50 shadow-sm font-medium'
+                  : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    abaAtiva === 'cobrancas'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/25'
+                  }`}
+                >
+                  <DollarSign className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
+                    <span>Cobranças</span>
+                    {totalAlertasCobrancas > 0 && (
+                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
+                    )}
+                  </div>
+                  <div
+                    className={`text-[10px] truncate mt-0.5 leading-none ${
+                      abaAtiva === 'cobrancas'
+                        ? 'text-emerald-100'
+                        : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300'
+                    }`}
+                  >
+                    Entrega, NF e liquidação
+                  </div>
+                </div>
+              </div>
+
+              {totalAlertasCobrancas > 0 ? (
+                <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full shrink-0 ml-2 bg-rose-500 text-white animate-pulse">
+                  {totalAlertasCobrancas}
+                </span>
+              ) : totalCobrancas > 0 ? (
+                <span
+                  className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
+                    abaAtiva === 'cobrancas'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                  }`}
+                >
+                  {totalCobrancas}
+                </span>
+              ) : null}
+            </button>
+          </div>
+
           {/* Divisor Suave */}
           <div className="pt-2 border-t border-slate-200/80 dark:border-white/10 space-y-2">
             <div className="px-1">
@@ -184,6 +312,56 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 Ferramentas & Acesso
               </span>
             </div>
+
+            {/* Botão Análise (Mapa do Brasil, Lucros e Estatísticas) */}
+            <button
+              type="button"
+              onClick={() => {
+                setAbaAtiva('analise');
+                onFecharMobile();
+              }}
+              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+                abaAtiva === 'analise'
+                  ? 'bg-blue-600 text-white border-blue-500/50 shadow-sm font-medium'
+                  : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
+              }`}
+            >
+              <div className="flex items-center gap-3 min-w-0">
+                <div
+                  className={`p-2 rounded-lg transition-colors shrink-0 ${
+                    abaAtiva === 'analise'
+                      ? 'bg-white/20 text-white'
+                      : 'bg-blue-500/15 text-blue-600 dark:text-blue-400 group-hover:bg-blue-500/25'
+                  }`}
+                >
+                  <BarChart3 className="w-4 h-4" />
+                </div>
+                <div className="min-w-0">
+                  <div className="text-xs font-bold truncate leading-tight">
+                    Análise
+                  </div>
+                  <div
+                    className={`text-[10px] truncate mt-0.5 leading-none ${
+                      abaAtiva === 'analise'
+                        ? 'text-blue-100'
+                        : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300'
+                    }`}
+                  >
+                    Mapa do Brasil e lucros
+                  </div>
+                </div>
+              </div>
+
+              <span
+                className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ml-1 ${
+                  abaAtiva === 'analise'
+                    ? 'bg-white/20 text-white'
+                    : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
+                }`}
+              >
+                BI
+              </span>
+            </button>
 
             {/* Botão Documentos Oficiais (Retrátil Independente) */}
             <div>

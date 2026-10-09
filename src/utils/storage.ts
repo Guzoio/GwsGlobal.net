@@ -1,4 +1,4 @@
-import { Licitacao, ItemLicitacao, AcessoConfig } from '../types';
+import { Licitacao, ItemLicitacao, AcessoConfig, ContatoPrefeitura, Cobranca } from '../types';
 import { ACESSO_INICIAL, ID_PADRAO, HASH_PADRAO } from './security';
 import {
   salvarLoteImagensIndexedDB,
@@ -479,6 +479,58 @@ export function salvarResponsaveis(responsaveis: string[]): void {
   }
 }
 
+const LICITACOES_EXCLUIDAS_KEY = 'licitacoes_excluidas_db_v1';
+const ITENS_EXCLUIDOS_KEY = 'itens_excluidos_db_v1';
+
+// Lista base de licitações antigas que foram excluídas pelo usuário
+const EXCLUIDAS_INICIAIS = [2, 3, 6, 10, 11, 15, 19, 23, 24, 27];
+
+export function obterLicitacoesExcluidas(): number[] {
+  try {
+    const data = localStorage.getItem(LICITACOES_EXCLUIDAS_KEY);
+    const lista: number[] = data ? JSON.parse(data) : [];
+    const set = new Set([...EXCLUIDAS_INICIAIS, ...(Array.isArray(lista) ? lista.map(Number) : [])]);
+    return Array.from(set);
+  } catch {
+    return [...EXCLUIDAS_INICIAIS];
+  }
+}
+
+export function salvarLicitacaoExcluida(id: number): void {
+  try {
+    const numId = Number(id);
+    const atuais = obterLicitacoesExcluidas();
+    if (!atuais.includes(numId)) {
+      atuais.push(numId);
+      localStorage.setItem(LICITACOES_EXCLUIDAS_KEY, JSON.stringify(atuais));
+    }
+  } catch (err) {
+    console.warn('Aviso ao registrar licitação excluída:', err);
+  }
+}
+
+export function obterItensExcluidos(): number[] {
+  try {
+    const data = localStorage.getItem(ITENS_EXCLUIDOS_KEY);
+    return data ? JSON.parse(data).map(Number) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarItemExcluido(id: number): void {
+  try {
+    const numId = Number(id);
+    const atuais = obterItensExcluidos();
+    if (!atuais.includes(numId)) {
+      atuais.push(numId);
+      localStorage.setItem(ITENS_EXCLUIDOS_KEY, JSON.stringify(atuais));
+    }
+  } catch (err) {
+    console.warn('Aviso ao registrar item excluído:', err);
+  }
+}
+
 export function obterLicitacoes(): Licitacao[] {
   try {
     const data = localStorage.getItem(LICITACOES_KEY);
@@ -487,21 +539,25 @@ export function obterLicitacoes(): Licitacao[] {
     }
     const lics: Licitacao[] = JSON.parse(data);
     if (!Array.isArray(lics)) return [];
+    const setExcluidas = new Set(obterLicitacoesExcluidas());
+
     // Sanitize legacy modality values and ensure responsavel is populated
-    return lics.map((l, idx) => {
-      let mod = l.modalidade;
-      if (mod === ('Dispensa de Licitação' as any)) mod = 'Dispensa Eletrônica';
-      else if (mod === ('Concorrência' as any)) mod = 'Concorrência Eletrônica';
-      const responsavel = l.responsavel || (idx % 2 === 0 ? 'Gustavo' : 'Victor');
-      return {
-        ...l,
-        id: Number(l.id),
-        modalidade: mod,
-        responsavel,
-        acompanhamento: Boolean(l.acompanhamento),
-        homologada: Boolean(l.homologada),
-      };
-    });
+    return lics
+      .filter(l => !setExcluidas.has(Number(l.id)))
+      .map((l, idx) => {
+        let mod = l.modalidade;
+        if (mod === ('Dispensa de Licitação' as any)) mod = 'Dispensa Eletrônica';
+        else if (mod === ('Concorrência' as any)) mod = 'Concorrência Eletrônica';
+        const responsavel = l.responsavel || (idx % 2 === 0 ? 'Gustavo' : 'Victor');
+        return {
+          ...l,
+          id: Number(l.id),
+          modalidade: mod,
+          responsavel,
+          acompanhamento: Boolean(l.acompanhamento),
+          homologada: Boolean(l.homologada),
+        };
+      });
   } catch (err) {
     console.error('Erro ao ler licitações do storage:', err);
     return [];
@@ -510,7 +566,9 @@ export function obterLicitacoes(): Licitacao[] {
 
 export function salvarLicitacoes(licitacoes: Licitacao[]): void {
   try {
-    localStorage.setItem(LICITACOES_KEY, JSON.stringify(licitacoes));
+    const setExcluidas = new Set(obterLicitacoesExcluidas());
+    const filtradas = licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
+    localStorage.setItem(LICITACOES_KEY, JSON.stringify(filtradas));
   } catch (err) {
     console.warn('Aviso ao salvar licitações no storage:', err);
   }
@@ -524,10 +582,15 @@ export function obterItens(): ItemLicitacao[] {
     }
     const parsedItens: ItemLicitacao[] = JSON.parse(data);
     if (!Array.isArray(parsedItens)) return [];
-    return parsedItens.map(it => ({
-      ...it,
-      selecionado: it.selecionado !== undefined ? it.selecionado : true,
-    }));
+    const setExcluidas = new Set(obterLicitacoesExcluidas());
+    const setItensExcluidos = new Set(obterItensExcluidos());
+
+    return parsedItens
+      .filter(it => !setItensExcluidos.has(Number(it.id)) && !setExcluidas.has(Number(it.licitacao_id)))
+      .map(it => ({
+        ...it,
+        selecionado: it.selecionado !== undefined ? it.selecionado : true,
+      }));
   } catch (err) {
     console.error('Erro ao ler itens do storage:', err);
     return [];
@@ -535,16 +598,20 @@ export function obterItens(): ItemLicitacao[] {
 }
 
 export function salvarItens(itens: ItemLicitacao[]): void {
+  const setExcluidas = new Set(obterLicitacoesExcluidas());
+  const setItensExcluidos = new Set(obterItensExcluidos());
+  const itensFiltrados = itens.filter(it => !setItensExcluidos.has(Number(it.id)) && !setExcluidas.has(Number(it.licitacao_id)));
+
   // Salva cópia duradoura no IndexedDB para garantir que fotos nunca se percam
-  salvarLoteImagensIndexedDB(itens).catch(() => {});
+  salvarLoteImagensIndexedDB(itensFiltrados).catch(() => {});
 
   try {
-    localStorage.setItem(ITENS_KEY, JSON.stringify(itens));
+    localStorage.setItem(ITENS_KEY, JSON.stringify(itensFiltrados));
   } catch (err) {
     console.warn('Cota do localStorage atingida ao salvar itens completos. Otimizando armazenamento local...', err);
     try {
       // Se estourar a cota de 5MB, salva itens com referências no IndexedDB
-      const itensLeves = itens.map(it => {
+      const itensLeves = itensFiltrados.map(it => {
         if (it.caminho_imagem && it.caminho_imagem.length > 500) {
           // Salva individualmente no IndexedDB antes de podar do localStorage
           salvarImagemItemIndexedDB(it.id, it.caminho_imagem).catch(() => {});
@@ -633,3 +700,102 @@ export function redimensionarEComprimirImagem(
     reader.readAsDataURL(arquivo);
   });
 }
+
+const CONTATOS_KEY = 'gws_contatos_prefeituras';
+const CONTATOS_EXCLUIDOS_KEY = 'gws_contatos_excluidos';
+const COBRANCAS_KEY = 'gws_cobrancas_prefeituras';
+const COBRANCAS_EXCLUIDAS_KEY = 'gws_cobrancas_excluidas';
+
+export function obterContatosExcluidos(): string[] {
+  try {
+    const raw = localStorage.getItem(CONTATOS_EXCLUIDOS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarContatoExcluido(id: string): void {
+  try {
+    const strId = String(id);
+    const atuais = obterContatosExcluidos();
+    if (!atuais.includes(strId)) {
+      atuais.push(strId);
+      localStorage.setItem(CONTATOS_EXCLUIDOS_KEY, JSON.stringify(atuais));
+    }
+  } catch (err) {
+    console.warn('Aviso ao registrar contato excluído:', err);
+  }
+}
+
+export function obterContatosLocal(): ContatoPrefeitura[] {
+  try {
+    const raw = localStorage.getItem(CONTATOS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const excluidos = new Set(obterContatosExcluidos());
+    return Array.isArray(parsed) ? parsed.filter(c => !excluidos.has(String(c.id))) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarContatosLocal(contatos: ContatoPrefeitura[]): void {
+  try {
+    const excluidos = new Set(obterContatosExcluidos());
+    const filtrados = contatos.filter(c => !excluidos.has(String(c.id)));
+    localStorage.setItem(CONTATOS_KEY, JSON.stringify(filtrados));
+  } catch (err) {
+    console.warn('Aviso ao salvar contatos locais:', err);
+  }
+}
+
+export function obterCobrancasExcluidas(): string[] {
+  try {
+    const raw = localStorage.getItem(COBRANCAS_EXCLUIDAS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    return Array.isArray(parsed) ? parsed.map(String) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarCobrancaExcluida(id: string): void {
+  try {
+    const strId = String(id);
+    const atuais = obterCobrancasExcluidas();
+    if (!atuais.includes(strId)) {
+      atuais.push(strId);
+      localStorage.setItem(COBRANCAS_EXCLUIDAS_KEY, JSON.stringify(atuais));
+    }
+  } catch (err) {
+    console.warn('Aviso ao registrar cobrança excluída:', err);
+  }
+}
+
+export function obterCobrancasLocal(): Cobranca[] {
+  try {
+    const raw = localStorage.getItem(COBRANCAS_KEY);
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    const excluidas = new Set(obterCobrancasExcluidas());
+    return Array.isArray(parsed) ? parsed.filter(c => !excluidas.has(String(c.id))) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarCobrancasLocal(cobrancas: Cobranca[]): void {
+  try {
+    const excluidas = new Set(obterCobrancasExcluidas());
+    const filtradas = cobrancas.filter(c => !excluidas.has(String(c.id)));
+    localStorage.setItem(COBRANCAS_KEY, JSON.stringify(filtradas));
+  } catch (err) {
+    console.warn('Aviso ao salvar cobranças locais:', err);
+  }
+}
+
+

@@ -115,6 +115,21 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   const [responsavelParaExcluir, setResponsavelParaExcluir] = useState<string | null>(null);
   const [destinoTransferencia, setDestinoTransferencia] = useState<string>('');
 
+  // Lista unificada de responsáveis conhecidos (da config + das licitações existentes)
+  const listaCompletaResponsaveis = useMemo(() => {
+    const nomes = new Set(responsaveis.map(r => r.trim()).filter(Boolean));
+    licitacoes.forEach(l => {
+      if (l.responsavel && l.responsavel.trim()) {
+        const rNome = l.responsavel.trim();
+        const jaExiste = Array.from(nomes).some(n => n.toLowerCase() === rNome.toLowerCase());
+        if (!jaExiste) {
+          nomes.add(rNome);
+        }
+      }
+    });
+    return Array.from(nomes);
+  }, [responsaveis, licitacoes]);
+
   // Filtragem de licitações: busca por texto + responsável + data de cadastro
   const licitacoesFiltradas = useMemo(() => {
     return licitacoes.filter(lic => {
@@ -123,10 +138,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         lic.processo_pregao.toLowerCase().includes(busca.toLowerCase()) ||
         lic.modalidade.toLowerCase().includes(busca.toLowerCase());
 
-      const respLic = lic.responsavel || 'Gustavo';
+      const respLic = (lic.responsavel || 'Gustavo').trim();
       const matchResponsavel =
         filtroResponsavel === 'Todos' ||
-        respLic.toLowerCase() === filtroResponsavel.toLowerCase();
+        respLic.toLowerCase() === filtroResponsavel.trim().toLowerCase();
 
       let matchData = true;
       if (filtroData) {
@@ -159,15 +174,16 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   // Contagem de licitações por responsável
   const contagemPorResponsavel = useMemo(() => {
     const mapa: Record<string, number> = {};
-    responsaveis.forEach(r => {
+    listaCompletaResponsaveis.forEach(r => {
       mapa[r] = 0;
     });
     licitacoes.forEach(l => {
-      const r = l.responsavel || 'Gustavo';
-      mapa[r] = (mapa[r] || 0) + 1;
+      const respLic = (l.responsavel || 'Gustavo').trim();
+      const match = listaCompletaResponsaveis.find(r => r.toLowerCase() === respLic.toLowerCase()) || respLic;
+      mapa[match] = (mapa[match] || 0) + 1;
     });
     return mapa;
-  }, [licitacoes, responsaveis]);
+  }, [licitacoes, listaCompletaResponsaveis]);
 
   // Licitações e Itens dinâmicos que respeitam todos os filtros
   const licitacoesDoFiltro = useMemo(() => {
@@ -542,7 +558,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               title="Filtrar por quem fez a licitação"
             >
               <option value="Todos">👤 Quem fez: Todos</option>
-              {responsaveis.map(resp => (
+              {listaCompletaResponsaveis.map(resp => (
                 <option key={resp} value={resp}>
                   👤 {resp} ({contagemPorResponsavel[resp] || 0})
                 </option>

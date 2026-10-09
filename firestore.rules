@@ -61,6 +61,22 @@ service cloud.firestore {
         );
     }
 
+    function isValidContato(data) {
+      return data.keys().hasAll(['id', 'prefeitura', 'nomeContato'])
+        && data.id is string && data.id.size() <= 128
+        && data.prefeitura is string && data.prefeitura.size() <= 1000
+        && data.nomeContato is string && data.nomeContato.size() <= 300
+        && (!('cidadeUf' in data) || (data.cidadeUf is string && data.cidadeUf.size() <= 200))
+        && (!('cargoSetor' in data) || (data.cargoSetor is string && data.cargoSetor.size() <= 200))
+        && (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() <= 100))
+        && (!('telefoneFixo' in data) || (data.telefoneFixo is string && data.telefoneFixo.size() <= 100))
+        && (!('ramal' in data) || (data.ramal is string && data.ramal.size() <= 50))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
+        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000))
+        && (!('favorito' in data) || data.favorito is bool)
+        && (!('dataCadastro' in data) || (data.dataCadastro is string && data.dataCadastro.size() <= 100));
+    }
+
     // Licitações Collection - Sincronização em tempo real da equipe
     match /licitacoes/{licitacaoId} {
       allow read: if true;
@@ -73,6 +89,18 @@ service cloud.firestore {
       allow read: if true;
       allow create, update: if isValidId(itemId) && isValidItem(incoming());
       allow delete: if isValidId(itemId);
+    }
+
+    // Contatos de Prefeituras Collection - Agenda e WhatsApp
+    match /contatos/{contatoId} {
+      allow read: if true;
+      allow create, update: if isValidId(contatoId) && isValidContato(incoming());
+      allow delete: if isValidId(contatoId);
+    }
+
+    // Cobranças de Prefeituras - Envio, Entrega, NF, Liquidação e Pagamento
+    match /cobrancas/{cobrancaId} {
+      allow read, write: if true;
     }
 
     // Configurações Documentos

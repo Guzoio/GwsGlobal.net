@@ -222,7 +222,12 @@ if (fs.existsSync(DB_FILE)) {
     const parsed = JSON.parse(raw);
     if (parsed && typeof parsed === "object") {
       dbData = {
-        licitacoes: Array.isArray(parsed.licitacoes) ? parsed.licitacoes : [],
+        licitacoes: Array.isArray(parsed.licitacoes) ? parsed.licitacoes.map((l) => ({
+          ...l,
+          id: Number(l.id),
+          acompanhamento: Boolean(l.acompanhamento),
+          homologada: Boolean(l.homologada)
+        })) : [],
         itens: Array.isArray(parsed.itens) ? parsed.itens : [],
         timbrado: parsed.timbrado || null,
         responsaveis: Array.isArray(parsed.responsaveis) && parsed.responsaveis.length > 0 ? parsed.responsaveis : ["Gustavo", "Victor"],
@@ -307,12 +312,30 @@ app.post("/api/sync/merge", (req, res) => {
       for (const lic of licitacoes) {
         if (!lic || lic.id === void 0) continue;
         const id = Number(lic.id);
+        const licLimpa = {
+          ...lic,
+          id,
+          acompanhamento: Boolean(lic.acompanhamento),
+          homologada: Boolean(lic.homologada)
+        };
         if (!mapaLics.has(id)) {
-          mapaLics.set(id, lic);
+          mapaLics.set(id, licLimpa);
           alterado = true;
         } else {
           const atual = mapaLics.get(id);
-          mapaLics.set(id, { ...atual, ...lic });
+          const novoAcomp = lic.acompanhamento !== void 0 ? Boolean(lic.acompanhamento) : Boolean(atual.acompanhamento);
+          const novoHomol = lic.homologada !== void 0 ? Boolean(lic.homologada) : Boolean(atual.homologada);
+          const mesclado = {
+            ...atual,
+            ...lic,
+            id,
+            acompanhamento: novoAcomp,
+            homologada: novoHomol
+          };
+          if (atual.acompanhamento !== mesclado.acompanhamento || atual.homologada !== mesclado.homologada || atual.responsavel !== mesclado.responsavel || atual.data_proposta !== mesclado.data_proposta) {
+            alterado = true;
+          }
+          mapaLics.set(id, mesclado);
         }
       }
       dbData.licitacoes = Array.from(mapaLics.values()).sort((a, b) => Number(b.id) - Number(a.id));
@@ -372,10 +395,17 @@ app.post("/api/sync/licitacao", (req, res) => {
     }
     const id = Number(lic.id);
     const index = dbData.licitacoes.findIndex((l) => Number(l.id) === id);
+    const itemAtualizado = {
+      ...index >= 0 ? dbData.licitacoes[index] : {},
+      ...lic,
+      id,
+      acompanhamento: Boolean(lic.acompanhamento),
+      homologada: Boolean(lic.homologada)
+    };
     if (index >= 0) {
-      dbData.licitacoes[index] = { ...dbData.licitacoes[index], ...lic };
+      dbData.licitacoes[index] = itemAtualizado;
     } else {
-      dbData.licitacoes.unshift(lic);
+      dbData.licitacoes.unshift(itemAtualizado);
     }
     dbData.licitacoes.sort((a, b) => Number(b.id) - Number(a.id));
     salvarDbNoDisco();

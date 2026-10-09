@@ -11,10 +11,12 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './config';
-import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig } from '../types';
+import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig, ContatoPrefeitura, Cobranca } from '../types';
 
 const LICITACOES_COL = 'licitacoes';
 const ITENS_COL = 'itens';
+const CONTATOS_COL = 'contatos';
+const COBRANCAS_COL = 'cobrancas';
 const CONFIG_COL = 'configuracoes';
 
 // Ouvir licitações em tempo real (qualquer inserção, alteração ou exclusão reflete instantaneamente)
@@ -76,14 +78,14 @@ export function ouvirItensNuvem(
           quantidade: Number(data.quantidade) || 0,
           valor_unitario: Number(data.valor_unitario) || 0,
           valor_total: Number(data.valor_total) || 0,
-          lance_minimo: Number(data.lance_minimo) || 0,
-          lance_lote: Number(data.lance_lote) || 0,
+          lance_minimo: data.lance_minimo !== undefined && Number(data.lance_minimo) > 0 ? Number(data.lance_minimo) : undefined,
+          lance_lote: data.lance_lote !== undefined && Number(data.lance_lote) > 0 ? Number(data.lance_lote) : undefined,
           link_produto: data.link_produto || '',
           caminho_imagem: data.caminho_imagem || '',
           selecionado: data.selecionado !== false,
           observacoes: data.observacoes || '',
-          custo_fornecedor: data.custo_fornecedor !== undefined && data.custo_fornecedor > 0 ? Number(data.custo_fornecedor) : undefined,
-          valor_ganho: data.valor_ganho !== undefined && data.valor_ganho > 0 ? Number(data.valor_ganho) : undefined,
+          custo_fornecedor: data.custo_fornecedor !== undefined && Number(data.custo_fornecedor) > 0 ? Number(data.custo_fornecedor) : undefined,
+          valor_ganho: data.valor_ganho !== undefined && Number(data.valor_ganho) > 0 ? Number(data.valor_ganho) : undefined,
           aliquota_imposto: data.aliquota_imposto !== undefined ? Number(data.aliquota_imposto) : undefined,
           outros_custos: data.outros_custos !== undefined ? Number(data.outros_custos) : undefined,
         });
@@ -117,10 +119,10 @@ export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<voi
         quantidade: Number(item.quantidade) || 0,
         valor_unitario: Number(item.valor_unitario) || 0,
         valor_total: Number(item.valor_total) || 0,
-        lance_minimo: Number(item.lance_minimo) || 0,
-        lance_lote: Number(item.lance_lote) || 0,
+        lance_minimo: item.lance_minimo !== undefined && Number(item.lance_minimo) > 0 ? Number(item.lance_minimo) : 0,
+        lance_lote: item.lance_lote !== undefined && Number(item.lance_lote) > 0 ? Number(item.lance_lote) : 0,
         link_produto: item.link_produto || '',
-        caminho_imagem: item.caminho_imagem || '',
+        caminho_imagem: (item.caminho_imagem && item.caminho_imagem.length < 500000) ? item.caminho_imagem : '',
         selecionado: item.selecionado !== false,
         observacoes: item.observacoes || '',
         custo_fornecedor: Number(item.custo_fornecedor) || 0,
@@ -128,7 +130,7 @@ export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<voi
         aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
         outros_custos: Number(item.outros_custos) || 0,
         updatedAt: new Date().toISOString(),
-      });
+      }, { merge: true });
     }
     await batch.commit();
   }
@@ -251,10 +253,10 @@ export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
       quantidade: Number(item.quantidade) || 0,
       valor_unitario: Number(item.valor_unitario) || 0,
       valor_total: Number(item.valor_total) || 0,
-      lance_minimo: Number(item.lance_minimo) || 0,
-      lance_lote: Number(item.lance_lote) || 0,
+      lance_minimo: item.lance_minimo !== undefined && Number(item.lance_minimo) > 0 ? Number(item.lance_minimo) : 0,
+      lance_lote: item.lance_lote !== undefined && Number(item.lance_lote) > 0 ? Number(item.lance_lote) : 0,
       link_produto: item.link_produto || '',
-      caminho_imagem: item.caminho_imagem || '',
+      caminho_imagem: (item.caminho_imagem && item.caminho_imagem.length < 500000) ? item.caminho_imagem : '',
       selecionado: item.selecionado !== false,
       observacoes: item.observacoes || '',
       custo_fornecedor: Number(item.custo_fornecedor) || 0,
@@ -262,7 +264,7 @@ export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
       aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
       outros_custos: Number(item.outros_custos) || 0,
       updatedAt: new Date().toISOString(),
-    });
+    }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -420,3 +422,172 @@ export async function sincronizarBancoInicialSeVazio(
     console.warn('Aviso na verificação de inicialização:', err);
   }
 }
+
+// Ouvir contatos de prefeituras em tempo real na nuvem
+export function ouvirContatosNuvem(
+  onUpdate: (contatos: ContatoPrefeitura[]) => void,
+  onError?: (err: any) => void
+): () => void {
+  const colRef = collection(db, CONTATOS_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const lista: ContatoPrefeitura[] = [];
+      snapshot.forEach((d) => {
+        const data = d.data();
+        lista.push({
+          id: String(data.id ?? d.id),
+          prefeitura: data.prefeitura || '',
+          cidadeUf: data.cidadeUf || '',
+          nomeContato: data.nomeContato || '',
+          cargoSetor: data.cargoSetor || '',
+          whatsapp: data.whatsapp || '',
+          telefoneFixo: data.telefoneFixo || '',
+          ramal: data.ramal || '',
+          email: data.email || '',
+          observacoes: data.observacoes || '',
+          favorito: Boolean(data.favorito),
+          dataCadastro: data.dataCadastro || new Date().toISOString(),
+          licitacaoId: data.licitacaoId !== undefined ? Number(data.licitacaoId) : undefined,
+        });
+      });
+      // Ordena: favoritos primeiro, depois ordem alfabética por prefeitura
+      lista.sort((a, b) => {
+        if (a.favorito && !b.favorito) return -1;
+        if (!a.favorito && b.favorito) return 1;
+        return a.prefeitura.localeCompare(b.prefeitura);
+      });
+      onUpdate(lista);
+    },
+    (error) => {
+      console.warn('Aviso sincronização contatos:', error.message);
+      if (onError) onError(error);
+    }
+  );
+}
+
+// Salvar ou atualizar contato de prefeitura na nuvem
+export async function salvarContatoNuvem(contato: ContatoPrefeitura): Promise<void> {
+  const path = `${CONTATOS_COL}/${contato.id}`;
+  try {
+    await setDoc(doc(db, CONTATOS_COL, String(contato.id)), {
+      id: String(contato.id),
+      prefeitura: contato.prefeitura || '',
+      cidadeUf: contato.cidadeUf || '',
+      nomeContato: contato.nomeContato || '',
+      cargoSetor: contato.cargoSetor || '',
+      whatsapp: contato.whatsapp || '',
+      telefoneFixo: contato.telefoneFixo || '',
+      ramal: contato.ramal || '',
+      email: contato.email || '',
+      observacoes: contato.observacoes || '',
+      favorito: Boolean(contato.favorito),
+      dataCadastro: contato.dataCadastro || new Date().toISOString(),
+      licitacaoId: contato.licitacaoId !== undefined ? Number(contato.licitacaoId) : null,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+// Excluir contato de prefeitura na nuvem
+export async function removerContatoNuvem(contatoId: string): Promise<void> {
+  const path = `${CONTATOS_COL}/${contatoId}`;
+  try {
+    await deleteDoc(doc(db, CONTATOS_COL, String(contatoId)));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+// ====================================================================
+// MÓDULO DE COBRANÇAS & PAGAMENTOS NA NUVEM
+// ====================================================================
+
+// Ouvir cobranças em tempo real na nuvem
+export function ouvirCobrancasNuvem(
+  onUpdate: (cobrancas: Cobranca[]) => void,
+  onError?: (err: any) => void
+): () => void {
+  const colRef = collection(db, COBRANCAS_COL);
+  return onSnapshot(
+    colRef,
+    (snapshot) => {
+      const lista: Cobranca[] = [];
+      snapshot.forEach((d) => {
+        const data = d.data();
+        lista.push({
+          id: String(data.id ?? d.id),
+          prefeitura: data.prefeitura || '',
+          processo: data.processo || undefined,
+          licitacaoId: data.licitacaoId !== undefined ? Number(data.licitacaoId) : undefined,
+          ordemFornecimento: data.ordemFornecimento || undefined,
+          numeroNota: data.numeroNota || undefined,
+          produto: data.produto || '',
+          quantidade: data.quantidade !== undefined ? Number(data.quantidade) : undefined,
+          valorNota: Number(data.valorNota) || 0,
+          observacoes: data.observacoes || undefined,
+
+          dataEnvioProdutos: data.dataEnvioProdutos || undefined,
+          dataPrevisaoEntrega: data.dataPrevisaoEntrega || undefined,
+          dataRealEntrega: data.dataRealEntrega || undefined,
+          produtoRecebido: Boolean(data.produtoRecebido),
+
+          dataEnvioNota: data.dataEnvioNota || undefined,
+          notaEnviada: Boolean(data.notaEnviada),
+
+          diasLiquidacao: Number(data.diasLiquidacao) || 7,
+          tipoDiasLiquidacao: (data.tipoDiasLiquidacao as any) || 'uteis',
+          eventoInicioLiquidacao: (data.eventoInicioLiquidacao as any) || 'entrega',
+          dataRealLiquidacao: data.dataRealLiquidacao || undefined,
+          liquidado: Boolean(data.liquidado),
+
+          diasPagamento: Number(data.diasPagamento) || 5,
+          tipoDiasPagamento: (data.tipoDiasPagamento as any) || 'corridos',
+          eventoInicioPagamento: (data.eventoInicioPagamento as any) || 'liquidacao',
+          dataRealPagamento: data.dataRealPagamento || undefined,
+          pago: Boolean(data.pago),
+
+          criadoEm: data.criadoEm || new Date().toISOString(),
+          atualizadoEm: data.atualizadoEm || new Date().toISOString(),
+        });
+      });
+      // Ordena por data de criação / mais recente
+      lista.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
+      onUpdate(lista);
+    },
+    (error) => {
+      handleFirestoreError(error, OperationType.GET, COBRANCAS_COL);
+      onError?.(error);
+    }
+  );
+}
+
+// Salvar ou atualizar cobrança na nuvem
+export async function salvarCobrancaNuvem(cobranca: Cobranca): Promise<void> {
+  const path = `${COBRANCAS_COL}/${cobranca.id}`;
+  try {
+    const docRef = doc(db, COBRANCAS_COL, String(cobranca.id));
+    await setDoc(docRef, {
+      ...cobranca,
+      id: String(cobranca.id),
+      valorNota: Number(cobranca.valorNota) || 0,
+      updatedAt: new Date().toISOString(),
+    }, { merge: true });
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
+// Excluir cobrança na nuvem
+export async function removerCobrancaNuvem(cobrancaId: string): Promise<void> {
+  const path = `${COBRANCAS_COL}/${cobrancaId}`;
+  try {
+    await deleteDoc(doc(db, COBRANCAS_COL, String(cobrancaId)));
+  } catch (error) {
+    handleFirestoreError(error, OperationType.DELETE, path);
+  }
+}
+
+

@@ -7,6 +7,8 @@ import {
   Menu,
 } from 'lucide-react';
 import { LogoGwsGlobal } from './LogoGwsGlobal';
+import { SininhoNotificacoes } from './SininhoNotificacoes';
+import { AlertaCobranca } from '../types';
 
 interface HeaderProps {
   sidebarAberta?: boolean;
@@ -16,6 +18,9 @@ interface HeaderProps {
   statusNuvem?: 'conectando' | 'conectado' | 'desconectado';
   tema?: 'light' | 'dark';
   onAlternarTema?: (novoTema?: 'light' | 'dark') => void;
+  alertasCobrancas?: AlertaCobranca[];
+  onNavegarParaCobranca?: (cobrancaId?: string) => void;
+  onTestarSomNotificacao?: () => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -26,6 +31,9 @@ export const Header: React.FC<HeaderProps> = ({
   statusNuvem = 'conectado',
   tema = 'light',
   onAlternarTema,
+  alertasCobrancas = [],
+  onNavegarParaCobranca,
+  onTestarSomNotificacao,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#0A162B]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors duration-200">
@@ -59,8 +67,15 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Lado direito: Tema, CALCULAR e SAIR */}
-        <div className="flex items-center gap-2.5 sm:gap-3 shrink-0">
+        {/* Lado direito: Sininho de Cobranças, Tema, CALCULAR e SAIR */}
+        <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Sininho Global de Notificações de Cobranças (Sempre visível no cabeçalho) */}
+          <SininhoNotificacoes
+            alertas={alertasCobrancas}
+            onNavegarParaCobranca={onNavegarParaCobranca || (() => {})}
+            onTestarSom={onTestarSomNotificacao || (() => {})}
+          />
+
           {/* Alternar Modo Escuro / Claro */}
           <button
             type="button"

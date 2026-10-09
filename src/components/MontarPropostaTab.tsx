@@ -31,12 +31,14 @@ import {
   Calculator,
   Percent,
   ClipboardPaste,
+  MapPin,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 import { redimensionarEComprimirImagem } from '../utils/storage';
 import { ModalLucroItem } from './ModalLucroItem';
+import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
 
 interface MontarPropostaTabProps {
   licitacoes: Licitacao[];
@@ -53,6 +55,7 @@ interface MontarPropostaTabProps {
   onVisualizarPdf: () => void;
   onIrParaTimbrado?: () => void;
   onForcarSalvarProposta?: (licId: number) => Promise<boolean>;
+  onAtualizarUfLicitacao?: (licId: number, novaUf: string) => void;
 }
 
 export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
@@ -70,6 +73,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onVisualizarPdf,
   onIrParaTimbrado,
   onForcarSalvarProposta,
+  onAtualizarUfLicitacao,
 }) => {
   const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0];
   const itensAtuais = useMemo(() => {
@@ -233,7 +237,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       outros_custos?: number;
     }
   ) => {
-    const itemExistente = itens.find(i => i.id === itemId);
+    const itemExistente = itens.find(i => Number(i.id) === Number(itemId));
     if (itemExistente && onAtualizarItem) {
       onAtualizarItem({
         ...itemExistente,
@@ -609,32 +613,38 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                 </span>
               </div>
 
-              {/* Botão de Forçar Salvamento de Garantia */}
+              {/* Seletor de UF (Estado da Licitação) */}
               <div className="flex flex-col items-start gap-1 shrink-0">
-                <button
-                  type="button"
-                  onClick={handleForcarSalvar}
-                  disabled={salvandoManual}
-                  className="px-3.5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 active:bg-emerald-800 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-75 whitespace-nowrap active:scale-98"
-                  title="Garante que todos os itens e especificações da proposta estejam gravados na nuvem e no armazenamento local"
-                >
-                  {salvandoManual ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Gravando na Nuvem...</span>
-                    </>
-                  ) : (
-                    <>
-                      <Save className="w-4 h-4 text-emerald-200" />
-                      <span>Salvar Proposta & Catálogo</span>
-                    </>
-                  )}
-                </button>
-                {ultimoSalvoTimestamp && (
-                  <span className="text-[10px] text-emerald-600 dark:text-emerald-400 font-semibold flex items-center gap-1">
-                    ✓ Salvo às {ultimoSalvoTimestamp}
+                <span className="font-semibold text-slate-900 dark:text-white flex items-center gap-1.5 text-xs">
+                  <MapPin className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <span>Estado da Licitação (UF):</span>
+                </span>
+                <div className="flex items-center gap-2">
+                  <select
+                    value={licitacaoAtual.uf || detectarEstado(licitacaoAtual.orgao)}
+                    onChange={e => {
+                      const novaUf = e.target.value;
+                      if (onAtualizarUfLicitacao) {
+                        onAtualizarUfLicitacao(licitacaoAtual.id, novaUf);
+                      }
+                      setNotificacao({
+                        tipo: 'sucesso',
+                        texto: `Estado da licitação atualizado para ${novaUf}! Refletido na aba de Análise.`,
+                      });
+                    }}
+                    className="px-3 py-1.5 text-xs font-bold bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/30 cursor-pointer shadow-xs font-mono"
+                    title="Selecione o estado (UF) desta prefeitura/órgão para mapeamento nas análises e mapa do Brasil"
+                  >
+                    {ESTADOS_BRASIL_OPCOES.map(est => (
+                      <option key={est.sigla} value={est.sigla}>
+                        {est.nome}
+                      </option>
+                    ))}
+                  </select>
+                  <span className="text-xs font-mono font-bold px-2 py-1 rounded-lg bg-blue-50 dark:bg-blue-900/40 text-blue-700 dark:text-blue-300 border border-blue-200/80 dark:border-blue-700/60 shadow-2xs">
+                    {licitacaoAtual.uf || detectarEstado(licitacaoAtual.orgao)}
                   </span>
-                )}
+                </div>
               </div>
             </div>
           )}
