@@ -351,16 +351,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   </div>
                 </div>
               </div>
-
-              <span
-                className={`text-[10px] font-bold px-1.5 py-0.5 rounded shrink-0 ml-1 ${
-                  abaAtiva === 'analise'
-                    ? 'bg-white/20 text-white'
-                    : 'bg-blue-100 dark:bg-blue-900/40 text-blue-800 dark:text-blue-300'
-                }`}
-              >
-                BI
-              </span>
             </button>
 
             {/* Botão Documentos Oficiais (Retrátil Independente) */}

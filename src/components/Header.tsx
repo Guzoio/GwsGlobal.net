@@ -19,8 +19,10 @@ interface HeaderProps {
   tema?: 'light' | 'dark';
   onAlternarTema?: (novoTema?: 'light' | 'dark') => void;
   alertasCobrancas?: AlertaCobranca[];
+  onNavegarParaAlerta?: (alerta: AlertaCobranca) => void;
   onNavegarParaCobranca?: (cobrancaId?: string) => void;
   onTestarSomNotificacao?: () => void;
+  onConcluirAvisoPregoeiro?: (licitacaoId: number) => void;
 }
 
 export const Header: React.FC<HeaderProps> = ({
@@ -32,8 +34,10 @@ export const Header: React.FC<HeaderProps> = ({
   tema = 'light',
   onAlternarTema,
   alertasCobrancas = [],
+  onNavegarParaAlerta,
   onNavegarParaCobranca,
   onTestarSomNotificacao,
+  onConcluirAvisoPregoeiro,
 }) => {
   return (
     <header className="sticky top-0 z-30 bg-white/95 dark:bg-[#0A162B]/95 backdrop-blur-md border-b border-slate-200/80 dark:border-slate-800 shadow-xs transition-colors duration-200">
@@ -72,8 +76,10 @@ export const Header: React.FC<HeaderProps> = ({
           {/* Sininho Global de Notificações de Cobranças (Sempre visível no cabeçalho) */}
           <SininhoNotificacoes
             alertas={alertasCobrancas}
+            onNavegarParaAlerta={onNavegarParaAlerta}
             onNavegarParaCobranca={onNavegarParaCobranca || (() => {})}
             onTestarSom={onTestarSomNotificacao || (() => {})}
+            onConcluirAvisoPregoeiro={onConcluirAvisoPregoeiro}
           />
 
           {/* Alternar Modo Escuro / Claro */}

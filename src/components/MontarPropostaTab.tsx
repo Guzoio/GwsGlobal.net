@@ -75,7 +75,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onForcarSalvarProposta,
   onAtualizarUfLicitacao,
 }) => {
-  const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0];
+  const licitacaoAtual =
+    licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) ||
+    licitacoes[0];
   const itensAtuais = useMemo(() => {
     if (!licitacaoAtual) return [];
     return itens
@@ -560,7 +562,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </label>
             <div className="relative">
               <select
-                value={licitacaoSelecionadaId ?? ''}
+                value={licitacaoAtual?.id ?? (licitacaoSelecionadaId ?? '')}
                 onChange={e => onSelecionarLicitacao(Number(e.target.value))}
                 className="w-full bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl px-3.5 py-2.5 text-xs font-semibold text-slate-900 dark:text-white shadow-2xs focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
               >

@@ -381,6 +381,12 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
         if (!c.pago) return false;
       }
 
+      // Filtro por responsável (quem fez)
+      if (filtroResponsavel !== 'todos') {
+        const respCob = (c.responsavel || '').toLowerCase().trim();
+        if (respCob !== filtroResponsavel.toLowerCase().trim()) return false;
+      }
+
       // Filtro por texto
       if (!busca.trim()) return true;
       const termo = busca.toLowerCase();
@@ -389,44 +395,33 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
         c.produto.toLowerCase().includes(termo) ||
         (c.numeroNota && c.numeroNota.toLowerCase().includes(termo)) ||
         (c.processo && c.processo.toLowerCase().includes(termo)) ||
-        (c.ordemFornecimento && c.ordemFornecimento.toLowerCase().includes(termo))
+        (c.ordemFornecimento && c.ordemFornecimento.toLowerCase().includes(termo)) ||
+        (c.responsavel && c.responsavel.toLowerCase().includes(termo))
       );
     });
-  }, [cobrancasComAnalise, busca, filtroStatus]);
+  }, [cobrancasComAnalise, busca, filtroStatus, filtroResponsavel]);
 
   return (
-    <div className="space-y-6 pb-12 animate-in fade-in duration-150">
-      {/* Top Header & Título */}
-      <div className="bg-white dark:bg-[#0A162B] rounded-2xl p-4 sm:p-6 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
-        <div>
-          <div className="flex items-center gap-2">
-            <div className="p-2.5 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border border-emerald-500/20">
-              <DollarSign className="w-5 h-5" />
-            </div>
-            <div>
-              <h1 className="text-lg sm:text-xl font-black text-slate-900 dark:text-white flex items-center gap-2">
-                <span>Módulo de Cobranças & Faturamento</span>
-                <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
-                  {cobrancas.length} cadastradas
-                </span>
-              </h1>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                Envio dos produtos → Entrega → Nota fiscal → Liquidação → Pagamento
-              </p>
-            </div>
-          </div>
+    <div className="space-y-5 pb-12 animate-in fade-in duration-150">
+      {/* Topo Limpo com Ação Nova Cobrança */}
+      <div className="flex items-center justify-between gap-4">
+        <div className="flex items-center gap-2">
+          <span className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
+            Painel de Cobranças
+          </span>
+          <span className="text-xs font-bold px-2 py-0.5 rounded-full bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300">
+            {cobrancas.length} cadastradas
+          </span>
         </div>
 
-        <div className="flex items-center gap-2.5 w-full md:w-auto">
-          <button
-            type="button"
-            onClick={handleNovaCobranca}
-            className="flex-1 md:flex-none px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
-          >
-            <Plus className="w-4 h-4" />
-            <span>Nova Cobrança</span>
-          </button>
-        </div>
+        <button
+          type="button"
+          onClick={handleNovaCobranca}
+          className="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-98 text-white text-xs font-bold shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+        >
+          <Plus className="w-4 h-4" />
+          <span>Nova Cobrança</span>
+        </button>
       </div>
 
       {/* KPI Cards / Indicadores Rápidos */}
@@ -505,6 +500,22 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
               <X className="w-3.5 h-3.5" />
             </button>
           )}
+        </div>
+
+        {/* Seletor de Quem Fez (Responsável) */}
+        <div className="relative min-w-[160px]">
+          <User className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+          <select
+            value={filtroResponsavel}
+            onChange={e => setFiltroResponsavel(e.target.value)}
+            className="w-full pl-8 pr-7 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-none focus:ring-2 focus:ring-blue-500/30 cursor-pointer appearance-none"
+            title="Filtrar por quem fez a cobrança"
+          >
+            <option value="todos">👤 Quem fez: Todos</option>
+            {responsaveis.map(resp => (
+              <option key={resp} value={resp}>👤 {resp}</option>
+            ))}
+          </select>
         </div>
 
         {/* Chips de Filtros Rápidos */}
@@ -651,6 +662,21 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
                         >
                           {analise.statusIcone} {analise.statusRotulo}
                         </span>
+                        {cobranca.responsavel && (
+                          <span
+                            className={`text-[10px] font-bold px-2 py-0.5 rounded-md border flex items-center gap-1 ${
+                              cobranca.responsavel.toLowerCase().includes('gustavo')
+                                ? 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300'
+                                : cobranca.responsavel.toLowerCase().includes('victor')
+                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300'
+                                : 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300'
+                            }`}
+                            title="Responsável pela cobrança"
+                          >
+                            <User className="w-3 h-3" />
+                            <span>{cobranca.responsavel}</span>
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400 mt-0.5 flex-wrap">
                         <span className="font-semibold text-slate-700 dark:text-slate-300">
@@ -913,6 +939,7 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
               <thead className="bg-slate-50 dark:bg-[#0E1F3D] border-b border-slate-200 dark:border-white/10 text-slate-500 dark:text-slate-400 font-semibold uppercase text-[10px] tracking-wider">
                 <tr>
                   <th className="py-3 px-4">Prefeitura & Produto</th>
+                  <th className="py-3 px-4">Quem Fez</th>
                   <th className="py-3 px-4">Status</th>
                   <th className="py-3 px-4">Valor</th>
                   <th className="py-3 px-4">Entrega</th>
@@ -936,6 +963,24 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
                         {cobranca.produto}
                         {cobranca.numeroNota && ` • NF: ${cobranca.numeroNota}`}
                       </div>
+                    </td>
+                    <td className="py-3 px-4">
+                      {cobranca.responsavel ? (
+                        <span
+                          className={`inline-flex items-center gap-1 text-[10px] font-bold px-2 py-0.5 rounded-md border ${
+                            cobranca.responsavel.toLowerCase().includes('gustavo')
+                              ? 'bg-blue-50 text-blue-800 border-blue-200 dark:bg-blue-950/60 dark:text-blue-300'
+                              : cobranca.responsavel.toLowerCase().includes('victor')
+                              ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300'
+                              : 'bg-purple-50 text-purple-800 border-purple-200 dark:bg-purple-950/60 dark:text-purple-300'
+                          }`}
+                        >
+                          <User className="w-3 h-3" />
+                          <span>{cobranca.responsavel}</span>
+                        </span>
+                      ) : (
+                        <span className="text-slate-400 text-[11px]">—</span>
+                      )}
                     </td>
                     <td className="py-3 px-4">
                       <span className={`px-2 py-0.5 rounded-full text-[10px] font-bold border ${analise.statusCor}`}>
@@ -1162,6 +1207,54 @@ export const CobrancasTab: React.FC<CobrancasTabProps> = ({
                 </h4>
 
                 <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                  <div className="sm:col-span-2">
+                    <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5 flex items-center gap-1.5">
+                      <User className="w-3.5 h-3.5 text-blue-500" />
+                      <span>Quem Fez / Responsável pela Cobrança</span>
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {responsaveis.map(resp => (
+                        <button
+                          key={resp}
+                          type="button"
+                          onClick={() => {
+                            setFormResponsavel(resp);
+                            setIsModoOutroResponsavel(false);
+                          }}
+                          className={`py-1.5 px-3 text-xs font-semibold rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                            !isModoOutroResponsavel && formResponsavel === resp
+                              ? 'bg-[#0A1D37] text-white border-[#0A1D37] shadow-xs'
+                              : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                          }`}
+                        >
+                          <span>👤 {resp}</span>
+                        </button>
+                      ))}
+                      <button
+                        type="button"
+                        onClick={() => setIsModoOutroResponsavel(true)}
+                        className={`py-1.5 px-3 text-xs font-semibold rounded-xl border flex items-center gap-1 transition-all cursor-pointer ${
+                          isModoOutroResponsavel
+                            ? 'bg-[#0A1D37] text-white border-[#0A1D37] shadow-xs'
+                            : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        + Outro...
+                      </button>
+                    </div>
+                    {isModoOutroResponsavel && (
+                      <div className="mt-2 animate-in fade-in duration-150">
+                        <input
+                          type="text"
+                          value={responsavelCustom}
+                          onChange={e => setResponsavelCustom(e.target.value)}
+                          placeholder="Digite o nome do novo responsável..."
+                          className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500/30"
+                        />
+                      </div>
+                    )}
+                  </div>
+
                   <div>
                     <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                       Prefeitura / Órgão <span className="text-rose-500">*</span>

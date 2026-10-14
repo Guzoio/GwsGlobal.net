@@ -26,7 +26,13 @@ service cloud.firestore {
         && (!('data_proposta' in data) || (data.data_proposta is string && data.data_proposta.size() <= 100))
         && (!('status' in data) || (data.status is string && data.status.size() <= 100))
         && (!('acompanhamento' in data) || data.acompanhamento is bool)
-        && (!('homologada' in data) || data.homologada is bool);
+        && (!('homologada' in data) || data.homologada is bool)
+        && (!('uf' in data) || (data.uf is string && data.uf.size() <= 20))
+        && (!('avisoData' in data) || (data.avisoData is string && data.avisoData.size() <= 50))
+        && (!('avisoHora' in data) || (data.avisoHora is string && data.avisoHora.size() <= 20))
+        && (!('avisoMensagem' in data) || (data.avisoMensagem is string && data.avisoMensagem.size() <= 2000))
+        && (!('avisoConcluido' in data) || data.avisoConcluido is bool)
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
     function isValidItem(data) {

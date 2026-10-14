@@ -19,6 +19,8 @@ import {
   CheckSquare,
   Layers,
   Calendar,
+  Clock,
+  Bell,
   Shield,
   Eye,
   Check,
@@ -77,6 +79,9 @@ interface HistoricoTabProps {
   onAbrirSeguranca?: () => void;
   onToggleAcompanhamento?: (id: number) => void;
   onToggleHomologada?: (id: number) => void;
+  onSalvarAvisoPregoeiro?: (licId: number, data: string, hora: string, msg: string) => void;
+  onConcluirAvisoPregoeiro?: (licId: number) => void;
+  onRemoverAvisoPregoeiro?: (licId: number) => void;
   onAbrirCalculadora?: () => void;
   onAbrirDeclaracao?: (lic?: Licitacao) => void;
 }
@@ -96,6 +101,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   onAbrirSeguranca,
   onToggleAcompanhamento,
   onToggleHomologada,
+  onSalvarAvisoPregoeiro,
+  onConcluirAvisoPregoeiro,
+  onRemoverAvisoPregoeiro,
   onAbrirCalculadora,
   onAbrirDeclaracao,
 }) => {
@@ -104,6 +112,30 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   const [filtroData, setFiltroData] = useState<string>(''); // formato YYYY-MM-DD
   const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>('todos');
   const [licitacaoParaExcluir, setLicitacaoParaExcluir] = useState<Licitacao | null>(null);
+
+  // Modal de Aviso de Retorno do Pregoeiro
+  const [modalAvisoLic, setModalAvisoLic] = useState<Licitacao | null>(null);
+  const [formAvisoData, setFormAvisoData] = useState<string>('');
+  const [formAvisoHora, setFormAvisoHora] = useState<string>('');
+  const [formAvisoMsg, setFormAvisoMsg] = useState<string>('');
+
+  const handleAbrirModalAviso = (lic: Licitacao) => {
+    setModalAvisoLic(lic);
+    let dataPadrao = lic.avisoData || '';
+    if (!dataPadrao) {
+      dataPadrao = new Date().toISOString().split('T')[0];
+    }
+    setFormAvisoData(dataPadrao);
+    setFormAvisoHora(lic.avisoHora || '14:00');
+    setFormAvisoMsg(lic.avisoMensagem || '');
+  };
+
+  const handleSalvarAviso = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!modalAvisoLic) return;
+    onSalvarAvisoPregoeiro?.(modalAvisoLic.id, formAvisoData, formAvisoHora, formAvisoMsg);
+    setModalAvisoLic(null);
+  };
 
   // Modal de Declaração Unificada (Lei 14.133/2021)
   const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState(false);
@@ -735,44 +767,84 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                           </select>
                         </div>
                       </td>
-                      {/* Coluna de Acompanhamento (👁 Acompanhar e ✓ Concluída/Homologada) */}
+                      {/* Coluna de Acompanhamento (👁 Acompanhar, ⏰ Alerta Pregoeiro e ✓ Concluída/Homologada) */}
                       <td className="py-3.5 px-4 text-center whitespace-nowrap">
-                        <div className="flex items-center justify-center gap-1.5">
-                          {/* Botão Acompanhar (Olho) */}
-                          <button
-                            type="button"
-                            onClick={() => onToggleAcompanhamento?.(lic.id)}
-                            className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
-                              lic.acompanhamento
-                                ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-xs ring-1 ring-amber-300'
-                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200'
-                            }`}
-                            title={
-                              lic.acompanhamento
-                                ? 'Licitação em acompanhamento (aguardando homologação / resultado) — Clique para desmarcar'
-                                : 'Marcar para acompanhamento (aguardando homologação / resultado)'
-                            }
-                          >
-                            <Eye className="w-4 h-4" />
-                          </button>
+                        <div className="flex flex-col items-center justify-center gap-1">
+                          <div className="flex items-center justify-center gap-1.5">
+                            {/* Botão Acompanhar (Olho) */}
+                            <button
+                              type="button"
+                              onClick={() => onToggleAcompanhamento?.(lic.id)}
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                                lic.acompanhamento
+                                  ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-xs ring-1 ring-amber-300'
+                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200'
+                              }`}
+                              title={
+                                lic.acompanhamento
+                                  ? 'Licitação em acompanhamento — Clique para desmarcar'
+                                  : 'Marcar para acompanhamento'
+                              }
+                            >
+                              <Eye className="w-4 h-4" />
+                            </button>
 
-                          {/* Botão Concluída / Homologada (Check) */}
-                          <button
-                            type="button"
-                            onClick={() => onToggleHomologada?.(lic.id)}
-                            className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
-                              lic.homologada
-                                ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200 shadow-xs ring-1 ring-emerald-300'
-                                : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
-                            }`}
-                            title={
-                              lic.homologada
-                                ? 'Licitação concluída / homologada — Clique para desmarcar'
-                                : 'Marcar como concluída / homologada'
-                            }
-                          >
-                            <Check className="w-4 h-4 stroke-[2.5]" />
-                          </button>
+                            {/* Botão Agendar Alerta de Retorno do Pregoeiro */}
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirModalAviso(lic)}
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                                lic.avisoData && !lic.avisoConcluido
+                                  ? 'bg-amber-500 border-amber-600 text-white shadow-xs animate-pulse ring-1 ring-amber-400'
+                                  : lic.acompanhamento
+                                  ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
+                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                              }`}
+                              title={
+                                lic.avisoData && !lic.avisoConcluido
+                                  ? `Retorno agendado para ${lic.avisoData}${lic.avisoHora ? ` às ${lic.avisoHora}` : ''} — Clique para editar`
+                                  : 'Agendar aviso de retorno do pregoeiro (data e horário no Sininho)'
+                              }
+                            >
+                              <Clock className="w-4 h-4" />
+                            </button>
+
+                            {/* Botão Concluída / Homologada (Check) */}
+                            <button
+                              type="button"
+                              onClick={() => onToggleHomologada?.(lic.id)}
+                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                                lic.homologada
+                                  ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200 shadow-xs ring-1 ring-emerald-300'
+                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
+                              }`}
+                              title={
+                                lic.homologada
+                                  ? 'Licitação concluída / homologada — Clique para desmarcar'
+                                  : 'Marcar como concluída / homologada'
+                              }
+                            >
+                              <Check className="w-4 h-4 stroke-[2.5]" />
+                            </button>
+                          </div>
+
+                          {/* Badge Indicativo de Alerta Agendado */}
+                          {lic.avisoData && !lic.avisoConcluido && (
+                            <button
+                              type="button"
+                              onClick={() => handleAbrirModalAviso(lic)}
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-200 transition-colors cursor-pointer"
+                              title={lic.avisoMensagem || 'Clique para ver ou alterar o aviso do pregoeiro'}
+                            >
+                              <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
+                              <span>
+                                {lic.avisoData.includes('-')
+                                  ? lic.avisoData.split('-').reverse().slice(0, 2).join('/')
+                                  : lic.avisoData.slice(0, 5)}
+                                {lic.avisoHora ? ` ${lic.avisoHora}` : ''}
+                              </span>
+                            </button>
+                          )}
                         </div>
                       </td>
                       <td className="py-3.5 px-4 text-right whitespace-nowrap">
@@ -1063,6 +1135,128 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         licitacaoInicial={licParaDeclaracao}
         timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
+
+      {/* ========================================================================= */}
+      {/* MODAL AGENDAR RETORNO DO PREGOEIRO (AVISO SONORO & SININHO) */}
+      {/* ========================================================================= */}
+      {modalAvisoLic && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setModalAvisoLic(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#0A162B] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative animate-in fade-in zoom-in-95 duration-150"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                  <Clock className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Aviso de Retorno do Pregoeiro
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400 truncate max-w-[260px]">
+                    {modalAvisoLic.orgao}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalAvisoLic(null)}
+                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSalvarAviso} className="mt-4 space-y-3.5">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    📅 Data do Retorno <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="date"
+                    required
+                    value={formAvisoData}
+                    onChange={e => setFormAvisoData(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                    ⏰ Horário do Retorno <span className="text-rose-500">*</span>
+                  </label>
+                  <input
+                    type="time"
+                    required
+                    value={formAvisoHora}
+                    onChange={e => setFormAvisoHora(e.target.value)}
+                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Mensagem / Observação do Pregoeiro
+                </label>
+                <textarea
+                  rows={2}
+                  value={formAvisoMsg}
+                  onChange={e => setFormAvisoMsg(e.target.value)}
+                  placeholder="Ex: Pregoeiro informou no chat que a sessão reabre às 14h para disputa de lances..."
+                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+                <Bell className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+                <span className="leading-relaxed">
+                  Este aviso emitirá um <strong>alerta sonoro</strong> e ficará disponível no <strong>Sininho no canto superior direito</strong> para que você não perca a reabertura!
+                </span>
+              </div>
+
+              <div className="flex items-center justify-between pt-2">
+                <div>
+                  {modalAvisoLic.avisoData && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        onRemoverAvisoPregoeiro?.(modalAvisoLic.id);
+                        setModalAvisoLic(null);
+                      }}
+                      className="text-xs text-rose-600 hover:text-rose-700 dark:text-rose-400 font-semibold cursor-pointer underline"
+                    >
+                      Remover Alerta
+                    </button>
+                  )}
+                </div>
+
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setModalAvisoLic(null)}
+                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-semibold"
+                  >
+                    Cancelar
+                  </button>
+                  <button
+                    type="submit"
+                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                  >
+                    <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                    <span>Salvar Alerta</span>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

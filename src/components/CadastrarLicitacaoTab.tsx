@@ -4,8 +4,8 @@ import { ModalidadeLic, Licitacao } from '../types';
 import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
 
 interface CadastrarLicitacaoTabProps {
-  onCadastrar: (novaLic: Omit<Licitacao, 'id'>) => void;
-  onSucesso: (idCriado: number) => void;
+  onCadastrar: (novaLic: Omit<Licitacao, 'id'>) => number | void;
+  onSucesso?: (idCriado: number) => void;
   responsaveis?: string[];
   onAdicionarResponsavel?: (nome: string) => boolean;
 }
@@ -19,6 +19,7 @@ const MODALIDADES: ModalidadeLic[] = [
 
 export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
   onCadastrar,
+  onSucesso,
   responsaveis = ['Gustavo', 'Victor'],
   onAdicionarResponsavel,
 }) => {
@@ -66,7 +67,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
     setErro('');
 
-    onCadastrar({
+    const idCriado = onCadastrar({
       orgao: orgao.trim(),
       processo_pregao: processo.trim(),
       modalidade,
@@ -74,6 +75,10 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
       responsavel: responsavelFinal,
       uf: ufSelecionada,
     });
+
+    if (idCriado && onSucesso) {
+      onSucesso(idCriado);
+    }
 
     // Reset form
     setOrgao('');

@@ -556,6 +556,10 @@ export function obterLicitacoes(): Licitacao[] {
           responsavel,
           acompanhamento: Boolean(l.acompanhamento),
           homologada: Boolean(l.homologada),
+          avisoData: l.avisoData || undefined,
+          avisoHora: l.avisoHora || undefined,
+          avisoMensagem: l.avisoMensagem || undefined,
+          avisoConcluido: Boolean(l.avisoConcluido),
         };
       });
   } catch (err) {

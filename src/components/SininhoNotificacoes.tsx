@@ -9,6 +9,8 @@ import {
   Package,
   FileText,
   DollarSign,
+  Eye,
+  Check,
   X,
 } from 'lucide-react';
 import { AlertaCobranca } from '../types';
@@ -16,17 +18,21 @@ import { formatarMoeda } from '../utils/numberToWordsPtBr';
 
 interface SininhoNotificacoesProps {
   alertas: AlertaCobranca[];
+  onNavegarParaAlerta?: (alerta: AlertaCobranca) => void;
   onNavegarParaCobranca: (cobrancaId?: string) => void;
   onTestarSom: () => void;
+  onConcluirAvisoPregoeiro?: (licitacaoId: number) => void;
 }
 
 export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
   alertas,
+  onNavegarParaAlerta,
   onNavegarParaCobranca,
   onTestarSom,
+  onConcluirAvisoPregoeiro,
 }) => {
   const [aberto, setAberto] = useState(false);
-  const [filtro, setFiltro] = useState<'todos' | 'criticos' | 'hoje'>('todos');
+  const [filtro, setFiltro] = useState<'todos' | 'pregoeiro' | 'criticos' | 'hoje'>('todos');
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   // Fecha o dropdown se clicar fora
@@ -46,10 +52,12 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
 
   // Contagens
   const totalAlertas = alertas.length;
-  const alertasCriticos = alertas.filter(a => a.urgencia === 'critica');
+  const alertasPregoeiro = alertas.filter(a => a.tipo === 'pregoeiro_retorno');
+  const alertasCriticos = alertas.filter(a => a.urgencia === 'critica' && a.tipo !== 'pregoeiro_retorno');
   const alertasHoje = alertas.filter(a => a.diasRestantes === 0);
 
   const alertasFiltrados = alertas.filter(a => {
+    if (filtro === 'pregoeiro') return a.tipo === 'pregoeiro_retorno';
     if (filtro === 'criticos') return a.urgencia === 'critica';
     if (filtro === 'hoje') return a.diasRestantes === 0;
     return true;
@@ -57,6 +65,8 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
 
   const getIconeAlerta = (tipo: AlertaCobranca['tipo']) => {
     switch (tipo) {
+      case 'pregoeiro_retorno':
+        return <Eye className="w-4 h-4 text-amber-500" />;
       case 'entrega_hoje':
       case 'entrega_atrasada':
         return <Package className="w-4 h-4 text-blue-500" />;
@@ -160,6 +170,20 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
               >
                 Todos ({totalAlertas})
               </button>
+              {alertasPregoeiro.length > 0 && (
+                <button
+                  type="button"
+                  onClick={() => setFiltro('pregoeiro')}
+                  className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                    filtro === 'pregoeiro'
+                      ? 'bg-amber-500 text-white shadow-2xs'
+                      : 'text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
+                  }`}
+                >
+                  <Eye className="w-3 h-3" />
+                  <span>Pregoeiro ({alertasPregoeiro.length})</span>
+                </button>
+              )}
               {alertasCriticos.length > 0 && (
                 <button
                   type="button"
@@ -200,82 +224,121 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                   Tudo em dia!
                 </h4>
                 <p className="text-[11px] text-slate-500 dark:text-slate-400 max-w-xs mx-auto leading-relaxed">
-                  Não há cobranças atrasadas ou com vencimento hoje. O sistema continuará monitorando automaticamente.
+                  Não há avisos de pregoeiro ou cobranças pendentes para este filtro. O sistema continuará monitorando em tempo real.
                 </p>
               </div>
             ) : (
-              alertasFiltrados.map(alerta => (
-                <div
-                  key={alerta.id}
-                  onClick={() => {
-                    setAberto(false);
-                    onNavegarParaCobranca(alerta.cobrancaId);
-                  }}
-                  className={`p-3 sm:p-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group flex items-start gap-3 ${
-                    alerta.urgencia === 'critica'
-                      ? 'bg-rose-50/30 dark:bg-rose-950/10'
-                      : alerta.urgencia === 'alta'
-                      ? 'bg-amber-50/30 dark:bg-amber-950/10'
-                      : ''
-                  }`}
-                >
+              alertasFiltrados.map(alerta => {
+                const ehPregoeiro = alerta.tipo === 'pregoeiro_retorno';
+                return (
                   <div
-                    className={`p-2 rounded-xl shrink-0 border mt-0.5 ${
-                      alerta.urgencia === 'critica'
-                        ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900'
+                    key={alerta.id}
+                    onClick={() => {
+                      setAberto(false);
+                      if (onNavegarParaAlerta) {
+                        onNavegarParaAlerta(alerta);
+                      } else {
+                        onNavegarParaCobranca(alerta.cobrancaId);
+                      }
+                    }}
+                    className={`p-3 sm:p-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group flex items-start gap-3 ${
+                      ehPregoeiro
+                        ? 'bg-amber-50/40 dark:bg-amber-950/20'
+                        : alerta.urgencia === 'critica'
+                        ? 'bg-rose-50/30 dark:bg-rose-950/10'
                         : alerta.urgencia === 'alta'
-                        ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900'
-                        : 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900'
+                        ? 'bg-amber-50/30 dark:bg-amber-950/10'
+                        : ''
                     }`}
                   >
-                    {getIconeAlerta(alerta.tipo)}
-                  </div>
-
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center justify-between gap-2">
-                      <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
-                        {alerta.titulo}
-                      </h4>
-                      <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 shrink-0 font-mono">
-                        {formatarMoeda(alerta.valorNota)}
-                      </span>
+                    <div
+                      className={`p-2 rounded-xl shrink-0 border mt-0.5 ${
+                        ehPregoeiro
+                          ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
+                          : alerta.urgencia === 'critica'
+                          ? 'bg-rose-100 text-rose-700 border-rose-200 dark:bg-rose-950/50 dark:text-rose-300 dark:border-rose-900'
+                          : alerta.urgencia === 'alta'
+                          ? 'bg-amber-100 text-amber-700 border-amber-200 dark:bg-amber-950/50 dark:text-amber-300 dark:border-amber-900'
+                          : 'bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/50 dark:text-blue-300 dark:border-blue-900'
+                      }`}
+                    >
+                      {getIconeAlerta(alerta.tipo)}
                     </div>
 
-                    <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-0.5 line-clamp-1">
-                      {alerta.prefeitura}
-                      {alerta.numeroNota && (
-                        <span className="text-slate-400 font-normal"> • NF: {alerta.numeroNota}</span>
-                      )}
-                    </p>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center justify-between gap-2">
+                        <h4 className="text-xs font-bold text-slate-900 dark:text-white group-hover:text-blue-600 dark:group-hover:text-blue-400 transition-colors truncate">
+                          {alerta.titulo}
+                        </h4>
+                        {ehPregoeiro ? (
+                          <span className="text-[10px] font-bold text-amber-700 dark:text-amber-300 shrink-0 font-mono bg-amber-100 dark:bg-amber-950/60 px-1.5 py-0.5 rounded">
+                            {alerta.horario ? `⏰ ${alerta.horario}` : '⏰ Retorno'}
+                          </span>
+                        ) : (
+                          alerta.valorNota !== undefined && (
+                            <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 shrink-0 font-mono">
+                              {formatarMoeda(alerta.valorNota)}
+                            </span>
+                          )
+                        )}
+                      </div>
 
-                    <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
-                      {alerta.mensagem}
-                    </p>
+                      <p className="text-[11px] font-medium text-slate-700 dark:text-slate-300 mt-0.5 line-clamp-1">
+                        {alerta.prefeitura}
+                        {alerta.numeroNota && (
+                          <span className="text-slate-400 font-normal"> • NF: {alerta.numeroNota}</span>
+                        )}
+                      </p>
 
-                    <div className="mt-2 flex items-center justify-between text-[10px]">
-                      <span
-                        className={`font-bold px-2 py-0.5 rounded-md ${
-                          alerta.urgencia === 'critica'
-                            ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
-                            : alerta.urgencia === 'alta'
-                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
-                            : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
-                        }`}
-                      >
-                        {alerta.urgencia === 'critica'
-                          ? 'Atrasado'
-                          : alerta.diasRestantes === 0
-                          ? 'Vence Hoje'
-                          : 'Próximo'}
-                      </span>
+                      <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-1 leading-relaxed">
+                        {alerta.mensagem}
+                      </p>
 
-                      <span className="text-blue-600 dark:text-blue-400 font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
-                        Abrir cobrança <ArrowRight className="w-3 h-3" />
-                      </span>
+                      <div className="mt-2 flex items-center justify-between text-[10px]">
+                        <span
+                          className={`font-bold px-2 py-0.5 rounded-md ${
+                            ehPregoeiro
+                              ? 'bg-amber-100 text-amber-800 dark:bg-amber-950/60 dark:text-amber-300'
+                              : alerta.urgencia === 'critica'
+                              ? 'bg-rose-100 text-rose-700 dark:bg-rose-950/60 dark:text-rose-300'
+                              : alerta.diasRestantes === 0
+                              ? 'bg-amber-100 text-amber-700 dark:bg-amber-950/60 dark:text-amber-300'
+                              : 'bg-blue-100 text-blue-700 dark:bg-blue-950/60 dark:text-blue-300'
+                          }`}
+                        >
+                          {ehPregoeiro
+                            ? 'Acompanhamento Pregoeiro'
+                            : alerta.urgencia === 'critica'
+                            ? 'Atrasado'
+                            : alerta.diasRestantes === 0
+                            ? 'Vence Hoje'
+                            : 'Próximo'}
+                        </span>
+
+                        <div className="flex items-center gap-2">
+                          {ehPregoeiro && alerta.licitacaoId && onConcluirAvisoPregoeiro && (
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onConcluirAvisoPregoeiro(alerta.licitacaoId!);
+                              }}
+                              className="px-2 py-0.5 rounded-md bg-emerald-50 dark:bg-emerald-950/60 hover:bg-emerald-100 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1 cursor-pointer transition-colors"
+                              title="Marcar aviso do pregoeiro como atendido"
+                            >
+                              <Check className="w-3 h-3" />
+                              <span>Atendido</span>
+                            </button>
+                          )}
+                          <span className="text-blue-600 dark:text-blue-400 font-bold inline-flex items-center gap-1 group-hover:translate-x-0.5 transition-transform">
+                            {ehPregoeiro ? 'Ver Licitação' : 'Abrir cobrança'} <ArrowRight className="w-3 h-3" />
+                          </span>
+                        </div>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))
+                );
+              })
             )}
           </div>
 

@@ -19,6 +19,10 @@ export interface Licitacao {
   acompanhamento?: boolean; // 👁 Marcada para acompanhamento (amarelo)
   homologada?: boolean; // ✓ Concluída / Homologada (verde)
   uf?: string; // Estado (UF) da licitação (ex: 'SP', 'MG', 'PR')
+  avisoData?: string; // YYYY-MM-DD ou DD/MM/AAAA data do retorno do pregoeiro
+  avisoHora?: string; // HH:mm horário do retorno (ex: 14:30)
+  avisoMensagem?: string; // Mensagem/motivo do aviso (ex: 'Pregoeiro volta para fase de lances')
+  avisoConcluido?: boolean; // Se o alerta de retorno já foi atendido/concluído
 }
 
 export interface ItemLicitacao {
@@ -273,10 +277,12 @@ export interface Cobranca {
 
 export interface AlertaCobranca {
   id: string;
-  cobrancaId: string;
+  cobrancaId?: string;
+  licitacaoId?: number;
   prefeitura: string;
   numeroNota?: string;
-  valorNota: number;
+  valorNota?: number;
+  horario?: string;
   tipo:
     | 'entrega_hoje'
     | 'entrega_atrasada'
@@ -284,7 +290,8 @@ export interface AlertaCobranca {
     | 'liquidacao_vencendo'
     | 'liquidacao_atrasada'
     | 'pagamento_vencendo'
-    | 'pagamento_atrasado';
+    | 'pagamento_atrasado'
+    | 'pregoeiro_retorno';
   titulo: string;
   mensagem: string;
   diasRestantes?: number;

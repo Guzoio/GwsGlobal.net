@@ -472,12 +472,20 @@ app.post('/api/sync/merge', (req, res) => {
             id,
             acompanhamento: novoAcomp,
             homologada: novoHomol,
+            avisoData: lic.avisoData !== undefined ? lic.avisoData : atual.avisoData,
+            avisoHora: lic.avisoHora !== undefined ? lic.avisoHora : atual.avisoHora,
+            avisoMensagem: lic.avisoMensagem !== undefined ? lic.avisoMensagem : atual.avisoMensagem,
+            avisoConcluido: lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : Boolean(atual.avisoConcluido),
           };
           if (
             atual.acompanhamento !== mesclado.acompanhamento ||
             atual.homologada !== mesclado.homologada ||
             atual.responsavel !== mesclado.responsavel ||
-            atual.data_proposta !== mesclado.data_proposta
+            atual.data_proposta !== mesclado.data_proposta ||
+            atual.avisoData !== mesclado.avisoData ||
+            atual.avisoHora !== mesclado.avisoHora ||
+            atual.avisoMensagem !== mesclado.avisoMensagem ||
+            atual.avisoConcluido !== mesclado.avisoConcluido
           ) {
             alterado = true;
           }
@@ -564,6 +572,10 @@ app.post('/api/sync/licitacao', (req, res) => {
       id,
       acompanhamento: Boolean(lic.acompanhamento),
       homologada: Boolean(lic.homologada),
+      avisoData: lic.avisoData !== undefined ? lic.avisoData : (index >= 0 ? dbData.licitacoes[index]?.avisoData : undefined),
+      avisoHora: lic.avisoHora !== undefined ? lic.avisoHora : (index >= 0 ? dbData.licitacoes[index]?.avisoHora : undefined),
+      avisoMensagem: lic.avisoMensagem !== undefined ? lic.avisoMensagem : (index >= 0 ? dbData.licitacoes[index]?.avisoMensagem : undefined),
+      avisoConcluido: lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : (index >= 0 ? Boolean(dbData.licitacoes[index]?.avisoConcluido) : false),
     };
     if (index >= 0) {
       dbData.licitacoes[index] = itemAtualizado;

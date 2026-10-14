@@ -42,6 +42,11 @@ export function ouvirLicitacoesNuvem(
           status: data.status,
           acompanhamento: data.acompanhamento !== undefined ? Boolean(data.acompanhamento) : undefined,
           homologada: data.homologada !== undefined ? Boolean(data.homologada) : undefined,
+          uf: data.uf || undefined,
+          avisoData: data.avisoData || undefined,
+          avisoHora: data.avisoHora || undefined,
+          avisoMensagem: data.avisoMensagem || undefined,
+          avisoConcluido: data.avisoConcluido !== undefined ? Boolean(data.avisoConcluido) : undefined,
         });
       });
       // Ordena por ID decrescente
@@ -200,6 +205,11 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       status: lic.status || 'Ativa',
       acompanhamento: Boolean(lic.acompanhamento),
       homologada: Boolean(lic.homologada),
+      uf: lic.uf || 'SP',
+      avisoData: lic.avisoData || '',
+      avisoHora: lic.avisoHora || '',
+      avisoMensagem: lic.avisoMensagem || '',
+      avisoConcluido: Boolean(lic.avisoConcluido),
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (error) {
