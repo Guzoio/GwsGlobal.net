@@ -716,7 +716,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               </thead>
               <tbody className="divide-y divide-slate-100 dark:divide-slate-800 text-xs">
                 {licitacoesFiltradas.map(lic => {
-                  const itensDaLic = itens.filter(i => i.licitacao_id === lic.id);
+                  const itensDaLic = itens.filter(i => Number(i.licitacao_id) === Number(lic.id));
                   const totalLic = itensDaLic.reduce((acc, it) => acc + (it.valor_total || 0), 0);
                   const responsavelAtual = lic.responsavel || 'Gustavo';
 

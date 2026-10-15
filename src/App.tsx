@@ -3,7 +3,7 @@
  * SPDX-License-Identifier: Apache-2.0
  */
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { Header } from './components/Header';
 import { Sidebar } from './components/Sidebar';
 import { HistoricoTab } from './components/HistoricoTab';
@@ -170,7 +170,26 @@ export default function App() {
     }
     qtdAlertasAnteriorRef.current = todosAlertasSininho.length;
   }, [todosAlertasSininho.length]);
-  const [licitacaoSelecionadaId, setLicitacaoSelecionadaId] = useState<number | null>(null);
+  const [licitacaoSelecionadaId, setLicitacaoSelecionadaIdState] = useState<number | null>(() => {
+    try {
+      const salvo = localStorage.getItem('gws_licitacao_selecionada_id');
+      return salvo ? Number(salvo) : null;
+    } catch {
+      return null;
+    }
+  });
+
+  const setLicitacaoSelecionadaId = useCallback((idOuFn: number | null | ((prev: number | null) => number | null)) => {
+    setLicitacaoSelecionadaIdState(prev => {
+      const novo = typeof idOuFn === 'function' ? idOuFn(prev) : idOuFn;
+      try {
+        if (novo !== null && novo !== undefined) {
+          localStorage.setItem('gws_licitacao_selecionada_id', String(novo));
+        }
+      } catch {}
+      return novo;
+    });
+  }, []);
   const [timbradoConfig, setTimbradoConfig] = useState<PapelTimbradoConfig>(() =>
     obterPapelTimbradoConfig()
   );
@@ -234,7 +253,17 @@ export default function App() {
       }
     });
 
-    if (lics.length > 0) {
+    const idSalvo = (() => {
+      try {
+        const s = localStorage.getItem('gws_licitacao_selecionada_id');
+        return s ? Number(s) : null;
+      } catch {
+        return null;
+      }
+    })();
+    if (idSalvo && lics.some(l => Number(l.id) === idSalvo)) {
+      setLicitacaoSelecionadaId(idSalvo);
+    } else if (lics.length > 0) {
       setLicitacaoSelecionadaId(lics[0].id);
     }
 
@@ -736,7 +765,7 @@ export default function App() {
       salvarResponsaveisNuvem(novaLista).catch(() => {});
     }
     const atualizadas = licitacoes.map(l => {
-      if (l.id === id) {
+      if (Number(l.id) === Number(id)) {
         const atual = { ...l, responsavel: novoResponsavel };
         salvarLicitacaoServidor(atual);
         salvarLicitacaoNuvem(atual).catch(() => {});
@@ -763,7 +792,7 @@ export default function App() {
 
     removerLicitacaoServidor(id);
 
-    if (licitacaoSelecionadaId === id) {
+    if (Number(licitacaoSelecionadaId) === Number(id)) {
       setLicitacaoSelecionadaId(licsAtualizadas.length > 0 ? licsAtualizadas[0].id : null);
     }
 
@@ -778,7 +807,7 @@ export default function App() {
 
   const handleAtualizarDataProposta = (licId: number, novaData: string) => {
     const licsAtualizadas = licitacoes.map(l => {
-      if (l.id === licId) {
+      if (Number(l.id) === Number(licId)) {
         const atualizada: Licitacao = { ...l, data_proposta: novaData };
         salvarLicitacaoServidor(atualizada);
         salvarLicitacaoNuvem(atualizada).catch(err => {
@@ -797,7 +826,7 @@ export default function App() {
     const ufFormatada = novaUf.trim().toUpperCase();
     let licModificada: Licitacao | null = null;
     const licsAtualizadas = licitacoes.map(l => {
-      if (l.id === licId) {
+      if (Number(l.id) === Number(licId)) {
         const atualizada: Licitacao = { ...l, uf: ufFormatada };
         licModificada = atualizada;
         return atualizada;
@@ -953,14 +982,14 @@ export default function App() {
   };
 
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
-    // Busca o maior ID entre o estado em memória e os dados persistidos localmente
+    // Garante ID estritamente único que nunca colide com nenhuma licitação existente (nem Catanduvas nem outras)
     const licsLocais = obterLicitacoes();
     const todasLics = [...licitacoes, ...licsLocais];
     const maiorId = todasLics.reduce((max, l) => {
       const num = Number(l.id);
       return !isNaN(num) && num > max ? num : max;
     }, 0);
-    const novoId = maiorId + 1;
+    const novoId = Math.max(Date.now(), maiorId + 1);
 
     const dataPropostaInicial =
       novaLic.data_proposta || converterParaFormatoInputDate(novaLic.data_cadastro);
@@ -970,6 +999,7 @@ export default function App() {
       data_proposta: dataPropostaInicial,
       acompanhamento: false,
       homologada: false,
+      avisoConcluido: false,
     };
 
     const listaAtualizada = [itemCriado, ...licitacoes.filter(l => Number(l.id) !== novoId)];
@@ -983,7 +1013,7 @@ export default function App() {
     // Define a nova licitação como selecionada e abre a aba montar
     setLicitacaoSelecionadaId(novoId);
     setAbaAtiva('montar');
-    mostrarToast(`Licitação #${novoId} ("${novaLic.orgao}") cadastrada com sucesso! Adicione os itens da proposta.`);
+    mostrarToast(`Licitação "${novaLic.orgao}" criada com sucesso! Proposta limpa pronta para inserção de itens.`);
     return novoId;
   };
 
@@ -1122,14 +1152,14 @@ export default function App() {
 
   // Geração e Download do Arquivo PDF com Timbrado (apenas itens selecionados no quadrinho)
   const handleGerarPdf = async () => {
-    const licAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0];
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0];
     if (!licAtual) {
       mostrarToast('Nenhuma licitação selecionada.', 'erro');
       return;
     }
 
     // Filtra estritamente os itens marcados no quadrinho (selecionado !== false)
-    const itensDaLic = itens.filter(i => i.licitacao_id === licAtual.id && i.selecionado !== false);
+    const itensDaLic = itens.filter(i => Number(i.licitacao_id) === Number(licAtual.id) && i.selecionado !== false);
     if (itensDaLic.length === 0) {
       mostrarToast('Marque ao menos um item no quadrinho para gerar a proposta em PDF.', 'erro');
       return;
@@ -1148,8 +1178,8 @@ export default function App() {
     }
   };
 
-  const licitacaoAtual = licitacoes.find(l => l.id === licitacaoSelecionadaId);
-  const temItensNaLicAtual = itens.some(i => i.licitacao_id === licitacaoSelecionadaId);
+  const licitacaoAtual = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0] || null;
+  const temItensNaLicAtual = itens.some(i => Number(i.licitacao_id) === Number(licitacaoSelecionadaId));
 
   // Se não estiver autenticado, bloqueia completamente o sistema e exibe apenas a tela de login
   if (!autenticado) {
@@ -1268,7 +1298,7 @@ export default function App() {
           totalCobrancas={cobrancas.length}
           totalAlertasCobrancas={todosAlertasSininho.length}
           onAbrirDeclaracao={() => {
-            const lic = licitacoes.find(l => l.id === licitacaoSelecionadaId) || licitacoes[0] || null;
+            const lic = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0] || null;
             setLicitacaoParaDeclaracao(lic);
             setModalDeclaracaoAberto(true);
             setSidebarAberta(false);

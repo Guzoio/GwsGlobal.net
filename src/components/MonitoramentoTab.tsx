@@ -811,7 +811,7 @@ export const MonitoramentoTab: React.FC<MonitoramentoTabProps> = ({
             <div className="grid grid-cols-1 gap-4">
               {pregoesFiltrados.map(pregao => {
                 const badge = getBadgeSituacaoPregao(pregao.situacao);
-                const vinculadoCrm = licitacoesCrm.find(l => l.id === pregao.licitacaoCrmId);
+                const vinculadoCrm = licitacoesCrm.find(l => Number(l.id) === Number(pregao.licitacaoCrmId));
 
                 return (
                   <div

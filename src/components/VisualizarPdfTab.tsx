@@ -207,7 +207,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
                 className="w-full bg-slate-50 hover:bg-white border-2 border-slate-300 focus:border-[#0F2C59] rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 transition-all cursor-pointer"
               >
                 {licitacoes.map(lic => {
-                  const countItens = itens.filter(i => i.licitacao_id === lic.id).length;
+                  const countItens = itens.filter(i => Number(i.licitacao_id) === Number(lic.id)).length;
                   return (
                     <option key={lic.id} value={lic.id}>
                       #{lic.id} — {lic.processo_pregao} | {lic.orgao} ({lic.modalidade}) • [{countItens} produto(s)] • Resp: {lic.responsavel || 'Gustavo'}
@@ -250,7 +250,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
                     key={lic.id}
                     onClick={() => onSelecionarLicitacao(lic.id)}
                     className={`px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap cursor-pointer ${
-                      lic.id === licitacao?.id
+                      Number(lic.id) === Number(licitacao?.id)
                         ? 'bg-[#0F2C59] text-white shadow-2xs'
                         : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
                     }`}

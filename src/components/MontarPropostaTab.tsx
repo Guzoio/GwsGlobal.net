@@ -36,7 +36,7 @@ import {
 import { Licitacao, ItemLicitacao } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
-import { redimensionarEComprimirImagem } from '../utils/storage';
+import { redimensionarEComprimirImagem, obterLicitacoes } from '../utils/storage';
 import { ModalLucroItem } from './ModalLucroItem';
 import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
 
@@ -75,9 +75,18 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onForcarSalvarProposta,
   onAtualizarUfLicitacao,
 }) => {
-  const licitacaoAtual =
-    licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) ||
-    licitacoes[0];
+  const licitacaoAtual = useMemo(() => {
+    if (licitacaoSelecionadaId !== null && licitacaoSelecionadaId !== undefined) {
+      const encontrada = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId));
+      if (encontrada) return encontrada;
+      // Fallback imediato para storage local garantindo que licitação recém-criada seja aberta do zero
+      const locais = obterLicitacoes();
+      const emLocais = locais.find(l => Number(l.id) === Number(licitacaoSelecionadaId));
+      if (emLocais) return emLocais;
+    }
+    return licitacoes[0] || null;
+  }, [licitacoes, licitacaoSelecionadaId]);
+
   const itensAtuais = useMemo(() => {
     if (!licitacaoAtual) return [];
     return itens
@@ -116,6 +125,25 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [salvandoManual, setSalvandoManual] = useState<boolean>(false);
   const [ultimoSalvoTimestamp, setUltimoSalvoTimestamp] = useState<string | null>(null);
   const [feedbackSalvar, setFeedbackSalvar] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
+
+  // Sempre que a licitação ativa mudar (inclusive ao criar nova), limpa o formulário de itens e inicia no item 1
+  useEffect(() => {
+    const proxNum = (itensAtuais.length > 0 ? Math.max(...itensAtuais.map(i => i.num_item)) : 0) + 1;
+    setNumItem(proxNum);
+    setIdItemEditando(null);
+    setLinkProduto('');
+    setDescricaoCurta('');
+    setDescricaoTecnica('');
+    setMarca('');
+    setQuantidade(1);
+    setValorUnitario(150.0);
+    setLanceMinimo('');
+    setLanceLote('');
+    setImagemBase64('');
+    setObservacoes('');
+    setMostrarObservacoes(false);
+    setMostrarCampoColarMultiplos(false);
+  }, [licitacaoAtual?.id]);
 
   // Forçar salvamento garantido na nuvem e no armazenamento local
   const handleForcarSalvar = async () => {

@@ -298,7 +298,7 @@ export async function removerItensDaLicitacaoNuvem(licId: number, itens?: ItemLi
 
     // Se temos a lista de itens local
     if (itens && itens.length > 0) {
-      const paraRemover = itens.filter((i) => i.licitacao_id === licId);
+      const paraRemover = itens.filter((i) => Number(i.licitacao_id) === Number(licId));
       for (const it of paraRemover) {
         batch.delete(doc(db, ITENS_COL, String(it.id)));
         count++;

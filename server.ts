@@ -24,6 +24,18 @@ app.use((req, res, next) => {
   next();
 });
 
+// Servir favicon.ico explicitamente para evitar erro 503/404 em qualquer ambiente
+app.get('/favicon.ico', (_req, res) => {
+  const icoPath = path.resolve(process.cwd(), 'public/favicon.ico');
+  const jpgPath = path.resolve(process.cwd(), 'public/logo_gws_global.jpg');
+  if (fs.existsSync(icoPath)) {
+    return res.sendFile(icoPath);
+  } else if (fs.existsSync(jpgPath)) {
+    return res.sendFile(jpgPath);
+  }
+  return res.status(204).end();
+});
+
 // Inicialização do cliente oficial Google Gen AI conforme diretrizes do skill
 const ai = new GoogleGenAI({
   apiKey: process.env.GEMINI_API_KEY,

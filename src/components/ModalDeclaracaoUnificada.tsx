@@ -202,7 +202,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
     }
     const id = Number(idStr);
     setLicitacaoVinculadaId(id);
-    const lic = licitacoes.find(l => l.id === id);
+    const lic = licitacoes.find(l => Number(l.id) === Number(id));
     if (lic) {
       preencherComLicitacao(lic);
     }
