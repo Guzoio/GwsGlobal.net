@@ -17,6 +17,9 @@ import {
   DollarSign,
   Scale,
   PenTool,
+  Award,
+  ShieldCheck,
+  UserCheck,
 } from 'lucide-react';
 import { PalavraDoDiaCard } from './PalavraDoDiaCard';
 
@@ -29,6 +32,7 @@ interface SidebarProps {
   totalAlertasCobrancas?: number;
   totalAlertasPregoeiro?: number;
   onAbrirDeclaracao?: () => void;
+  onAbrirNovaDeclaracao?: (tipo: 'me_epp' | 'habilitacao' | 'fatos_impeditivos' | 'trabalho_infantil') => void;
   onAbrirExequibilidade?: () => void;
   onAbrirAssinador?: () => void;
   onAbrirSeguranca?: () => void;
@@ -46,6 +50,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
   totalAlertasCobrancas = 0,
   totalAlertasPregoeiro = 0,
   onAbrirDeclaracao,
+  onAbrirNovaDeclaracao,
   onAbrirExequibilidade,
   onAbrirAssinador,
   onAbrirSeguranca,
@@ -411,6 +416,78 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </span>
                   </button>
 
+                  {/* 1. Comprovação de enquadramento em ME/EPP */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('me_epp');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Award className="w-3.5 h-3.5 text-indigo-500 dark:text-indigo-400 shrink-0" />
+                      <span className="truncate font-semibold">Enquadramento ME/EPP</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-indigo-100 dark:bg-indigo-500/20 text-indigo-800 dark:text-indigo-300 shrink-0">
+                      LC 123
+                    </span>
+                  </button>
+
+                  {/* 2. Declaração de cumprimento dos requisitos de Habilitação */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('habilitacao');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <ShieldCheck className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                      <span className="truncate font-semibold">Cumprimento Habilitação</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 shrink-0">
+                      Habilitação
+                    </span>
+                  </button>
+
+                  {/* 3. Declaração de inexistência de fatos impeditivos ou supervenientes */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('fatos_impeditivos');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Scale className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400 shrink-0" />
+                      <span className="truncate font-semibold">Fatos Impeditivos</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 shrink-0">
+                      Supervenientes
+                    </span>
+                  </button>
+
+                  {/* 4. Declaração de não utilização de mão de obra infantil */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('trabalho_infantil');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <UserCheck className="w-3.5 h-3.5 text-rose-500 dark:text-rose-400 shrink-0" />
+                      <span className="truncate font-semibold">Não Emprego de Menor</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 shrink-0">
+                      CF Art. 7º
+                    </span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => {
@@ -420,10 +497,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
                   >
                     <div className="flex items-center gap-2.5 min-w-0">
-                      <Scale className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                      <Scale className="w-3.5 h-3.5 text-teal-500 dark:text-teal-400 shrink-0" />
                       <span className="truncate font-semibold">Exequibilidade</span>
                     </div>
-                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 shrink-0">
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-teal-100 dark:bg-teal-500/20 text-teal-800 dark:text-teal-300 shrink-0">
                       Custos Ganhos
                     </span>
                   </button>

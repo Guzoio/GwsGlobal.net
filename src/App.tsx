@@ -17,6 +17,8 @@ import { SegurancaModal } from './components/SegurancaModal';
 import { ModalDeclaracaoUnificada } from './components/ModalDeclaracaoUnificada';
 import { ModalExequibilidade } from './components/ModalExequibilidade';
 import { ModalAssinadorDocumentos } from './components/ModalAssinadorDocumentos';
+import { ModalNovasDeclaracoes } from './components/ModalNovasDeclaracoes';
+import { TipoNovaDeclaracao } from './utils/novasDeclaracoesPdf';
 import { ContatosTab } from './components/ContatosTab';
 import { AnaliseTab } from './components/AnaliseTab';
 import { CobrancasTab } from './components/CobrancasTab';
@@ -220,6 +222,8 @@ export default function App() {
   const [modalExequibilidadeAberto, setModalExequibilidadeAberto] = useState<boolean>(false);
   const [licitacaoParaExequibilidade, setLicitacaoParaExequibilidade] = useState<Licitacao | null>(null);
   const [modalAssinadorAberto, setModalAssinadorAberto] = useState<boolean>(false);
+  const [modalNovasDeclaracoesAberto, setModalNovasDeclaracoesAberto] = useState<boolean>(false);
+  const [tipoNovaDeclaracaoAtiva, setTipoNovaDeclaracaoAtiva] = useState<TipoNovaDeclaracao>('me_epp');
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
   const [tema, setTema] = useState<ThemeMode>(() => obterTema());
@@ -1494,6 +1498,20 @@ export default function App() {
         timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
 
+      {/* Modal das Novas Declarações Oficiais (ME/EPP, Habilitação, Fatos Impeditivos, Mão de Obra Infantil) */}
+      <ModalNovasDeclaracoes
+        aberto={modalNovasDeclaracoesAberto}
+        onFechar={() => setModalNovasDeclaracoesAberto(false)}
+        tipoInicial={tipoNovaDeclaracaoAtiva}
+        licitacoes={licitacoes}
+        licitacaoInicial={
+          licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) ||
+          licitacoes[0] ||
+          null
+        }
+        timbrado={timbradoConfig || obterPapelTimbradoConfig()}
+      />
+
       {/* Toast flutuante */}
       {toast && (
         <div
@@ -1530,6 +1548,11 @@ export default function App() {
             const lic = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0] || null;
             setLicitacaoParaDeclaracao(lic);
             setModalDeclaracaoAberto(true);
+            setSidebarAberta(false);
+          }}
+          onAbrirNovaDeclaracao={(tipo) => {
+            setTipoNovaDeclaracaoAtiva(tipo);
+            setModalNovasDeclaracoesAberto(true);
             setSidebarAberta(false);
           }}
           onAbrirExequibilidade={() => {
