@@ -15,6 +15,8 @@ import { CalculadoraOfertaDrawer } from './components/CalculadoraOfertaDrawer';
 import { LoginScreen } from './components/LoginScreen';
 import { SegurancaModal } from './components/SegurancaModal';
 import { ModalDeclaracaoUnificada } from './components/ModalDeclaracaoUnificada';
+import { ModalExequibilidade } from './components/ModalExequibilidade';
+import { ModalAssinadorDocumentos } from './components/ModalAssinadorDocumentos';
 import { ContatosTab } from './components/ContatosTab';
 import { AnaliseTab } from './components/AnaliseTab';
 import { CobrancasTab } from './components/CobrancasTab';
@@ -55,6 +57,7 @@ import {
   registrarLogin,
   deslogar,
 } from './utils/storage';
+import { removerImagemItemIndexedDB } from './utils/indexedDb';
 import {
   gerarAlertasCobrancas,
   tocarSomNotificacao,
@@ -121,9 +124,20 @@ export default function App() {
     return gerarAlertasCobrancas(cobrancas);
   }, [cobrancas]);
 
+  // Temporizador para verificar virada de minuto/horário para alertas pontuais
+  const [tickerMinuto, setTickerMinuto] = useState<number>(0);
+  useEffect(() => {
+    const timer = setInterval(() => setTickerMinuto(t => t + 1), 30000);
+    return () => clearInterval(timer);
+  }, []);
+
   // Alertas de retorno do pregoeiro para licitações em acompanhamento
+  // Só alerta e apita NO DIA MARCADO NO RELÓGIO (diffDias <= 0) e quando o horário marcado chegar
   const alertasPregoeiro = useMemo(() => {
     const lista: AlertaCobranca[] = [];
+    const agora = new Date();
+    const horaAtual = `${String(agora.getHours()).padStart(2, '0')}:${String(agora.getMinutes()).padStart(2, '0')}`;
+
     for (const lic of licitacoes) {
       if (!lic.acompanhamento) continue;
       if (!lic.avisoData || lic.avisoConcluido) continue;
@@ -135,8 +149,13 @@ export default function App() {
       }
 
       const diffDias = diferencaEmDiasParaHoje(isoData);
-      // Notifica se o aviso é para hoje, atrasado ou nos próximos 2 dias
-      if (diffDias !== null && diffDias <= 2) {
+      // Notifica estritamente no dia marcado no relógio (diffDias <= 0, ou seja, hoje ou vencido)
+      if (diffDias !== null && diffDias <= 0) {
+        // Se for para o dia de hoje e tiver horário programado, só apita/alerta quando atingir o horário
+        if (diffDias === 0 && lic.avisoHora && horaAtual < lic.avisoHora) {
+          continue;
+        }
+
         lista.push({
           id: `pregoeiro_${lic.id}_${isoData}_${lic.avisoHora || ''}`,
           licitacaoId: Number(lic.id),
@@ -155,7 +174,7 @@ export default function App() {
       }
     }
     return lista;
-  }, [licitacoes]);
+  }, [licitacoes, tickerMinuto]);
 
   // Alertas consolidados no Sininho (Cobranças + Acompanhamentos/Pregoeiro)
   const todosAlertasSininho = useMemo(() => {
@@ -194,9 +213,13 @@ export default function App() {
     obterPapelTimbradoConfig()
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
+  const [calculadoraMinimizada, setCalculadoraMinimizada] = useState<boolean>(false);
   const [sidebarAberta, setSidebarAberta] = useState<boolean>(false);
   const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState<boolean>(false);
   const [licitacaoParaDeclaracao, setLicitacaoParaDeclaracao] = useState<Licitacao | null>(null);
+  const [modalExequibilidadeAberto, setModalExequibilidadeAberto] = useState<boolean>(false);
+  const [licitacaoParaExequibilidade, setLicitacaoParaExequibilidade] = useState<Licitacao | null>(null);
+  const [modalAssinadorAberto, setModalAssinadorAberto] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
   const [tema, setTema] = useState<ThemeMode>(() => obterTema());
@@ -233,23 +256,49 @@ export default function App() {
     setContatos(cts);
     setCobrancas(cobs);
 
-    // Carrega contatos atualizados do servidor
+    // Carrega contatos atualizados do servidor com mesclagem segura (nunca sobrescreve contatos locais)
     obterContatosServidor().then(ctsServidor => {
       if (ctsServidor && ctsServidor.length > 0) {
         const setContatosExcluidos = new Set(obterContatosExcluidos());
-        const ctsLimpos = ctsServidor.filter(c => !setContatosExcluidos.has(String(c.id)));
-        setContatos(ctsLimpos);
-        salvarContatosLocal(ctsLimpos);
+        setContatos(prev => {
+          const mapa = new Map<string, ContatoPrefeitura>();
+          for (const c of prev) {
+            const id = String(c.id);
+            if (!setContatosExcluidos.has(id)) mapa.set(id, c);
+          }
+          for (const inc of ctsServidor) {
+            const id = String(inc.id);
+            if (setContatosExcluidos.has(id)) continue;
+            const exist = mapa.get(id);
+            mapa.set(id, exist ? { ...exist, ...inc } : inc);
+          }
+          const lista = Array.from(mapa.values());
+          salvarContatosLocal(lista);
+          return lista;
+        });
       }
     });
 
-    // Carrega cobranças atualizadas do servidor
+    // Carrega cobranças atualizadas do servidor com mesclagem segura (nunca sobrescreve cobranças locais)
     obterCobrancasServidor().then(cobsServidor => {
       if (cobsServidor && cobsServidor.length > 0) {
         const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-        const cobsLimpos = cobsServidor.filter(c => !setCobrancasExcluidas.has(String(c.id)));
-        setCobrancas(cobsLimpos);
-        salvarCobrancasLocal(cobsLimpos);
+        setCobrancas(prev => {
+          const mapa = new Map<string, Cobranca>();
+          for (const c of prev) {
+            const id = String(c.id);
+            if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
+          }
+          for (const inc of cobsServidor) {
+            const id = String(inc.id);
+            if (setCobrancasExcluidas.has(id)) continue;
+            const exist = mapa.get(id);
+            mapa.set(id, exist ? { ...exist, ...inc } : inc);
+          }
+          const lista = Array.from(mapa.values());
+          salvarCobrancasLocal(lista);
+          return lista;
+        });
       }
     });
 
@@ -341,17 +390,43 @@ export default function App() {
           setResponsaveis(payload.responsaveis);
           salvarResponsaveis(payload.responsaveis);
         }
-        if (payload.contatos) {
+        if (payload.contatos && payload.contatos.length > 0) {
           const setContatosExcluidos = new Set(obterContatosExcluidos());
-          const ctsLimpos = payload.contatos.filter(c => !setContatosExcluidos.has(String(c.id)));
-          setContatos(ctsLimpos);
-          salvarContatosLocal(ctsLimpos);
+          setContatos(prev => {
+            const mapa = new Map<string, ContatoPrefeitura>();
+            for (const c of prev) {
+              const id = String(c.id);
+              if (!setContatosExcluidos.has(id)) mapa.set(id, c);
+            }
+            for (const inc of payload.contatos!) {
+              const id = String(inc.id);
+              if (setContatosExcluidos.has(id)) continue;
+              const exist = mapa.get(id);
+              mapa.set(id, exist ? { ...exist, ...inc } : inc);
+            }
+            const lista = Array.from(mapa.values());
+            salvarContatosLocal(lista);
+            return lista;
+          });
         }
-        if (payload.cobrancas) {
+        if (payload.cobrancas && payload.cobrancas.length > 0) {
           const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-          const cobsLimpos = payload.cobrancas.filter(c => !setCobrancasExcluidas.has(String(c.id)));
-          setCobrancas(cobsLimpos);
-          salvarCobrancasLocal(cobsLimpos);
+          setCobrancas(prev => {
+            const mapa = new Map<string, Cobranca>();
+            for (const c of prev) {
+              const id = String(c.id);
+              if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
+            }
+            for (const inc of payload.cobrancas!) {
+              const id = String(inc.id);
+              if (setCobrancasExcluidas.has(id)) continue;
+              const exist = mapa.get(id);
+              mapa.set(id, exist ? { ...exist, ...inc } : inc);
+            }
+            const lista = Array.from(mapa.values());
+            salvarCobrancasLocal(lista);
+            return lista;
+          });
         }
       } else if (payload.tipo === 'licitacoes' && payload.licitacoes) {
         const licsLimpas = payload.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
@@ -399,14 +474,40 @@ export default function App() {
         salvarResponsaveis(payload.responsaveis);
       } else if (payload.tipo === 'contatos' && payload.contatos) {
         const setContatosExcluidos = new Set(obterContatosExcluidos());
-        const ctsLimpos = payload.contatos.filter(c => !setContatosExcluidos.has(String(c.id)));
-        setContatos(ctsLimpos);
-        salvarContatosLocal(ctsLimpos);
+        setContatos(prev => {
+          const mapa = new Map<string, ContatoPrefeitura>();
+          for (const c of prev) {
+            const id = String(c.id);
+            if (!setContatosExcluidos.has(id)) mapa.set(id, c);
+          }
+          for (const inc of payload.contatos!) {
+            const id = String(inc.id);
+            if (setContatosExcluidos.has(id)) continue;
+            const exist = mapa.get(id);
+            mapa.set(id, exist ? { ...exist, ...inc } : inc);
+          }
+          const lista = Array.from(mapa.values());
+          salvarContatosLocal(lista);
+          return lista;
+        });
       } else if (payload.tipo === 'cobrancas' && payload.cobrancas) {
         const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-        const cobsLimpos = payload.cobrancas.filter(c => !setCobrancasExcluidas.has(String(c.id)));
-        setCobrancas(cobsLimpos);
-        salvarCobrancasLocal(cobsLimpos);
+        setCobrancas(prev => {
+          const mapa = new Map<string, Cobranca>();
+          for (const c of prev) {
+            const id = String(c.id);
+            if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
+          }
+          for (const inc of payload.cobrancas!) {
+            const id = String(inc.id);
+            if (setCobrancasExcluidas.has(id)) continue;
+            const exist = mapa.get(id);
+            mapa.set(id, exist ? { ...exist, ...inc } : inc);
+          }
+          const lista = Array.from(mapa.values());
+          salvarCobrancasLocal(lista);
+          return lista;
+        });
       }
     });
 
@@ -415,12 +516,16 @@ export default function App() {
     const itsLocais = obterItens();
     const timbLocal = obterPapelTimbradoConfig();
     const respsLocais = obterResponsaveis();
+    const ctsLocais = obterContatosLocal();
+    const cobsLocais = obterCobrancasLocal();
 
     mesclarEstadoComServidor({
       licitacoes: licsLocais,
       itens: itsLocais,
       timbrado: timbLocal,
       responsaveis: respsLocais,
+      contatos: ctsLocais,
+      cobrancas: cobsLocais,
     }).then((estado) => {
       if (estado) {
         const setExcluidas = new Set(obterLicitacoesExcluidas());
@@ -467,6 +572,44 @@ export default function App() {
             }
             const lista = Array.from(mapa.values());
             salvarItens(lista);
+            return lista;
+          });
+        }
+        if (estado.contatos && estado.contatos.length > 0) {
+          const setContatosExcluidos = new Set(obterContatosExcluidos());
+          setContatos(prev => {
+            const mapa = new Map<string, ContatoPrefeitura>();
+            for (const p of prev) {
+              const id = String(p.id);
+              if (!setContatosExcluidos.has(id)) mapa.set(id, p);
+            }
+            for (const inc of estado.contatos!) {
+              const id = String(inc.id);
+              if (setContatosExcluidos.has(id)) continue;
+              const exist = mapa.get(id);
+              mapa.set(id, exist ? { ...exist, ...inc } : inc);
+            }
+            const lista = Array.from(mapa.values());
+            salvarContatosLocal(lista);
+            return lista;
+          });
+        }
+        if (estado.cobrancas && estado.cobrancas.length > 0) {
+          const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
+          setCobrancas(prev => {
+            const mapa = new Map<string, Cobranca>();
+            for (const p of prev) {
+              const id = String(p.id);
+              if (!setCobrancasExcluidas.has(id)) mapa.set(id, p);
+            }
+            for (const inc of estado.cobrancas!) {
+              const id = String(inc.id);
+              if (setCobrancasExcluidas.has(id)) continue;
+              const exist = mapa.get(id);
+              mapa.set(id, exist ? { ...exist, ...inc } : inc);
+            }
+            const lista = Array.from(mapa.values());
+            salvarCobrancasLocal(lista);
             return lista;
           });
         }
@@ -544,7 +687,7 @@ export default function App() {
               const prev = mapa.get(id);
               mapa.set(id, {
                 ...nuv,
-                caminho_imagem: nuv.caminho_imagem || prev?.caminho_imagem || '',
+                caminho_imagem: nuv.caminho_imagem !== undefined ? nuv.caminho_imagem : (prev?.caminho_imagem || ''),
               });
             }
             const lista = Array.from(mapa.values());
@@ -580,15 +723,47 @@ export default function App() {
     const unsubContatos = ouvirContatosNuvem((ctsNuvem) => {
       const setContatosExcluidos = new Set(obterContatosExcluidos());
       const ctsLimpos = (ctsNuvem || []).filter(c => !setContatosExcluidos.has(String(c.id)));
-      setContatos(ctsLimpos);
-      salvarContatosLocal(ctsLimpos);
+      setContatos(prev => {
+        const mapa = new Map<string, ContatoPrefeitura>();
+        // 1. Preserva todos os contatos locais primeiro
+        for (const p of prev) {
+          const id = String(p.id);
+          if (!setContatosExcluidos.has(id)) mapa.set(id, p);
+        }
+        // 2. Mescla dados atualizados da nuvem
+        for (const inc of ctsLimpos) {
+          const id = String(inc.id);
+          if (setContatosExcluidos.has(id)) continue;
+          const exist = mapa.get(id);
+          mapa.set(id, exist ? { ...exist, ...inc } : inc);
+        }
+        const lista = Array.from(mapa.values());
+        salvarContatosLocal(lista);
+        return lista;
+      });
     });
 
     const unsubCobrancas = ouvirCobrancasNuvem((cobNuvem) => {
       const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
       const cobsLimpos = (cobNuvem || []).filter(c => !setCobrancasExcluidas.has(String(c.id)));
-      setCobrancas(cobsLimpos);
-      salvarCobrancasLocal(cobsLimpos);
+      setCobrancas(prev => {
+        const mapa = new Map<string, Cobranca>();
+        // 1. Preserva todas as cobranças locais primeiro
+        for (const p of prev) {
+          const id = String(p.id);
+          if (!setCobrancasExcluidas.has(id)) mapa.set(id, p);
+        }
+        // 2. Mescla cobranças da nuvem
+        for (const inc of cobsLimpos) {
+          const id = String(inc.id);
+          if (setCobrancasExcluidas.has(id)) continue;
+          const exist = mapa.get(id);
+          mapa.set(id, exist ? { ...exist, ...inc } : inc);
+        }
+        const lista = Array.from(mapa.values());
+        salvarCobrancasLocal(lista);
+        return lista;
+      });
     });
 
     return () => {
@@ -605,16 +780,25 @@ export default function App() {
   }, []);
 
   const handleSalvarContato = async (contato: ContatoPrefeitura) => {
+    let listaAtualizada: ContatoPrefeitura[] = [];
     setContatos(prev => {
       const idx = prev.findIndex(c => String(c.id) === String(contato.id));
       const lista = idx >= 0
         ? prev.map(c => (String(c.id) === String(contato.id) ? contato : c))
         : [contato, ...prev];
+      listaAtualizada = lista;
       salvarContatosLocal(lista);
       return lista;
     });
     salvarContatoServidor(contato).catch(() => {});
     salvarContatoNuvem(contato).catch(() => {});
+    if (listaAtualizada.length > 0) {
+      mesclarEstadoComServidor({
+        licitacoes: [],
+        itens: [],
+        contatos: listaAtualizada,
+      }).catch(() => {});
+    }
     mostrarToast(`Contato de "${contato.nomeContato}" (${contato.prefeitura}) salvo com sucesso!`);
   };
 
@@ -923,7 +1107,9 @@ export default function App() {
         console.warn('Aviso ao sincronizar aviso do pregoeiro na nuvem:', err);
       });
     }
-    mostrarToast('Lembrete de retorno do pregoeiro agendado no Sininho!');
+    // Garante que o som do sininho não apite imediatamente na hora de salvar
+    qtdAlertasAnteriorRef.current = qtdAlertasAnteriorRef.current + 1;
+    mostrarToast('Lembrete de retorno do pregoeiro salvo com sucesso!');
   };
 
   const handleRemoverAvisoPregoeiro = (licId: number) => {
@@ -1084,7 +1270,11 @@ export default function App() {
       licitacao_id: Number(itemAtualizado.licitacao_id),
       quantidade: Math.max(1, Math.round(itemAtualizado.quantidade)),
       valor_total: Math.max(1, Math.round(itemAtualizado.quantidade)) * itemAtualizado.valor_unitario,
+      caminho_imagem: itemAtualizado.caminho_imagem ? itemAtualizado.caminho_imagem : '',
     };
+    if (!itemNormalizado.caminho_imagem) {
+      removerImagemItemIndexedDB(itemNormalizado.id).catch(() => {});
+    }
     setItens(prev => {
       const existe = prev.some(i => Number(i.id) === Number(itemNormalizado.id));
       const listaAtualizada = existe
@@ -1215,7 +1405,13 @@ export default function App() {
       <Header
         sidebarAberta={sidebarAberta}
         onToggleSidebar={() => setSidebarAberta(prev => !prev)}
-        onAbrirCalculadora={() => setCalculadoraAberta(prev => !prev)}
+        onAbrirCalculadora={() => {
+          if (abaAtiva === 'montar') {
+            setCalculadoraMinimizada(false);
+          } else {
+            setCalculadoraAberta(prev => !prev);
+          }
+        }}
         onLogout={handleLogout}
         statusNuvem={statusNuvem}
         tema={tema}
@@ -1240,10 +1436,19 @@ export default function App() {
         onConcluirAvisoPregoeiro={handleConcluirAvisoPregoeiro}
       />
 
-      {/* Painel lateral deslizante da Calculadora de Limite de Oferta */}
+      {/* Painel lateral deslizante da Calculadora de Limite de Oferta (Fixo na aba Montar Proposta) */}
       <CalculadoraOfertaDrawer
-        aberto={calculadoraAberta}
-        onFechar={() => setCalculadoraAberta(false)}
+        aberto={abaAtiva === 'montar' ? true : calculadoraAberta}
+        modoFixo={abaAtiva === 'montar'}
+        minimizada={abaAtiva === 'montar' ? calculadoraMinimizada : false}
+        onAlternarMinimizar={() => setCalculadoraMinimizada(prev => !prev)}
+        onFechar={() => {
+          if (abaAtiva === 'montar') {
+            setCalculadoraMinimizada(true);
+          } else {
+            setCalculadoraAberta(false);
+          }
+        }}
       />
 
       {/* Modal de Configuração de Segurança e Acesso */}
@@ -1263,6 +1468,29 @@ export default function App() {
         }}
         licitacoes={licitacoes}
         licitacaoInicial={licitacaoParaDeclaracao}
+        timbrado={timbradoConfig || obterPapelTimbradoConfig()}
+      />
+
+      {/* Modal de Exequibilidade de Preços e Composição de Custos */}
+      <ModalExequibilidade
+        aberto={modalExequibilidadeAberto}
+        onFechar={() => {
+          setModalExequibilidadeAberto(false);
+          setLicitacaoParaExequibilidade(null);
+        }}
+        licitacoes={licitacoes}
+        itens={itens}
+        licitacaoInicial={licitacaoParaExequibilidade}
+        timbrado={timbradoConfig || obterPapelTimbradoConfig()}
+        onAtualizarItem={handleAtualizarItem}
+        onAlternarSelecaoItem={handleAlternarSelecaoItem}
+        onAlternarTodosItens={handleAlternarTodosItens}
+      />
+
+      {/* Modal Assinador de Documentos & Atas de Registro de Preços */}
+      <ModalAssinadorDocumentos
+        aberto={modalAssinadorAberto}
+        onFechar={() => setModalAssinadorAberto(false)}
         timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
 
@@ -1296,11 +1524,27 @@ export default function App() {
           totalLicitacoes={licitacoes.length}
           totalContatos={contatos.length}
           totalCobrancas={cobrancas.length}
-          totalAlertasCobrancas={todosAlertasSininho.length}
+          totalAlertasCobrancas={alertasCobrancas.length}
+          totalAlertasPregoeiro={alertasPregoeiro.length}
           onAbrirDeclaracao={() => {
             const lic = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0] || null;
             setLicitacaoParaDeclaracao(lic);
             setModalDeclaracaoAberto(true);
+            setSidebarAberta(false);
+          }}
+          onAbrirExequibilidade={() => {
+            const lic =
+              licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) ||
+              licitacoes.find(l => itens.some(i => Number(i.licitacao_id) === Number(l.id) && i.selecionado === true)) ||
+              licitacoes.find(l => itens.some(i => Number(i.licitacao_id) === Number(l.id))) ||
+              licitacoes[0] ||
+              null;
+            setLicitacaoParaExequibilidade(lic);
+            setModalExequibilidadeAberto(true);
+            setSidebarAberta(false);
+          }}
+          onAbrirAssinador={() => {
+            setModalAssinadorAberto(true);
             setSidebarAberta(false);
           }}
           onAbrirSeguranca={() => {
@@ -1415,6 +1659,7 @@ export default function App() {
             onIrParaTimbrado={() => setAbaAtiva('timbrado')}
             onForcarSalvarProposta={handleForcarSalvarProposta}
             onAtualizarUfLicitacao={handleAtualizarUfLicitacao}
+            calculadoraFixaAberta={abaAtiva === 'montar' && !calculadoraMinimizada}
           />
         )}
 

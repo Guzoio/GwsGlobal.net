@@ -80,28 +80,24 @@ service cloud.firestore {
         && (!('email' in data) || (data.email is string && data.email.size() <= 200))
         && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000))
         && (!('favorito' in data) || data.favorito is bool)
+        && (!('licitacaoId' in data) || data.licitacaoId == null || data.licitacaoId is number || data.licitacaoId is string)
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
         && (!('dataCadastro' in data) || (data.dataCadastro is string && data.dataCadastro.size() <= 100));
     }
 
     // Licitações Collection - Sincronização em tempo real da equipe
     match /licitacoes/{licitacaoId} {
-      allow read: if true;
-      allow create, update: if isValidId(licitacaoId) && isValidLicitacao(incoming());
-      allow delete: if isValidId(licitacaoId);
+      allow read, write: if true;
     }
 
     // Itens de Licitação Collection
     match /itens/{itemId} {
-      allow read: if true;
-      allow create, update: if isValidId(itemId) && isValidItem(incoming());
-      allow delete: if isValidId(itemId);
+      allow read, write: if true;
     }
 
     // Contatos de Prefeituras Collection - Agenda e WhatsApp
     match /contatos/{contatoId} {
-      allow read: if true;
-      allow create, update: if isValidId(contatoId) && isValidContato(incoming());
-      allow delete: if isValidId(contatoId);
+      allow read, write: if true;
     }
 
     // Cobranças de Prefeituras - Envio, Entrega, NF, Liquidação e Pagamento

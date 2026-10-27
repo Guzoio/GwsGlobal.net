@@ -12,31 +12,38 @@ import {
   DollarSign,
   CheckCircle2,
   XCircle,
+  ChevronRight,
+  ChevronLeft,
+  Minimize2,
 } from 'lucide-react';
-import { formatarMoeda } from '../utils/numberToWordsPtBr';
+import { formatarMoeda, parseMoedaBrasileira, formatarNumeroPtBr } from '../utils/numberToWordsPtBr';
 
 interface CalculadoraOfertaDrawerProps {
   aberto: boolean;
   onFechar: () => void;
+  modoFixo?: boolean;
+  minimizada?: boolean;
+  onAlternarMinimizar?: () => void;
 }
 
 export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = ({
   aberto,
   onFechar,
+  modoFixo = false,
+  minimizada = false,
+  onAlternarMinimizar,
 }) => {
   // Inputs da calculadora
   const [quantidade, setQuantidade] = useState<number | string>(6);
-  const [precoPrefeitura, setPrecoPrefeitura] = useState<number | string>(1543.0);
-  const [precoFornecedor, setPrecoFornecedor] = useState<number | string>(959.0);
+  const [precoPrefeitura, setPrecoPrefeitura] = useState<string>('1.543,00');
+  const [precoFornecedor, setPrecoFornecedor] = useState<string>('959,00');
   const [margemLucro, setMargemLucro] = useState<number | string>(30);
   const [copiadoCampo, setCopiadoCampo] = useState<string | null>(null);
 
-  // Parsing numérico seguro
+  // Parsing numérico seguro com suporte a vírgula e ponto brasileiros
   const qtdNum = typeof quantidade === 'string' ? parseFloat(quantidade) || 0 : quantidade;
-  const precoPrefeituraNum =
-    typeof precoPrefeitura === 'string' ? parseFloat(precoPrefeitura) || 0 : precoPrefeitura;
-  const precoFornecedorNum =
-    typeof precoFornecedor === 'string' ? parseFloat(precoFornecedor) || 0 : precoFornecedor;
+  const precoPrefeituraNum = parseMoedaBrasileira(precoPrefeitura) || 0;
+  const precoFornecedorNum = parseMoedaBrasileira(precoFornecedor) || 0;
   const margemNum = typeof margemLucro === 'string' ? parseFloat(margemLucro) || 0 : margemLucro;
 
   // 1. VIABILIDADE PARA PARTICIPAR (% ESTIM.)
@@ -77,48 +84,103 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
 
   if (!aberto) return null;
 
-  return (
-    <div className="fixed inset-0 z-50 overflow-hidden flex justify-end">
-      {/* Backdrop suave que mantém a página visível */}
-      <div
-        onClick={onFechar}
-        className="fixed inset-0 bg-[#071326]/40 backdrop-blur-[2px] transition-opacity"
-        aria-hidden="true"
-      />
+  // Se estiver em modo fixo e minimizada, exibe botão flutuante elegante na borda direita
+  if (modoFixo && minimizada) {
+    return (
+      <button
+        type="button"
+        onClick={onAlternarMinimizar}
+        className="fixed right-0 top-24 z-30 bg-[#0A1D37] hover:bg-[#122A4E] text-white py-3 px-3.5 rounded-l-2xl shadow-2xl border-l-2 border-y border-amber-400/60 flex items-center gap-2 cursor-pointer transition-all hover:pr-4 group animate-in slide-in-from-right duration-150"
+        title="Abrir Calculadora de Limite de Oferta (Fixo)"
+      >
+        <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center">
+          <Calculator className="w-3.5 h-3.5" />
+        </div>
+        <span className="text-xs font-bold tracking-tight text-white hidden sm:inline">
+          Calculadora de Oferta
+        </span>
+        <ChevronLeft className="w-4 h-4 text-amber-400 group-hover:-translate-x-0.5 transition-transform" />
+      </button>
+    );
+  }
 
-      {/* Painel lateral deslizante (Drawer): ~400px de largura no desktop, adaptando-se em telas menores */}
-      <div className="relative w-full sm:w-[400px] max-w-[400px] bg-white dark:bg-[#0A162B] shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col z-50 animate-in slide-in-from-right duration-200 max-h-screen">
+  return (
+    <div
+      className={
+        modoFixo
+          ? 'fixed top-16 right-0 bottom-0 z-30 w-full sm:w-[380px] lg:w-[400px] flex flex-col bg-white dark:bg-[#0A162B] shadow-2xl border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-200'
+          : 'fixed inset-0 z-50 overflow-hidden flex justify-end'
+      }
+    >
+      {/* Backdrop suave APENAS quando não estiver em modo fixo */}
+      {!modoFixo && (
+        <div
+          onClick={onFechar}
+          className="fixed inset-0 bg-[#071326]/40 backdrop-blur-[2px] transition-opacity"
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Painel lateral: no modo fixo ocupa a lateral; no modo modal ocupa o drawer com z-50 */}
+      <div
+        className={
+          modoFixo
+            ? 'w-full h-full flex flex-col min-h-0 overflow-hidden'
+            : 'relative w-full sm:w-[400px] max-w-[400px] bg-white dark:bg-[#0A162B] shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col z-50 animate-in slide-in-from-right duration-200 max-h-screen'
+        }
+      >
         {/* Cabeçalho Navy Moderno GWS */}
-        <div className="px-5 py-4 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D] shrink-0">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs">
+        <div className="px-4 sm:px-5 py-3.5 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D] shrink-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs shrink-0">
               <Calculator className="w-4 h-4" />
             </div>
-            <div>
-              <h2 className="text-sm font-bold text-white tracking-tight">
-                Calculadora de Ofertas
-              </h2>
-              <p className="text-[10px] text-slate-300">
+            <div className="min-w-0">
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-bold text-white tracking-tight truncate">
+                  Calculadora de Ofertas
+                </h2>
+                {modoFixo && (
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                    Fixa
+                  </span>
+                )}
+              </div>
+              <p className="text-[10px] text-slate-300 truncate">
                 Viabilidade & limite de lance
               </p>
             </div>
           </div>
 
-          <div className="flex items-center gap-1.5">
+          <div className="flex items-center gap-1.5 shrink-0">
             <button
+              type="button"
               onClick={limparCampos}
               className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Limpar campos"
             >
               <RotateCcw className="w-3.5 h-3.5" />
             </button>
-            <button
-              onClick={onFechar}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
-              title="Fechar painel"
-            >
-              <X className="w-4 h-4" />
-            </button>
+            {modoFixo ? (
+              <button
+                type="button"
+                onClick={onAlternarMinimizar || onFechar}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-semibold"
+                title="Recolher calculadora lateral"
+              >
+                <ChevronRight className="w-4 h-4 text-amber-400" />
+                <span className="hidden sm:inline text-[10px]">Recolher</span>
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={onFechar}
+                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                title="Fechar painel"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
           </div>
         </div>
 
@@ -184,11 +246,26 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                     R$
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={precoPrefeitura}
                     onChange={e => setPrecoPrefeitura(e.target.value)}
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setPrecoPrefeitura(formatarNumeroPtBr(parsed));
+                      } else {
+                        setPrecoPrefeitura(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const parsed = parseMoedaBrasileira(precoPrefeitura);
+                      if (parsed !== undefined && parsed > 0) {
+                        setPrecoPrefeitura(formatarNumeroPtBr(parsed));
+                      }
+                    }}
                     placeholder="0,00"
                     className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
                   />
@@ -205,11 +282,26 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                     R$
                   </span>
                   <input
-                    type="number"
-                    min="0"
-                    step="0.01"
+                    type="text"
+                    inputMode="decimal"
                     value={precoFornecedor}
                     onChange={e => setPrecoFornecedor(e.target.value)}
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setPrecoFornecedor(formatarNumeroPtBr(parsed));
+                      } else {
+                        setPrecoFornecedor(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const parsed = parseMoedaBrasileira(precoFornecedor);
+                      if (parsed !== undefined && parsed > 0) {
+                        setPrecoFornecedor(formatarNumeroPtBr(parsed));
+                      }
+                    }}
                     placeholder="0,00"
                     className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
                   />

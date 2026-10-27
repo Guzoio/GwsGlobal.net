@@ -34,7 +34,13 @@ import {
   MapPin,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao } from '../types';
-import { formatarMoeda, valorPorExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
+import {
+  formatarMoeda,
+  valorPorExtensoPtBr,
+  converterParaFormatoInputDate,
+  parseMoedaBrasileira,
+  formatarNumeroPtBr,
+} from '../utils/numberToWordsPtBr';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
 import { redimensionarEComprimirImagem, obterLicitacoes } from '../utils/storage';
 import { ModalLucroItem } from './ModalLucroItem';
@@ -56,6 +62,7 @@ interface MontarPropostaTabProps {
   onIrParaTimbrado?: () => void;
   onForcarSalvarProposta?: (licId: number) => Promise<boolean>;
   onAtualizarUfLicitacao?: (licId: number, novaUf: string) => void;
+  calculadoraFixaAberta?: boolean;
 }
 
 export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
@@ -74,6 +81,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   onIrParaTimbrado,
   onForcarSalvarProposta,
   onAtualizarUfLicitacao,
+  calculadoraFixaAberta = false,
 }) => {
   const licitacaoAtual = useMemo(() => {
     if (licitacaoSelecionadaId !== null && licitacaoSelecionadaId !== undefined) {
@@ -112,6 +120,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [marca, setMarca] = useState('');
   const [quantidade, setQuantidade] = useState<number>(1);
   const [valorUnitario, setValorUnitario] = useState<number>(150.0);
+  const [valorUnitarioTexto, setValorUnitarioTexto] = useState<string>('150,00');
   const [lanceMinimo, setLanceMinimo] = useState<string>('');
   const [lanceLote, setLanceLote] = useState<string>('');
   const [imagemBase64, setImagemBase64] = useState<string>('');
@@ -294,6 +303,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setMarca('');
     setQuantidade(1);
     setValorUnitario(150.0);
+    setValorUnitarioTexto('150,00');
     setLanceMinimo('');
     setLanceLote('');
     setImagemBase64('');
@@ -313,8 +323,17 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setMarca(item.marca);
     setQuantidade(item.quantidade);
     setValorUnitario(item.valor_unitario);
-    setLanceMinimo(item.lance_minimo !== undefined ? String(item.lance_minimo) : '');
-    setLanceLote(item.lance_lote !== undefined ? String(item.lance_lote) : '');
+    setValorUnitarioTexto(formatarNumeroPtBr(item.valor_unitario));
+    setLanceMinimo(
+      item.lance_minimo !== undefined && item.lance_minimo > 0
+        ? formatarNumeroPtBr(item.lance_minimo)
+        : ''
+    );
+    setLanceLote(
+      item.lance_lote !== undefined && item.lance_lote > 0
+        ? formatarNumeroPtBr(item.lance_lote)
+        : ''
+    );
     setImagemBase64(item.caminho_imagem || '');
     setObservacoes(item.observacoes || '');
     setNovoLinkInput('');
@@ -329,6 +348,23 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       tipo: 'sucesso',
       texto: `Item #${item.num_item} carregado no formulário acima. Faça as alterações e clique em "Salvar Alterações".`,
     });
+  };
+
+  // Remover foto de um item diretamente pela tabela ou formulário
+  const handleRemoverFotoItemDireto = (item: ItemLicitacao) => {
+    if (onAtualizarItem) {
+      onAtualizarItem({
+        ...item,
+        caminho_imagem: '',
+      });
+      if (idItemEditando === item.id) {
+        setImagemBase64('');
+      }
+      setNotificacao({
+        tipo: 'sucesso',
+        texto: `Foto do Item #${item.num_item} removida com sucesso!`,
+      });
+    }
   };
 
   // Real-time item calculation
@@ -457,8 +493,8 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
     const descTecnicaLimpa = limparTextoDescricaoTecnica(descricaoTecnica).trim();
 
-    const parsedMinimo = lanceMinimo ? parseFloat(lanceMinimo.replace(',', '.')) : undefined;
-    const parsedLote = lanceLote ? parseFloat(lanceLote.replace(',', '.')) : undefined;
+    const parsedMinimo = parseMoedaBrasileira(lanceMinimo);
+    const parsedLote = parseMoedaBrasileira(lanceLote);
     const qtdInteira = Math.max(1, Math.round(Number(quantidade)));
     const vUnit = Number(valorUnitario);
 
@@ -476,7 +512,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           quantidade: qtdInteira,
           valor_unitario: vUnit,
           valor_total: qtdInteira * vUnit,
-          caminho_imagem: imagemBase64 || undefined,
+          caminho_imagem: imagemBase64.trim() ? imagemBase64 : '',
           lance_minimo: parsedMinimo !== undefined && !isNaN(parsedMinimo) ? parsedMinimo : undefined,
           lance_lote: parsedLote !== undefined && !isNaN(parsedLote) ? parsedLote : undefined,
           observacoes: observacoes.trim() || undefined,
@@ -502,7 +538,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
       quantidade: qtdInteira,
       valor_unitario: vUnit,
       valor_total: qtdInteira * vUnit,
-      caminho_imagem: imagemBase64 || undefined,
+      caminho_imagem: imagemBase64.trim() ? imagemBase64 : undefined,
       lance_minimo: parsedMinimo !== undefined && !isNaN(parsedMinimo) ? parsedMinimo : undefined,
       lance_lote: parsedLote !== undefined && !isNaN(parsedLote) ? parsedLote : undefined,
       selecionado: true, // Por padrão quando salvar proposta esse quadrinho já vem marcado
@@ -515,6 +551,8 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setDescricaoCurta('');
     setDescricaoTecnica('');
     setMarca('');
+    setValorUnitario(150.0);
+    setValorUnitarioTexto('150,00');
     setLanceMinimo('');
     setLanceLote('');
     setImagemBase64('');
@@ -525,16 +563,24 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
   const abrirModalEditarLances = (item: ItemLicitacao) => {
     setItemEditandoLances(item);
-    setEditLanceMinimo(item.lance_minimo !== undefined ? String(item.lance_minimo) : '');
-    setEditLanceLote(item.lance_lote !== undefined ? String(item.lance_lote) : '');
+    setEditLanceMinimo(
+      item.lance_minimo !== undefined && item.lance_minimo > 0
+        ? formatarNumeroPtBr(item.lance_minimo)
+        : ''
+    );
+    setEditLanceLote(
+      item.lance_lote !== undefined && item.lance_lote > 0
+        ? formatarNumeroPtBr(item.lance_lote)
+        : ''
+    );
   };
 
   const handleSalvarEdicaoLances = (e: React.FormEvent) => {
     e.preventDefault();
     if (!itemEditandoLances || !onAtualizarItem) return;
 
-    const parsedMinimo = editLanceMinimo ? parseFloat(editLanceMinimo.replace(',', '.')) : undefined;
-    const parsedLote = editLanceLote ? parseFloat(editLanceLote.replace(',', '.')) : undefined;
+    const parsedMinimo = parseMoedaBrasileira(editLanceMinimo);
+    const parsedLote = parseMoedaBrasileira(editLanceLote);
 
     const itemAtualizado: ItemLicitacao = {
       ...itemEditandoLances,
@@ -551,7 +597,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   };
 
   return (
-    <div className="space-y-6">
+    <div className={`space-y-6 transition-all duration-300 ${calculadoraFixaAberta ? 'xl:mr-[400px]' : ''}`}>
       {/* Toast Notification */}
       {notificacao && (
         <div
@@ -989,9 +1035,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                   const novaQtd = isNaN(val) ? 1 : Math.max(1, val);
                   setQuantidade(novaQtd);
                   if (lanceMinimo && !lanceLote) {
-                    const numMin = parseFloat(lanceMinimo.replace(',', '.'));
-                    if (!isNaN(numMin)) {
-                      setLanceLote((numMin * novaQtd).toFixed(2));
+                    const numMin = parseMoedaBrasileira(lanceMinimo);
+                    if (numMin !== undefined && novaQtd > 0) {
+                      setLanceLote(formatarNumeroPtBr(numMin * novaQtd));
                     }
                   }
                 }}
@@ -1000,18 +1046,48 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
             </div>
 
             <div className="sm:col-span-3">
-              <label className="block text-xs font-semibold text-slate-700 mb-1">
+              <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
                 Valor Unitário (R$) *
               </label>
-              <input
-                type="number"
-                min="0.01"
-                step="0.01"
-                required
-                value={valorUnitario}
-                onChange={e => setValorUnitario(parseFloat(e.target.value) || 0)}
-                className="w-full px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20"
-              />
+              <div className="relative">
+                <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 font-mono font-semibold">
+                  R$
+                </span>
+                <input
+                  type="text"
+                  inputMode="decimal"
+                  required
+                  value={valorUnitarioTexto}
+                  onChange={e => {
+                    const raw = e.target.value;
+                    setValorUnitarioTexto(raw);
+                    const parsed = parseMoedaBrasileira(raw);
+                    if (parsed !== undefined && !isNaN(parsed)) {
+                      setValorUnitario(parsed);
+                    }
+                  }}
+                  onPaste={e => {
+                    e.preventDefault();
+                    const text = e.clipboardData.getData('text');
+                    const parsed = parseMoedaBrasileira(text);
+                    if (parsed !== undefined && !isNaN(parsed)) {
+                      setValorUnitario(parsed);
+                      setValorUnitarioTexto(formatarNumeroPtBr(parsed));
+                    } else {
+                      setValorUnitarioTexto(text);
+                    }
+                  }}
+                  onBlur={() => {
+                    const parsed = parseMoedaBrasileira(valorUnitarioTexto);
+                    if (parsed !== undefined && parsed > 0) {
+                      setValorUnitario(parsed);
+                      setValorUnitarioTexto(formatarNumeroPtBr(parsed));
+                    }
+                  }}
+                  placeholder="Ex: 2.530,57"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-200 dark:border-slate-700 rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20"
+                />
+              </div>
             </div>
 
             <div className="sm:col-span-3">
@@ -1076,21 +1152,39 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     R$
                   </span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={lanceMinimo}
                     onChange={e => {
                       const val = e.target.value;
                       setLanceMinimo(val);
                       if (val && !lanceLote) {
-                        const num = parseFloat(val.replace(',', '.'));
-                        if (!isNaN(num) && quantidade > 0) {
-                          setLanceLote((num * quantidade).toFixed(2));
+                        const num = parseMoedaBrasileira(val);
+                        if (num !== undefined && quantidade > 0) {
+                          setLanceLote(formatarNumeroPtBr(num * quantidade));
                         }
                       }
                     }}
-                    placeholder="Ex: 120,00"
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setLanceMinimo(formatarNumeroPtBr(parsed));
+                        if (!lanceLote && quantidade > 0) {
+                          setLanceLote(formatarNumeroPtBr(parsed * quantidade));
+                        }
+                      } else {
+                        setLanceMinimo(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseMoedaBrasileira(lanceMinimo);
+                      if (num !== undefined && num > 0) {
+                        setLanceMinimo(formatarNumeroPtBr(num));
+                      }
+                    }}
+                    placeholder="Ex: 2.530,57"
                     className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
@@ -1108,12 +1202,27 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     R$
                   </span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={lanceLote}
                     onChange={e => setLanceLote(e.target.value)}
-                    placeholder="Ex: 3000,00"
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setLanceLote(formatarNumeroPtBr(parsed));
+                      } else {
+                        setLanceLote(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseMoedaBrasileira(lanceLote);
+                      if (num !== undefined && num > 0) {
+                        setLanceLote(formatarNumeroPtBr(num));
+                      }
+                    }}
+                    placeholder="Ex: 5.060,00"
                     className="w-full pl-9 pr-3 py-2 text-xs bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
@@ -1436,9 +1545,19 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
                       <td className="py-3 px-4 text-center">
                         {it.caminho_imagem ? (
-                          <span className="inline-flex items-center text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
-                            <ImageIcon className="w-3 h-3 mr-1" /> Com Foto
-                          </span>
+                          <div className="inline-flex items-center gap-1.5 justify-center">
+                            <span className="inline-flex items-center text-[10px] font-medium text-emerald-700 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded">
+                              <ImageIcon className="w-3 h-3 mr-1" /> Com Foto
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => handleRemoverFotoItemDireto(it)}
+                              className="p-1 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded transition-colors cursor-pointer"
+                              title={`Apagar foto do Item #${it.num_item}`}
+                            >
+                              <Trash2 className="w-3 h-3 text-rose-500 hover:text-rose-700" />
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-[10px] text-slate-400 dark:text-slate-500">Sem Foto</span>
                         )}
@@ -1627,21 +1746,39 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     R$
                   </span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={editLanceMinimo}
                     onChange={e => {
                       const val = e.target.value;
                       setEditLanceMinimo(val);
                       if (val && !editLanceLote) {
-                        const num = parseFloat(val.replace(',', '.'));
-                        if (!isNaN(num) && itemEditandoLances.quantidade > 0) {
-                          setEditLanceLote((num * itemEditandoLances.quantidade).toFixed(2));
+                        const num = parseMoedaBrasileira(val);
+                        if (num !== undefined && itemEditandoLances.quantidade > 0) {
+                          setEditLanceLote(formatarNumeroPtBr(num * itemEditandoLances.quantidade));
                         }
                       }
                     }}
-                    placeholder="Ex: 120,00"
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setEditLanceMinimo(formatarNumeroPtBr(parsed));
+                        if (!editLanceLote && itemEditandoLances.quantidade > 0) {
+                          setEditLanceLote(formatarNumeroPtBr(parsed * itemEditandoLances.quantidade));
+                        }
+                      } else {
+                        setEditLanceMinimo(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseMoedaBrasileira(editLanceMinimo);
+                      if (num !== undefined && num > 0) {
+                        setEditLanceMinimo(formatarNumeroPtBr(num));
+                      }
+                    }}
+                    placeholder="Ex: 2.530,57"
                     className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>
@@ -1656,12 +1793,27 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     R$
                   </span>
                   <input
-                    type="number"
-                    step="0.01"
-                    min="0"
+                    type="text"
+                    inputMode="decimal"
                     value={editLanceLote}
                     onChange={e => setEditLanceLote(e.target.value)}
-                    placeholder="Ex: 3000,00"
+                    onPaste={e => {
+                      e.preventDefault();
+                      const text = e.clipboardData.getData('text');
+                      const parsed = parseMoedaBrasileira(text);
+                      if (parsed !== undefined && !isNaN(parsed)) {
+                        setEditLanceLote(formatarNumeroPtBr(parsed));
+                      } else {
+                        setEditLanceLote(text);
+                      }
+                    }}
+                    onBlur={() => {
+                      const num = parseMoedaBrasileira(editLanceLote);
+                      if (num !== undefined && num > 0) {
+                        setEditLanceLote(formatarNumeroPtBr(num));
+                      }
+                    }}
+                    placeholder="Ex: 5.060,00"
                     className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-lg font-mono tabular-nums focus:outline-hidden focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 dark:focus:border-amber-400"
                   />
                 </div>

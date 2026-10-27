@@ -448,7 +448,7 @@ app.get('/api/sync/state', (_req, res) => {
 // Mesclagem de dados (quando qualquer computador entra ou sincroniza dados prévios)
 app.post('/api/sync/merge', (req, res) => {
   try {
-    const { licitacoes, itens, timbrado, responsaveis, seguranca } = req.body || {};
+    const { licitacoes, itens, timbrado, responsaveis, seguranca, contatos, cobrancas } = req.body || {};
     let alterado = false;
 
     const setExcluidas = new Set(dbData.licitacoesExcluidas.map(Number));
@@ -524,7 +524,11 @@ app.post('/api/sync/merge', (req, res) => {
           alterado = true;
         } else {
           const atual = mapaItens.get(id);
-          mapaItens.set(id, { ...atual, ...item });
+          const mesclado = { ...atual, ...item };
+          if (item.caminho_imagem === '' || item.caminho_imagem === null) {
+            mesclado.caminho_imagem = '';
+          }
+          mapaItens.set(id, mesclado);
         }
       }
       dbData.itens = Array.from(mapaItens.values())
@@ -550,6 +554,34 @@ app.post('/api/sync/merge', (req, res) => {
       alterado = true;
     }
 
+    // Mescla contatos por ID preservando todos os existentes
+    if (Array.isArray(contatos) && contatos.length > 0) {
+      if (!Array.isArray(dbData.contatos)) dbData.contatos = [];
+      const mapaContatos = new Map(dbData.contatos.map(c => [String(c.id), c]));
+      for (const c of contatos) {
+        if (!c || !c.id) continue;
+        const id = String(c.id);
+        const atual = mapaContatos.get(id);
+        mapaContatos.set(id, atual ? { ...atual, ...c } : c);
+        if (!atual) alterado = true;
+      }
+      dbData.contatos = Array.from(mapaContatos.values());
+    }
+
+    // Mescla cobranças por ID preservando todas as existentes
+    if (Array.isArray(cobrancas) && cobrancas.length > 0) {
+      if (!Array.isArray(dbData.cobrancas)) dbData.cobrancas = [];
+      const mapaCobrancas = new Map(dbData.cobrancas.map(c => [String(c.id), c]));
+      for (const c of cobrancas) {
+        if (!c || !c.id) continue;
+        const id = String(c.id);
+        const atual = mapaCobrancas.get(id);
+        mapaCobrancas.set(id, atual ? { ...atual, ...c } : c);
+        if (!atual) alterado = true;
+      }
+      dbData.cobrancas = Array.from(mapaCobrancas.values());
+    }
+
     if (alterado) {
       salvarDbNoDisco();
       broadcastSse({
@@ -559,6 +591,8 @@ app.post('/api/sync/merge', (req, res) => {
         timbrado: dbData.timbrado,
         responsaveis: dbData.responsaveis,
         seguranca: dbData.seguranca,
+        contatos: dbData.contatos,
+        cobrancas: dbData.cobrancas,
       });
     }
 
@@ -656,6 +690,9 @@ app.post('/api/sync/item', (req, res) => {
     const index = dbData.itens.findIndex(i => Number(i.id) === id);
     if (index >= 0) {
       dbData.itens[index] = { ...dbData.itens[index], ...item };
+      if (item.caminho_imagem === '' || item.caminho_imagem === null) {
+        dbData.itens[index].caminho_imagem = '';
+      }
     } else {
       dbData.itens.push(item);
     }
@@ -684,7 +721,11 @@ app.post('/api/sync/itens-batch', (req, res) => {
     for (const item of itens) {
       if (!item || item.id === undefined) continue;
       const id = Number(item.id);
-      mapaItens.set(id, { ...(mapaItens.get(id) || {}), ...item });
+      const merged = { ...(mapaItens.get(id) || {}), ...item };
+      if (item.caminho_imagem === '' || item.caminho_imagem === null) {
+        merged.caminho_imagem = '';
+      }
+      mapaItens.set(id, merged);
     }
     dbData.itens = Array.from(mapaItens.values());
     salvarDbNoDisco();

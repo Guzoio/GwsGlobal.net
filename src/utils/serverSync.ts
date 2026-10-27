@@ -134,6 +134,8 @@ export async function mesclarEstadoComServidor(dadosLocais: {
   itens: ItemLicitacao[];
   timbrado?: PapelTimbradoConfig;
   responsaveis?: string[];
+  contatos?: ContatoPrefeitura[];
+  cobrancas?: Cobranca[];
 }): Promise<SyncState | null> {
   try {
     const res = await fetch('/api/sync/merge', {

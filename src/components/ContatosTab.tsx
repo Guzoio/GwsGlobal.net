@@ -147,6 +147,10 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
     };
 
     await onSalvarContato(novoContato);
+    if (!contatoEdicao) {
+      setBusca('');
+      setFiltroRapido('todos');
+    }
     setModalAberto(false);
   };
 

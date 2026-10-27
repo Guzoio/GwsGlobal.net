@@ -63,6 +63,8 @@ export async function salvarLoteImagensIndexedDB(itens: { id: number; caminho_im
       for (const item of itens) {
         if (item.caminho_imagem && item.caminho_imagem.startsWith('data:image')) {
           store.put({ id: Number(item.id), imagem: item.caminho_imagem, dataSalvo: Date.now() });
+        } else if (item.caminho_imagem === '' || item.caminho_imagem === null || item.caminho_imagem === undefined) {
+          store.delete(Number(item.id));
         }
       }
 

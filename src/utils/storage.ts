@@ -642,7 +642,7 @@ export async function restaurarImagensIndexedDB(itens: ItemLicitacao[]): Promise
 
     let houveMudanca = false;
     const itensRestaurados = itens.map(it => {
-      if (!it.caminho_imagem && mapaImagens[it.id]) {
+      if (it.caminho_imagem === undefined && mapaImagens[it.id]) {
         houveMudanca = true;
         return { ...it, caminho_imagem: mapaImagens[it.id] };
       }

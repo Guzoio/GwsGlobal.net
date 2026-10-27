@@ -15,6 +15,8 @@ import {
   CheckCircle2,
   BarChart3,
   DollarSign,
+  Scale,
+  PenTool,
 } from 'lucide-react';
 import { PalavraDoDiaCard } from './PalavraDoDiaCard';
 
@@ -25,7 +27,10 @@ interface SidebarProps {
   totalContatos?: number;
   totalCobrancas?: number;
   totalAlertasCobrancas?: number;
+  totalAlertasPregoeiro?: number;
   onAbrirDeclaracao?: () => void;
+  onAbrirExequibilidade?: () => void;
+  onAbrirAssinador?: () => void;
   onAbrirSeguranca?: () => void;
   abertaMobile: boolean;
   onFecharMobile: () => void;
@@ -39,7 +44,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
   totalContatos = 0,
   totalCobrancas = 0,
   totalAlertasCobrancas = 0,
+  totalAlertasPregoeiro = 0,
   onAbrirDeclaracao,
+  onAbrirExequibilidade,
+  onAbrirAssinador,
   onAbrirSeguranca,
   abertaMobile,
   onFecharMobile,
@@ -56,7 +64,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
       label: 'Minhas Licitações',
       icone: History,
       descricao: 'Visão geral e processos',
-      badge: totalLicitacoes > 0 ? `${totalLicitacoes}` : undefined,
+      badge: totalAlertasPregoeiro > 0 ? `${totalAlertasPregoeiro} retorno` : (totalLicitacoes > 0 ? `${totalLicitacoes}` : undefined),
     },
     {
       id: 'cadastrar',
@@ -400,6 +408,40 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-amber-100 dark:bg-amber-500/20 text-amber-800 dark:text-amber-300 shrink-0">
                       Lei 14.133
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirExequibilidade?.();
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Scale className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                      <span className="truncate font-semibold">Exequibilidade</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 shrink-0">
+                      Custos Ganhos
+                    </span>
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirAssinador?.();
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <PenTool className="w-3.5 h-3.5 text-blue-500 dark:text-blue-400 shrink-0" />
+                      <span className="truncate font-semibold">Assinar Atas & Documentos</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 shrink-0">
+                      PDF / Ata
                     </span>
                   </button>
                 </div>

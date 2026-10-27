@@ -156,3 +156,94 @@ export function converterParaFormatoInputDate(dataInput?: string): string {
   }
   return new Date().toISOString().split('T')[0];
 }
+
+/**
+ * Converte qualquer texto de valor monetário ou número (ex: "2.530,57", "2530,57", "2530.57", "R$ 2.530,57", "1.250.000,00")
+ * em um número float válido em JavaScript, aceitando pontos de milhar e vírgulas decimais sem conflito.
+ */
+export function parseMoedaBrasileira(valor: string | number | undefined | null): number | undefined {
+  if (valor === undefined || valor === null) return undefined;
+  if (typeof valor === 'number') {
+    return isNaN(valor) ? undefined : valor;
+  }
+  const limpo = String(valor).trim().replace(/[^\d.,]/g, '');
+  if (!limpo) return undefined;
+
+  // Se contiver ponto E vírgula (ex: "2.530,57" ou "1.250.340,99" ou "2,530.57")
+  if (limpo.includes('.') && limpo.includes(',')) {
+    const ultimoPonto = limpo.lastIndexOf('.');
+    const ultimaVirgula = limpo.lastIndexOf(',');
+    if (ultimaVirgula > ultimoPonto) {
+      // Padrão brasileiro: ponto é milhar, vírgula é decimal ("2.530,57")
+      const normalizado = limpo.replace(/\./g, '').replace(',', '.');
+      const num = parseFloat(normalizado);
+      return !isNaN(num) ? num : undefined;
+    } else {
+      // Padrão internacional copiado: vírgula é milhar, ponto é decimal ("2,530.57")
+      const normalizado = limpo.replace(/,/g, '');
+      const num = parseFloat(normalizado);
+      return !isNaN(num) ? num : undefined;
+    }
+  }
+
+  // Se contiver apenas vírgula (ex: "2530,57" ou "120,5")
+  if (limpo.includes(',')) {
+    const partes = limpo.split(',');
+    // Se tiver múltiplas vírgulas como milhares americanos (ex: "1,250,000")
+    if (partes.length > 2) {
+      const normalizado = limpo.replace(/,/g, '');
+      const num = parseFloat(normalizado);
+      return !isNaN(num) ? num : undefined;
+    }
+    const normalizado = limpo.replace(',', '.');
+    const num = parseFloat(normalizado);
+    return !isNaN(num) ? num : undefined;
+  }
+
+  // Se contiver apenas ponto:
+  if (limpo.includes('.')) {
+    const partes = limpo.split('.');
+    // Se tiver mais de um ponto (ex: "2.530.57" ou "1.250.000")
+    if (partes.length > 2) {
+      const ultimaParte = partes[partes.length - 1];
+      // Se a última parte tem 1 ou 2 dígitos (ex: "2.530.57" ou "1.500.5"), a última parte é decimal!
+      if (ultimaParte.length === 1 || ultimaParte.length === 2) {
+        const parteInteira = partes.slice(0, -1).join('');
+        const num = parseFloat(`${parteInteira}.${ultimaParte}`);
+        return !isNaN(num) ? num : undefined;
+      }
+      // Se a última parte tem 3 dígitos (ex: "1.250.000"), todos são milhares
+      const normalizado = limpo.replace(/\./g, '');
+      const num = parseFloat(normalizado);
+      return !isNaN(num) ? num : undefined;
+    }
+
+    // Se tiver exatamente 1 ponto:
+    // Se tiver exatamente 3 dígitos após o ponto E a parte inteira for <= 3 dígitos (ex: "2.530" ou "10.000")
+    // no contexto de moeda brasileiro pode ser milhar exato
+    if (/^\d{1,3}\.\d{3}$/.test(limpo)) {
+      const normalizado = limpo.replace(/\./g, '');
+      const num = parseFloat(normalizado);
+      return !isNaN(num) ? num : undefined;
+    }
+
+    // Caso com ponto decimal padrão (ex: "2530.57" ou "120.5" ou "2.53")
+    const num = parseFloat(limpo);
+    return !isNaN(num) ? num : undefined;
+  }
+
+  // Número simples sem separador
+  const num = parseFloat(limpo);
+  return !isNaN(num) ? num : undefined;
+}
+
+/**
+ * Formata um número em formato legível brasileiro sem o símbolo "R$", ex: "2.530,57"
+ */
+export function formatarNumeroPtBr(valor: number | undefined | null): string {
+  if (valor === undefined || valor === null || isNaN(valor)) return '';
+  return valor.toLocaleString('pt-BR', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
