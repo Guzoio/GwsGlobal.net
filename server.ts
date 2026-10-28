@@ -474,20 +474,45 @@ app.post('/api/sync/merge', (req, res) => {
           mapaLics.set(id, licLimpa);
           alterado = true;
         } else {
-          // Se já existe, atualiza campos preservando estados se foram marcados
+          // Se já existe, atualiza campos preservando estados e respeitando timestamps mais recentes
           const atual = mapaLics.get(id);
-          const novoAcomp = lic.acompanhamento !== undefined ? Boolean(lic.acompanhamento) : Boolean(atual.acompanhamento);
-          const novoHomol = lic.homologada !== undefined ? Boolean(lic.homologada) : Boolean(atual.homologada);
+          const dataAtual = atual?.updatedAt ? new Date(atual.updatedAt).getTime() : 0;
+          const dataInc = lic.updatedAt ? new Date(lic.updatedAt).getTime() : 0;
+
+          // Se o dado recebido for comprovadamente mais recente pelo timestamp, adota-o.
+          // Se o dado do servidor for mais recente, mantém o do servidor.
+          // Se não houver timestamp confiável ou forem iguais, PRESERVA o estado marcado (true) para nunca desmarcar acidentalmente por sincronização!
+          let novoAcomp: boolean;
+          if (dataInc > dataAtual && lic.acompanhamento !== undefined) {
+            novoAcomp = Boolean(lic.acompanhamento);
+          } else if (dataAtual > dataInc) {
+            novoAcomp = Boolean(atual.acompanhamento);
+          } else {
+            novoAcomp = Boolean(lic.acompanhamento) || Boolean(atual.acompanhamento);
+          }
+
+          let novoHomol: boolean;
+          if (dataInc > dataAtual && lic.homologada !== undefined) {
+            novoHomol = Boolean(lic.homologada);
+          } else if (dataAtual > dataInc) {
+            novoHomol = Boolean(atual.homologada);
+          } else {
+            novoHomol = Boolean(lic.homologada) || Boolean(atual.homologada);
+          }
+
           const mesclado = {
             ...atual,
             ...lic,
             id,
             acompanhamento: novoAcomp,
             homologada: novoHomol,
-            avisoData: lic.avisoData !== undefined ? lic.avisoData : atual.avisoData,
-            avisoHora: lic.avisoHora !== undefined ? lic.avisoHora : atual.avisoHora,
-            avisoMensagem: lic.avisoMensagem !== undefined ? lic.avisoMensagem : atual.avisoMensagem,
-            avisoConcluido: lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : Boolean(atual.avisoConcluido),
+            avisoData: dataInc > dataAtual ? (lic.avisoData || atual.avisoData) : (atual.avisoData || lic.avisoData),
+            avisoHora: dataInc > dataAtual ? (lic.avisoHora || atual.avisoHora) : (atual.avisoHora || lic.avisoHora),
+            avisoMensagem: dataInc > dataAtual ? (lic.avisoMensagem || atual.avisoMensagem) : (atual.avisoMensagem || lic.avisoMensagem),
+            avisoConcluido: dataInc > dataAtual
+              ? (lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : Boolean(atual.avisoConcluido))
+              : (atual.avisoConcluido !== undefined ? Boolean(atual.avisoConcluido) : Boolean(lic.avisoConcluido)),
+            updatedAt: dataInc > dataAtual ? (lic.updatedAt || new Date().toISOString()) : (atual.updatedAt || new Date().toISOString()),
           };
           if (
             atual.acompanhamento !== mesclado.acompanhamento ||
@@ -622,6 +647,7 @@ app.post('/api/sync/licitacao', (req, res) => {
       avisoHora: lic.avisoHora !== undefined ? lic.avisoHora : (index >= 0 ? dbData.licitacoes[index]?.avisoHora : undefined),
       avisoMensagem: lic.avisoMensagem !== undefined ? lic.avisoMensagem : (index >= 0 ? dbData.licitacoes[index]?.avisoMensagem : undefined),
       avisoConcluido: lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : (index >= 0 ? Boolean(dbData.licitacoes[index]?.avisoConcluido) : false),
+      updatedAt: lic.updatedAt || new Date().toISOString(),
     };
     if (index >= 0) {
       dbData.licitacoes[index] = itemAtualizado;

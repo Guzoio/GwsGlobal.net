@@ -23,6 +23,7 @@ export interface Licitacao {
   avisoHora?: string; // HH:mm horário do retorno (ex: 14:30)
   avisoMensagem?: string; // Mensagem/motivo do aviso (ex: 'Pregoeiro volta para fase de lances')
   avisoConcluido?: boolean; // Se o alerta de retorno já foi atendido/concluído
+  updatedAt?: string; // Timestamp ISO da última alteração para resolução de concorrência e sincronização
 }
 
 export interface ItemLicitacao {

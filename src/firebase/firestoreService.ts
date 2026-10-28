@@ -47,6 +47,7 @@ export function ouvirLicitacoesNuvem(
           avisoHora: data.avisoHora || undefined,
           avisoMensagem: data.avisoMensagem || undefined,
           avisoConcluido: data.avisoConcluido !== undefined ? Boolean(data.avisoConcluido) : undefined,
+          updatedAt: data.updatedAt || undefined,
         });
       });
       // Ordena por ID decrescente

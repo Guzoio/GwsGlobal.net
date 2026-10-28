@@ -109,6 +109,69 @@ import {
   removerCobrancaServidor,
 } from './utils/serverSync';
 
+/**
+ * Mesclagem inteligente de licitações com resolução de concorrência por timestamp (updatedAt).
+ * Garante que estados marcados pelo usuário (como o Olho de Acompanhamento ou Homologada)
+ * NUNCA sejam sobrescritos ou apagados por dados desatualizados do servidor ou nuvem.
+ */
+function mesclarLicitacoesSeguro(
+  prevLics: Licitacao[],
+  novasLics: Licitacao[],
+  setExcluidas: Set<number>
+): Licitacao[] {
+  const mapa = new Map<number, Licitacao>();
+  for (const p of prevLics) {
+    const id = Number(p.id);
+    if (!setExcluidas.has(id)) mapa.set(id, p);
+  }
+  for (const inc of novasLics) {
+    const id = Number(inc.id);
+    if (setExcluidas.has(id)) continue;
+    const prev = mapa.get(id);
+    if (!prev) {
+      mapa.set(id, inc);
+    } else {
+      const tPrev = prev.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
+      const tInc = inc.updatedAt ? new Date(inc.updatedAt).getTime() : 0;
+
+      let acomp: boolean;
+      if (tInc > tPrev && inc.acompanhamento !== undefined) {
+        acomp = Boolean(inc.acompanhamento);
+      } else if (tPrev > tInc) {
+        acomp = Boolean(prev.acompanhamento);
+      } else {
+        // Se nenhum lado for mais recente, preserva o estado marcado (true)
+        acomp = Boolean(prev.acompanhamento) || Boolean(inc.acompanhamento);
+      }
+
+      let homol: boolean;
+      if (tInc > tPrev && inc.homologada !== undefined) {
+        homol = Boolean(inc.homologada);
+      } else if (tPrev > tInc) {
+        homol = Boolean(prev.homologada);
+      } else {
+        homol = Boolean(prev.homologada) || Boolean(inc.homologada);
+      }
+
+      const merged: Licitacao = {
+        ...prev,
+        ...inc,
+        acompanhamento: acomp,
+        homologada: homol,
+        avisoData: tInc > tPrev ? (inc.avisoData || prev.avisoData) : (prev.avisoData || inc.avisoData),
+        avisoHora: tInc > tPrev ? (inc.avisoHora || prev.avisoHora) : (prev.avisoHora || inc.avisoHora),
+        avisoMensagem: tInc > tPrev ? (inc.avisoMensagem || prev.avisoMensagem) : (prev.avisoMensagem || inc.avisoMensagem),
+        avisoConcluido: tInc > tPrev
+          ? (inc.avisoConcluido !== undefined ? Boolean(inc.avisoConcluido) : Boolean(prev.avisoConcluido))
+          : (prev.avisoConcluido !== undefined ? Boolean(prev.avisoConcluido) : Boolean(inc.avisoConcluido)),
+        updatedAt: tInc > tPrev ? (inc.updatedAt || new Date().toISOString()) : (prev.updatedAt || new Date().toISOString()),
+      };
+      mapa.set(id, merged);
+    }
+  }
+  return Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
+}
+
 export default function App() {
   const [autenticado, setAutenticado] = useState<boolean>(() => estaAutenticado());
   const [acessoConfig, setAcessoConfig] = useState<AcessoConfig>(() => obterAcessoConfig());
@@ -345,18 +408,7 @@ export default function App() {
         if (payload.licitacoes && payload.licitacoes.length > 0) {
           const licsLimpas = payload.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
           setLicitacoes(prevLics => {
-            const mapa = new Map<number, Licitacao>();
-            for (const p of prevLics) {
-              const id = Number(p.id);
-              if (!setExcluidas.has(id)) mapa.set(id, p);
-            }
-            for (const inc of licsLimpas) {
-              const id = Number(inc.id);
-              if (setExcluidas.has(id)) continue;
-              const prev = mapa.get(id);
-              mapa.set(id, prev ? { ...prev, ...inc } : inc);
-            }
-            const res = Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
+            const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
             salvarLicitacoes(res);
             return res;
           });
@@ -435,18 +487,7 @@ export default function App() {
       } else if (payload.tipo === 'licitacoes' && payload.licitacoes) {
         const licsLimpas = payload.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
         setLicitacoes(prevLics => {
-          const mapa = new Map<number, Licitacao>();
-          for (const p of prevLics) {
-            const id = Number(p.id);
-            if (!setExcluidas.has(id)) mapa.set(id, p);
-          }
-          for (const inc of licsLimpas) {
-            const id = Number(inc.id);
-            if (setExcluidas.has(id)) continue;
-            const prev = mapa.get(id);
-            mapa.set(id, prev ? { ...prev, ...inc } : inc);
-          }
-          const res = Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
+          const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
           salvarLicitacoes(res);
           return res;
         });
@@ -538,18 +579,7 @@ export default function App() {
         if (estado.licitacoes && estado.licitacoes.length > 0) {
           const licsLimpas = estado.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
           setLicitacoes(prevLics => {
-            const mapa = new Map<number, Licitacao>();
-            for (const p of prevLics) {
-              const id = Number(p.id);
-              if (!setExcluidas.has(id)) mapa.set(id, p);
-            }
-            for (const inc of licsLimpas) {
-              const id = Number(inc.id);
-              if (setExcluidas.has(id)) continue;
-              const prev = mapa.get(id);
-              mapa.set(id, prev ? { ...prev, ...inc } : inc);
-            }
-            const res = Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
+            const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
             salvarLicitacoes(res);
             return res;
           });
@@ -631,35 +661,9 @@ export default function App() {
           const licsValidas = licsNuvem.filter(l => !setExcluidas.has(Number(l.id)));
 
           setLicitacoes(prevLics => {
-            const mapa = new Map<number, Licitacao>();
-            // Preserva todas as licitações locais atuais primeiro
-            for (const p of prevLics) {
-              const id = Number(p.id);
-              if (!setExcluidas.has(id)) mapa.set(id, p);
-            }
-            // Mescla dados da nuvem
-            for (const nuv of licsValidas) {
-              const id = Number(nuv.id);
-              if (setExcluidas.has(id)) continue;
-              const prev = mapa.get(id);
-              if (!prev) {
-                mapa.set(id, nuv);
-              } else {
-                mapa.set(id, {
-                  ...prev,
-                  ...nuv,
-                  acompanhamento: prev.acompanhamento !== undefined ? Boolean(prev.acompanhamento) : Boolean(nuv.acompanhamento),
-                  homologada: prev.homologada !== undefined ? Boolean(prev.homologada) : Boolean(nuv.homologada),
-                  avisoData: prev.avisoData || nuv.avisoData,
-                  avisoHora: prev.avisoHora || nuv.avisoHora,
-                  avisoMensagem: prev.avisoMensagem || nuv.avisoMensagem,
-                  avisoConcluido: prev.avisoConcluido !== undefined ? Boolean(prev.avisoConcluido) : Boolean(nuv.avisoConcluido),
-                });
-              }
-            }
-            const mescladas = Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
-            salvarLicitacoes(mescladas);
-            return mescladas;
+            const res = mesclarLicitacoesSeguro(prevLics, licsValidas, setExcluidas);
+            salvarLicitacoes(res);
+            return res;
           });
           setLicitacaoSelecionadaId(prev => {
             if (prev) return prev;
@@ -1038,18 +1042,25 @@ export default function App() {
   // Alternar Status de Acompanhamento (👁 Olho Amarelo)
   const handleToggleAcompanhamento = (id: number) => {
     let licModificada: Licitacao | null = null;
-    const listaAtualizada = licitacoes.map(l => {
-      if (Number(l.id) === Number(id)) {
-        const novoStatus = !l.acompanhamento;
-        const atual: Licitacao = { ...l, acompanhamento: novoStatus };
-        licModificada = atual;
-        return atual;
-      }
-      return l;
-    });
+    const nowIso = new Date().toISOString();
 
-    setLicitacoes(listaAtualizada);
-    salvarLicitacoes(listaAtualizada);
+    setLicitacoes(prevLics => {
+      const listaAtualizada = prevLics.map(l => {
+        if (Number(l.id) === Number(id)) {
+          const novoStatus = !l.acompanhamento;
+          const atual: Licitacao = {
+            ...l,
+            acompanhamento: novoStatus,
+            updatedAt: nowIso,
+          };
+          licModificada = atual;
+          return atual;
+        }
+        return l;
+      });
+      salvarLicitacoes(listaAtualizada);
+      return listaAtualizada;
+    });
 
     if (licModificada) {
       salvarLicitacaoServidor(licModificada);
@@ -1062,18 +1073,25 @@ export default function App() {
   // Alternar Status de Concluída / Homologada (✓ Check Verde)
   const handleToggleHomologada = (id: number) => {
     let licModificada: Licitacao | null = null;
-    const listaAtualizada = licitacoes.map(l => {
-      if (Number(l.id) === Number(id)) {
-        const novoStatus = !l.homologada;
-        const atual: Licitacao = { ...l, homologada: novoStatus };
-        licModificada = atual;
-        return atual;
-      }
-      return l;
-    });
+    const nowIso = new Date().toISOString();
 
-    setLicitacoes(listaAtualizada);
-    salvarLicitacoes(listaAtualizada);
+    setLicitacoes(prevLics => {
+      const listaAtualizada = prevLics.map(l => {
+        if (Number(l.id) === Number(id)) {
+          const novoStatus = !l.homologada;
+          const atual: Licitacao = {
+            ...l,
+            homologada: novoStatus,
+            updatedAt: nowIso,
+          };
+          licModificada = atual;
+          return atual;
+        }
+        return l;
+      });
+      salvarLicitacoes(listaAtualizada);
+      return listaAtualizada;
+    });
 
     if (licModificada) {
       salvarLicitacaoServidor(licModificada);
@@ -1086,24 +1104,28 @@ export default function App() {
   // Handlers para Alertas de Retorno do Pregoeiro
   const handleSalvarAvisoPregoeiro = (licId: number, dataAviso: string, horaAviso: string, msg: string) => {
     let licModificada: Licitacao | null = null;
-    const licsAtualizadas = licitacoes.map(l => {
-      if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = {
-          ...l,
-          acompanhamento: true, // Garante que a licitação permaneça em acompanhamento
-          avisoData: dataAviso,
-          avisoHora: horaAviso,
-          avisoMensagem: msg,
-          avisoConcluido: false,
-        };
-        licModificada = atualizada;
-        return atualizada;
-      }
-      return l;
-    });
+    const nowIso = new Date().toISOString();
 
-    setLicitacoes(licsAtualizadas);
-    salvarLicitacoes(licsAtualizadas);
+    setLicitacoes(prevLics => {
+      const licsAtualizadas = prevLics.map(l => {
+        if (Number(l.id) === Number(licId)) {
+          const atualizada: Licitacao = {
+            ...l,
+            acompanhamento: true, // Garante que a licitação permaneça em acompanhamento
+            avisoData: dataAviso,
+            avisoHora: horaAviso,
+            avisoMensagem: msg,
+            avisoConcluido: false,
+            updatedAt: nowIso,
+          };
+          licModificada = atualizada;
+          return atualizada;
+        }
+        return l;
+      });
+      salvarLicitacoes(licsAtualizadas);
+      return licsAtualizadas;
+    });
 
     if (licModificada) {
       salvarLicitacaoServidor(licModificada);

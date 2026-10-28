@@ -560,6 +560,7 @@ export function obterLicitacoes(): Licitacao[] {
           avisoHora: l.avisoHora || undefined,
           avisoMensagem: l.avisoMensagem || undefined,
           avisoConcluido: Boolean(l.avisoConcluido),
+          updatedAt: l.updatedAt || undefined,
         };
       });
   } catch (err) {
@@ -569,12 +570,29 @@ export function obterLicitacoes(): Licitacao[] {
 }
 
 export function salvarLicitacoes(licitacoes: Licitacao[]): void {
+  const setExcluidas = new Set(obterLicitacoesExcluidas());
+  const filtradas = licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
   try {
-    const setExcluidas = new Set(obterLicitacoesExcluidas());
-    const filtradas = licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
     localStorage.setItem(LICITACOES_KEY, JSON.stringify(filtradas));
   } catch (err) {
-    console.warn('Aviso ao salvar licitações no storage:', err);
+    console.warn('Aviso: cota do localStorage excedida ao salvar licitações. Otimizando espaço de armazenamento...', err);
+    try {
+      // Limpa dados pesados de imagens que possam ter inflado o localStorage
+      const itensRaw = localStorage.getItem(ITENS_KEY);
+      if (itensRaw) {
+        const parsed = JSON.parse(itensRaw);
+        if (Array.isArray(parsed)) {
+          const itensLeves = parsed.map((it: any) => ({
+            ...it,
+            caminho_imagem: (it.caminho_imagem && it.caminho_imagem.length > 500) ? '' : (it.caminho_imagem || ''),
+          }));
+          localStorage.setItem(ITENS_KEY, JSON.stringify(itensLeves));
+        }
+      }
+      localStorage.setItem(LICITACOES_KEY, JSON.stringify(filtradas));
+    } catch (e2) {
+      console.error('Falha crítica ao persistir licitações no localStorage:', e2);
+    }
   }
 }
 
@@ -606,27 +624,23 @@ export function salvarItens(itens: ItemLicitacao[]): void {
   const setItensExcluidos = new Set(obterItensExcluidos());
   const itensFiltrados = itens.filter(it => !setItensExcluidos.has(Number(it.id)) && !setExcluidas.has(Number(it.licitacao_id)));
 
-  // Salva cópia duradoura no IndexedDB para garantir que fotos nunca se percam
+  // 1. Salva cópia duradoura com imagens em alta resolução no IndexedDB (capacidade de gigabytes)
   salvarLoteImagensIndexedDB(itensFiltrados).catch(() => {});
 
-  try {
-    localStorage.setItem(ITENS_KEY, JSON.stringify(itensFiltrados));
-  } catch (err) {
-    console.warn('Cota do localStorage atingida ao salvar itens completos. Otimizando armazenamento local...', err);
-    try {
-      // Se estourar a cota de 5MB, salva itens com referências no IndexedDB
-      const itensLeves = itensFiltrados.map(it => {
-        if (it.caminho_imagem && it.caminho_imagem.length > 500) {
-          // Salva individualmente no IndexedDB antes de podar do localStorage
-          salvarImagemItemIndexedDB(it.id, it.caminho_imagem).catch(() => {});
-          return { ...it, caminho_imagem: '' };
-        }
-        return it;
-      });
-      localStorage.setItem(ITENS_KEY, JSON.stringify(itensLeves));
-    } catch (errFallback) {
-      console.warn('Não foi possível gravar itens no localStorage devido ao limite de 5MB do navegador:', errFallback);
+  // 2. Prepara versão ultraleve para o localStorage (sem strings base64 pesadas de 5MB)
+  // Isso previne que o localStorage estoure e bloqueie o salvamento do Acompanhamento de licitações
+  const itensLeves = itensFiltrados.map(it => {
+    if (it.caminho_imagem && it.caminho_imagem.length > 500) {
+      salvarImagemItemIndexedDB(it.id, it.caminho_imagem).catch(() => {});
+      return { ...it, caminho_imagem: '' };
     }
+    return it;
+  });
+
+  try {
+    localStorage.setItem(ITENS_KEY, JSON.stringify(itensLeves));
+  } catch (err) {
+    console.warn('Aviso ao gravar itens no localStorage:', err);
   }
 }
 
