@@ -20,8 +20,14 @@ import {
   Award,
   ShieldCheck,
   UserCheck,
+  Terminal,
 } from 'lucide-react';
 import { PalavraDoDiaCard } from './PalavraDoDiaCard';
+import { GorroNatalino } from './GorroNatalino';
+import { RenaNatalina } from './RenaNatalina';
+import { DoceNatalino } from './DoceNatalino';
+import { BonequinhoNeve } from './BonequinhoNeve';
+import { TipoNovaDeclaracao } from '../utils/novasDeclaracoesPdf';
 
 interface SidebarProps {
   abaAtiva: string;
@@ -32,13 +38,15 @@ interface SidebarProps {
   totalAlertasCobrancas?: number;
   totalAlertasPregoeiro?: number;
   onAbrirDeclaracao?: () => void;
-  onAbrirNovaDeclaracao?: (tipo: 'me_epp' | 'habilitacao' | 'fatos_impeditivos' | 'trabalho_infantil') => void;
+  onAbrirNovaDeclaracao?: (tipo: TipoNovaDeclaracao) => void;
   onAbrirExequibilidade?: () => void;
   onAbrirAssinador?: () => void;
   onAbrirSeguranca?: () => void;
+  onAbrirConsoleCmd?: () => void;
   abertaMobile: boolean;
   onFecharMobile: () => void;
   statusNuvem?: 'conectando' | 'conectado' | 'desconectado';
+  temaNatal?: boolean;
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({
@@ -54,9 +62,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
   onAbrirExequibilidade,
   onAbrirAssinador,
   onAbrirSeguranca,
+  onAbrirConsoleCmd,
   abertaMobile,
   onFecharMobile,
   statusNuvem = 'conectado',
+  temaNatal = true,
 }) => {
   const [menuDocumentosAberto, setMenuDocumentosAberto] = useState<boolean>(false);
   const [menuConfigAberto, setMenuConfigAberto] = useState<boolean>(
@@ -116,7 +126,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <div className="flex items-center gap-2">
               <span className="w-2 h-2 rounded-full bg-blue-600"></span>
               <span className="text-xs font-bold uppercase tracking-wider text-slate-700 dark:text-slate-300">
-                Menu CRM • GWS GLOBAL
+                Menu CRM • GWS GLOBAL {temaNatal ? '🎅' : ''}
               </span>
             </div>
             <button
@@ -134,14 +144,20 @@ export const Sidebar: React.FC<SidebarProps> = ({
             <span className="text-[11px] font-semibold text-slate-400 dark:text-slate-400 uppercase tracking-wider">
               Gestão de Licitações
             </span>
-            <span className="text-[10px] font-medium text-slate-400 dark:text-slate-400">
-              GWS CRM
-            </span>
+            {temaNatal ? (
+              <span className="text-[10px] font-bold text-red-600 dark:text-red-400 bg-red-100/70 dark:bg-red-950/60 px-2 py-0.5 rounded-full flex items-center gap-1 border border-red-200 dark:border-red-900/60 shadow-2xs">
+                <span>🎄</span> Boas Festas
+              </span>
+            ) : (
+              <span className="text-[10px] font-medium text-slate-400 dark:text-slate-400">
+                GWS CRM
+              </span>
+            )}
           </div>
 
           {/* Navegação Principal */}
           <nav className="space-y-1.5">
-            {itensMenuPrincipal.map(item => {
+            {itensMenuPrincipal.map((item) => {
               const Icone = item.icone;
               const estaAtivo = abaAtiva === item.id;
               return (
@@ -151,25 +167,37 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     setAbaAtiva(item.id);
                     onFecharMobile();
                   }}
-                  className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+                  className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
                     estaAtivo
                       ? 'bg-blue-600 text-white border-blue-500/50 shadow-sm shadow-blue-900/20 font-medium'
                       : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
                   }`}
                 >
                   <div className="flex items-center gap-3 min-w-0">
-                    <div
-                      className={`p-2 rounded-lg transition-colors shrink-0 ${
-                        estaAtivo
-                          ? 'bg-white/20 text-white'
-                          : 'bg-slate-200/60 dark:bg-white/5 text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white group-hover:bg-slate-200/90 dark:group-hover:bg-white/10'
-                      }`}
-                    >
-                      <Icone className="w-4 h-4" />
+                    <div className="relative shrink-0">
+                      <div
+                        className={`p-2 rounded-lg transition-colors shrink-0 ${
+                          estaAtivo
+                            ? 'bg-white/20 text-white'
+                            : 'bg-slate-200/60 dark:bg-white/5 text-slate-600 dark:text-slate-300 group-hover:text-slate-900 dark:group-hover:text-white group-hover:bg-slate-200/90 dark:group-hover:bg-white/10'
+                        }`}
+                      >
+                        <Icone className="w-4 h-4" />
+                      </div>
+                      {/* Gorro de Papai Noel no botão Nova Licitação */}
+                      {item.id === 'cadastrar' && temaNatal && (
+                        <div className="absolute -top-2.5 -left-1.5 pointer-events-none drop-shadow-xs">
+                          <GorroNatalino size={18} tilt={-16} />
+                        </div>
+                      )}
                     </div>
                     <div className="min-w-0">
-                      <div className="text-xs font-bold truncate leading-tight">
-                        {item.label}
+                      <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
+                        <span>{item.label}</span>
+                        {/* Bengala doce estilizada ao lado de Montar Proposta */}
+                        {item.id === 'montar' && temaNatal && (
+                          <DoceNatalino size={14} tilt={14} />
+                        )}
                       </div>
                       <div
                         className={`text-[10px] truncate mt-0.5 leading-none ${
@@ -213,7 +241,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setAbaAtiva('contatos');
                 onFecharMobile();
               }}
-              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+              className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
                 abaAtiva === 'contatos'
                   ? 'bg-blue-600 text-white border-blue-500/50 shadow-sm font-medium'
                   : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
@@ -230,8 +258,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <Users className="w-4 h-4" />
                 </div>
                 <div className="min-w-0">
-                  <div className="text-xs font-bold truncate leading-tight">
-                    Contatos
+                  <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
+                    <span>Contatos</span>
+                    {temaNatal && (
+                      <span className="text-[10px] select-none" title="Boas Festas!">🦌</span>
+                    )}
                   </div>
                   <div
                     className={`text-[10px] truncate mt-0.5 leading-none ${
@@ -265,7 +296,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setAbaAtiva('cobrancas');
                 onFecharMobile();
               }}
-              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+              className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
                 abaAtiva === 'cobrancas'
                   ? 'bg-emerald-600 text-white border-emerald-500/50 shadow-sm font-medium'
                   : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
@@ -333,7 +364,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 setAbaAtiva('analise');
                 onFecharMobile();
               }}
-              className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+              className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
                 abaAtiva === 'analise'
                   ? 'bg-blue-600 text-white border-blue-500/50 shadow-sm font-medium'
                   : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
@@ -371,7 +402,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
               <button
                 type="button"
                 onClick={() => setMenuDocumentosAberto(prev => !prev)}
-                className={`w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
+                className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
                   menuDocumentosAberto
                     ? 'bg-amber-50 dark:bg-[#12274D] text-amber-950 dark:text-white border-amber-200 dark:border-white/10 shadow-xs'
                     : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
@@ -382,8 +413,11 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     <FolderKanban className="w-4 h-4" />
                   </div>
                   <div className="min-w-0">
-                    <div className="text-xs font-bold truncate leading-tight">
-                      Documentos Oficiais
+                    <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
+                      <span>Documentos Oficiais</span>
+                      {temaNatal && (
+                        <DoceNatalino size={13} tilt={-12} />
+                      )}
                     </div>
                     <div className="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5 leading-none">
                       Declarações e certidões
@@ -485,6 +519,42 @@ export const Sidebar: React.FC<SidebarProps> = ({
                     </div>
                     <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-rose-100 dark:bg-rose-500/20 text-rose-800 dark:text-rose-300 shrink-0">
                       CF Art. 7º
+                    </span>
+                  </button>
+
+                  {/* 5. Declaração de responsabilidade (Anexo V - Sujeição, Habilitação e ME/EPP) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('responsabilidade');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <FileCheck className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                      <span className="truncate font-semibold">Declaração de Responsabilidade</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300 shrink-0">
+                      Anexo V
+                    </span>
+                  </button>
+
+                  {/* 6. Declaração de inexistência de parentes (Servidor Público / Quadro de Pessoal) */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirNovaDeclaracao?.('inexistencia_parentes');
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Users className="w-3.5 h-3.5 text-purple-600 dark:text-purple-400 shrink-0" />
+                      <span className="truncate font-semibold">Inexistência de Parentes</span>
+                    </div>
+                    <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-purple-100 dark:bg-purple-500/20 text-purple-800 dark:text-purple-300 shrink-0">
+                      Servidor
                     </span>
                   </button>
 
@@ -595,14 +665,57 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       ID / Senha
                     </span>
                   </button>
+
+                  {/* Console CMD / Terminal de Comandos para Alterações Rápidas e Manutenção */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onAbrirConsoleCmd?.();
+                      onFecharMobile();
+                    }}
+                    className="w-full group flex items-center justify-between px-3 py-2.5 text-xs font-medium rounded-lg text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-white/10 hover:text-slate-950 dark:hover:text-white transition-colors cursor-pointer text-left"
+                  >
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <Terminal className="w-3.5 h-3.5 text-emerald-500 dark:text-emerald-400 shrink-0" />
+                      <span className="truncate font-semibold">Console CMD</span>
+                    </div>
+                    <span className="text-[10px] font-mono font-bold px-1.5 py-0.5 rounded bg-emerald-100 dark:bg-emerald-500/20 text-emerald-800 dark:text-emerald-300 shrink-0">
+                      CMD
+                    </span>
+                  </button>
                 </div>
               )}
             </div>
           </div>
         </div>
 
+        {/* Card Especial de Boas Festas com Rena Rudolph, Boneco de Neve e Bengala Doce */}
+        {temaNatal && (
+          <div className="mt-auto pt-3 pb-1">
+            <div className="p-3 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-emerald-500/10 dark:from-red-950/40 dark:via-amber-950/30 dark:to-emerald-950/40 border border-red-200/70 dark:border-red-900/40 shadow-xs relative overflow-hidden group transition-all hover:shadow-sm">
+              <div className="flex items-center gap-2.5 relative z-10">
+                <div className="shrink-0 flex items-center -space-x-1.5">
+                  <RenaNatalina size={34} pose="head" mensagem="Rudolph: Boas Festas! 🦌" />
+                  <BonequinhoNeve size={32} mensagem="Boneco de Neve: Feliz Natal! ⛄" />
+                </div>
+                <div className="min-w-0 flex-1">
+                  <div className="flex items-center gap-1">
+                    <span className="text-xs font-black text-slate-900 dark:text-white truncate">
+                      Boas Festas! 🎅
+                    </span>
+                    <DoceNatalino size={14} tilt={15} />
+                  </div>
+                  <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-tight mt-0.5">
+                    Paz, saúde e licitações ganhas! 🎄✨
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Card Palavra Bíblica do Dia & Reflexão Diária (posicionado lá embaixo, rente ao rodapé do Sistema Online) */}
-        <div className="mt-auto pt-4 pb-1">
+        <div className={temaNatal ? 'pt-1 pb-1' : 'mt-auto pt-4 pb-1'}>
           <PalavraDoDiaCard />
         </div>
       </div>
@@ -620,7 +733,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   Sistema Online
                 </div>
                 <div className="text-[10px] text-slate-400 dark:text-slate-400 mt-0.5 truncate leading-none">
-                  GWS CRM Ativo
+                  {temaNatal ? 'GWS CRM • Edição de Natal 🎄' : 'GWS CRM Ativo'}
                 </div>
               </div>
             </div>

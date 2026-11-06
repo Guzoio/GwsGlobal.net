@@ -38,9 +38,13 @@ import {
   MoreVertical,
 } from 'lucide-react';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
-import { formatarMoeda } from '../utils/numberToWordsPtBr';
+import { formatarMoeda, compararLicitacoesPorDataCadastroDesc } from '../utils/numberToWordsPtBr';
 import { obterPapelTimbradoConfig } from '../utils/storage';
 import { ModalDeclaracaoUnificada } from './ModalDeclaracaoUnificada';
+import { GorroNatalino } from './GorroNatalino';
+import { RenaNatalina } from './RenaNatalina';
+import { DoceNatalino } from './DoceNatalino';
+import { obterTemaNatal } from '../utils/theme';
 
 // Funções utilitárias para conversão e comparação de datas
 function normalizarData(dataStr: string): string {
@@ -84,6 +88,8 @@ interface HistoricoTabProps {
   onRemoverAvisoPregoeiro?: (licId: number) => void;
   onAbrirCalculadora?: () => void;
   onAbrirDeclaracao?: (lic?: Licitacao) => void;
+  onAtualizarDataCadastro?: (licId: number, novaData: string) => void;
+  onAbrirConsoleCmd?: () => void;
 }
 
 export const HistoricoTab: React.FC<HistoricoTabProps> = ({
@@ -106,12 +112,18 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   onRemoverAvisoPregoeiro,
   onAbrirCalculadora,
   onAbrirDeclaracao,
+  onAtualizarDataCadastro,
+  onAbrirConsoleCmd,
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState<string>('Todos');
   const [filtroData, setFiltroData] = useState<string>(''); // formato YYYY-MM-DD
   const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>('todos');
   const [licitacaoParaExcluir, setLicitacaoParaExcluir] = useState<Licitacao | null>(null);
+
+  // Modal de Edição Rápida da Data de Cadastro (Discreta e Sem Poluição)
+  const [modalEditarDataLic, setModalEditarDataLic] = useState<Licitacao | null>(null);
+  const [novaDataCadastroForm, setNovaDataCadastroForm] = useState<string>('');
 
   // Modal de Aviso de Retorno do Pregoeiro
   const [modalAvisoLic, setModalAvisoLic] = useState<Licitacao | null>(null);
@@ -191,7 +203,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       }
 
       return matchTexto && matchResponsavel && matchData && matchAcompanhamento;
-    });
+    }).sort(compararLicitacoesPorDataCadastroDesc);
   }, [licitacoes, busca, filtroResponsavel, filtroData, filtroAcompanhamento]);
 
   // Contagem de licitações por acompanhamento e concluídas
@@ -325,15 +337,24 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
     setResponsavelParaExcluir(null);
   };
 
+  const natalAtivo = obterTemaNatal();
+
   return (
     <div className="space-y-5">
       {/* Cards de Métricas: Total de Licitações, Valores em Disputa e Valores Vencidos */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Card 1: Total de Licitações */}
-        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3 relative overflow-visible">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0 shadow-2xs">
-              <Landmark className="w-6 h-6" />
+            <div className="relative shrink-0">
+              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shadow-2xs">
+                <Landmark className="w-6 h-6" />
+              </div>
+              {natalAtivo && (
+                <div className="absolute -top-3 -left-2.5 pointer-events-none drop-shadow-xs">
+                  <GorroNatalino size={24} tilt={-16} />
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
@@ -372,7 +393,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               </div>
             </div>
           </div>
-          <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600 shrink-0" />
+          <div className="flex items-center gap-1.5 shrink-0">
+            {natalAtivo && (
+              <div className="hidden sm:block">
+                <DoceNatalino duplo size={22} tilt={10} />
+              </div>
+            )}
+            <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600" />
+          </div>
         </div>
 
         {/* Card 3: Valores Vencidos (Ganhos) */}
@@ -394,6 +422,11 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
+            {natalAtivo && (
+              <div className="hidden sm:block">
+                <RenaNatalina size={26} pose="head" mensagem="Vitórias de Natal! 🦌✨" />
+              </div>
+            )}
             {valorTotalDisputa > 0 && (
               <span className="hidden sm:inline-block bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {((valorTotalVencidos / valorTotalDisputa) * 100).toFixed(0)}%
@@ -707,7 +740,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <th className="py-3 px-4">Órgão Público</th>
                   <th className="py-3 px-4">Processo / Pregão</th>
                   <th className="py-3 px-4">Modalidade</th>
-                  <th className="py-3 px-4">Data Cad.</th>
+                  <th className="py-3 px-4">
+                    <div className="flex items-center gap-1">
+                      <span>Data Cad.</span>
+                      <span className="text-[10px] text-blue-600 dark:text-blue-400 font-bold" title="Ordenado: Mais recentes primeiro">↓</span>
+                    </div>
+                  </th>
                   <th className="py-3 px-4">Itens / Total</th>
                   <th className="py-3 px-4">Quem Fez</th>
                   <th className="py-3 px-4 text-center w-28">Acompanhamento</th>
@@ -735,7 +773,18 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                         {lic.modalidade}
                       </td>
                       <td className="py-3.5 px-4 text-slate-500 font-mono tabular-nums">
-                        {lic.data_cadastro}
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setModalEditarDataLic(lic);
+                            setNovaDataCadastroForm(dataParaInput(lic.data_cadastro) || new Date().toISOString().split('T')[0]);
+                          }}
+                          className="group/date inline-flex items-center gap-1.5 hover:text-blue-600 dark:hover:text-blue-400 cursor-pointer rounded px-1.5 py-0.5 -mx-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors text-left"
+                          title="Clique para alterar a data de cadastro desta licitação"
+                        >
+                          <span>{lic.data_cadastro}</span>
+                          <FileEdit className="w-3 h-3 opacity-0 group-hover/date:opacity-100 transition-opacity text-blue-500 shrink-0" />
+                        </button>
                       </td>
                       <td className="py-3.5 px-4">
                         <div className="font-semibold text-slate-800 font-mono tabular-nums">
@@ -1254,6 +1303,91 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 </div>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Modal de Edição Rápida da Data de Cadastro (Sem Poluição Visual) */}
+      {modalEditarDataLic && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
+          <div className="bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+            <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
+              <div className="flex items-center gap-2.5">
+                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                  <Calendar className="w-4 h-4" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                    Alterar Data de Cadastro
+                  </h3>
+                  <p className="text-[11px] text-slate-500 dark:text-slate-400">
+                    Licitação #{modalEditarDataLic.id} • {modalEditarDataLic.orgao}
+                  </p>
+                </div>
+              </div>
+              <button
+                type="button"
+                onClick={() => setModalEditarDataLic(null)}
+                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            <div className="space-y-3">
+              <div>
+                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
+                  Nova Data de Cadastro:
+                </label>
+                <input
+                  type="date"
+                  value={novaDataCadastroForm}
+                  onChange={e => setNovaDataCadastroForm(e.target.value)}
+                  className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                  autoFocus
+                />
+              </div>
+
+              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-[11px] text-slate-600 dark:text-slate-300">
+                Data atualmente salva: <strong className="font-mono text-slate-900 dark:text-white">{modalEditarDataLic.data_cadastro}</strong>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-between pt-2">
+              <button
+                type="button"
+                onClick={() => {
+                  setModalEditarDataLic(null);
+                  onAbrirConsoleCmd?.();
+                }}
+                className="text-[11px] text-cyan-600 dark:text-cyan-400 hover:underline font-mono flex items-center gap-1 cursor-pointer"
+                title="Abrir o Terminal CMD em tela cheia"
+              >
+                <span>💻 Abrir Terminal CMD</span>
+              </button>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setModalEditarDataLic(null)}
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="button"
+                  onClick={() => {
+                    if (!novaDataCadastroForm) return;
+                    const dataFormatada = normalizarData(novaDataCadastroForm);
+                    onAtualizarDataCadastro?.(modalEditarDataLic.id, dataFormatada);
+                    setModalEditarDataLic(null);
+                  }}
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs active:scale-98"
+                >
+                  Salvar Data
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

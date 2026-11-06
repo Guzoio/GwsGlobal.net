@@ -321,6 +321,53 @@ let dbData: SistemaDb = {
   updatedAt: new Date().toISOString(),
 };
 
+function timestampDataCadastro(dataStr?: string): number {
+  if (!dataStr) return 0;
+  const limpa = String(dataStr).trim();
+  if (!limpa) return 0;
+
+  // Formato brasileiro DD/MM/AAAA
+  if (limpa.includes('/')) {
+    const partes = limpa.split('/');
+    if (partes.length >= 3) {
+      const dia = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1;
+      const ano = parseInt(partes[2], 10);
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(ano)) {
+        return new Date(ano, mes, dia).getTime();
+      }
+    }
+  }
+
+  // Formato ISO AAAA-MM-DD
+  if (limpa.includes('-')) {
+    const partes = limpa.split('T')[0].split('-');
+    if (partes.length >= 3) {
+      const ano = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1;
+      const dia = parseInt(partes[2], 10);
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(ano)) {
+        return new Date(ano, mes, dia).getTime();
+      }
+    }
+  }
+
+  const d = new Date(limpa);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+function compararLicitacoesPorDataCadastroDesc(
+  a: { data_cadastro?: string; id: number | string },
+  b: { data_cadastro?: string; id: number | string }
+): number {
+  const tA = timestampDataCadastro(a.data_cadastro);
+  const tB = timestampDataCadastro(b.data_cadastro);
+  if (tB !== tA) {
+    return tB - tA;
+  }
+  return Number(b.id) - Number(a.id);
+}
+
 // Carrega dados persistentes do disco
 if (fs.existsSync(DB_FILE)) {
   try {
@@ -342,6 +389,7 @@ if (fs.existsSync(DB_FILE)) {
                 homologada: Boolean(l.homologada),
               }))
               .filter((l: any) => !setExcluidas.has(Number(l.id)))
+              .sort(compararLicitacoesPorDataCadastroDesc)
           : [],
         itens: Array.isArray(parsed.itens)
           ? parsed.itens.filter((i: any) => !setItensExcluidos.has(Number(i.id)) && !setExcluidas.has(Number(i.licitacao_id)))
@@ -531,7 +579,7 @@ app.post('/api/sync/merge', (req, res) => {
       }
       dbData.licitacoes = Array.from(mapaLics.values())
         .filter(l => !setExcluidas.has(Number(l.id)))
-        .sort((a, b) => Number(b.id) - Number(a.id));
+        .sort(compararLicitacoesPorDataCadastroDesc);
     }
 
     // Mescla itens por ID, IGNORANDO itens de licitações excluídas ou itens excluídos
@@ -654,7 +702,7 @@ app.post('/api/sync/licitacao', (req, res) => {
     } else {
       dbData.licitacoes.unshift(itemAtualizado);
     }
-    dbData.licitacoes.sort((a, b) => Number(b.id) - Number(a.id));
+    dbData.licitacoes.sort(compararLicitacoesPorDataCadastroDesc);
     salvarDbNoDisco();
 
     broadcastSse({

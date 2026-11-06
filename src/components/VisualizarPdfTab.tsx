@@ -4,6 +4,9 @@ import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { TIMBRADO_PADRAO } from '../utils/storage';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
+import { BonequinhoNeve } from './BonequinhoNeve';
+import { DoceNatalino } from './DoceNatalino';
+import { obterTemaNatal } from '../utils/theme';
 
 interface VisualizarPdfTabProps {
   licitacao: Licitacao | undefined;
@@ -17,6 +20,7 @@ interface VisualizarPdfTabProps {
   onSalvarConfig?: (config: PapelTimbradoConfig) => void;
   onAtualizarDataProposta?: (licId: number, novaData: string) => void;
   onNovaLicitacao?: () => void;
+  temaNatal?: boolean;
 }
 
 export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
@@ -31,7 +35,9 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
   onSalvarConfig,
   onAtualizarDataProposta,
   onNovaLicitacao,
+  temaNatal,
 }) => {
+  const natalAtivo = temaNatal ?? obterTemaNatal();
   const [dataEmissaoLocal, setDataEmissaoLocal] = useState<string>(() => {
     return converterParaFormatoInputDate(
       licitacao?.data_proposta || licitacao?.data_cadastro || timbrado.dataEmissao
@@ -435,7 +441,14 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
               )}
 
               {/* TABELA DE PROPOSTA COMERCIAL DE PREÇOS */}
-              <div className="pt-2">
+              <div className="pt-2 relative">
+                {/* Bonequinho de Neve natalino descansando e acenando em cima da tabela de pré-visualização */}
+                {natalAtivo && (
+                  <div className="absolute -top-12 sm:-top-14 right-2 sm:right-6 z-20 pointer-events-auto print:hidden">
+                    <BonequinhoNeve mensagem="Tabela Conferida! ⛄ Boas Festas!" />
+                  </div>
+                )}
+
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
                   Tabela de Itens e Proposta Comercial de Preços
                 </h4>
@@ -445,7 +458,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
                     Nenhum item adicionado ainda nesta licitação. Vá na aba "Montar Proposta & Catálogo" para adicionar produtos.
                   </div>
                 ) : (
-                  <div className="border border-slate-300 rounded overflow-hidden">
+                  <div className="relative border border-slate-300 rounded overflow-hidden">
                     <table className="w-full text-xs">
                       <thead className="bg-[#0F2C59] text-white font-bold text-[11px]">
                         <tr>

@@ -247,3 +247,58 @@ export function formatarNumeroPtBr(valor: number | undefined | null): string {
     maximumFractionDigits: 2,
   });
 }
+
+/**
+ * Converte data_cadastro (DD/MM/AAAA ou AAAA-MM-DD) para timestamp em milissegundos
+ * para ordenação precisa de datas mais recentes para as mais antigas.
+ */
+export function timestampDataCadastro(dataStr: string | undefined | null): number {
+  if (!dataStr || typeof dataStr !== 'string') return 0;
+  const limpa = dataStr.trim();
+  if (!limpa) return 0;
+
+  // Formato brasileiro DD/MM/AAAA ou DD/MM/YY
+  if (limpa.includes('/')) {
+    const partes = limpa.split('/');
+    if (partes.length >= 3) {
+      const dia = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1; // 0-indexed no JS Date
+      let ano = parseInt(partes[2].slice(0, 4), 10);
+      if (ano < 100) ano += 2000;
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(ano)) {
+        return new Date(ano, mes, dia).getTime();
+      }
+    }
+  }
+
+  // Formato ISO AAAA-MM-DD
+  if (limpa.includes('-')) {
+    const partes = limpa.split('T')[0].split('-');
+    if (partes.length >= 3) {
+      const ano = parseInt(partes[0], 10);
+      const mes = parseInt(partes[1], 10) - 1;
+      const dia = parseInt(partes[2], 10);
+      if (!isNaN(dia) && !isNaN(mes) && !isNaN(ano)) {
+        return new Date(ano, mes, dia).getTime();
+      }
+    }
+  }
+
+  const d = new Date(limpa);
+  return isNaN(d.getTime()) ? 0 : d.getTime();
+}
+
+/**
+ * Função de comparação para ordenar licitações por data de cadastro da mais recente para a mais antiga (decrescente).
+ * Em caso de empate na data, utiliza o ID em ordem decrescente como critério de desempate.
+ */
+export function compararLicitacoesPorDataCadastroDesc<
+  T extends { data_cadastro?: string; id: number | string }
+>(a: T, b: T): number {
+  const tA = timestampDataCadastro(a.data_cadastro);
+  const tB = timestampDataCadastro(b.data_cadastro);
+  if (tB !== tA) {
+    return tB - tA;
+  }
+  return Number(b.id) - Number(a.id);
+}

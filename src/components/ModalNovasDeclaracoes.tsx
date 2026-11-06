@@ -18,6 +18,7 @@ import {
   Award,
   Users,
   AlertTriangle,
+  FileCheck,
 } from 'lucide-react';
 import { Licitacao, PapelTimbradoConfig } from '../types';
 import {
@@ -70,6 +71,18 @@ const ABAS_DECLARACOES: {
     badge: 'CF Art. 7º XXXIII',
     icone: Users,
   },
+  {
+    tipo: 'responsabilidade',
+    label: 'Declaração de Responsabilidade',
+    badge: 'Anexo V • Sujeição & ME',
+    icone: FileCheck,
+  },
+  {
+    tipo: 'inexistencia_parentes',
+    label: 'Inexistência de Parentes',
+    badge: 'Quadro & Servidor Público',
+    icone: Users,
+  },
 ];
 
 export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
@@ -85,6 +98,10 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
   const [modalidade, setModalidade] = useState<string>('PREGÃO ELETRÔNICO');
   const [processoEdital, setProcessoEdital] = useState<string>('');
   const [orgaoPublico, setOrgaoPublico] = useState<string>('');
+  const [comissaoLicitacao, setComissaoLicitacao] = useState<string>(
+    'Comissão Municipal de Licitações'
+  );
+  const [objetoLicitacao, setObjetoLicitacao] = useState<string>('');
   const [dataEmissao, setDataEmissao] = useState<string>(
     new Date().toISOString().split('T')[0]
   );
@@ -92,7 +109,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
     timbrado.cidadeEmissao || 'TIMOTEO - MG'
   );
 
-  // Específicos para Não Emprego de Menor
+  // Específicos para Anexos (Não Emprego de Menor / Declaração de Responsabilidade)
   const [numeroAnexo, setNumeroAnexo] = useState<string>('ANEXO VIII');
   const [ressalvaAprendiz, setRessalvaAprendiz] = useState<boolean>(true); // Padrão conforme imagem modelo
 
@@ -115,6 +132,11 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
   useEffect(() => {
     if (tipoInicial) {
       setTipoAtivo(tipoInicial);
+      if (tipoInicial === 'responsabilidade') {
+        setNumeroAnexo('ANEXO V');
+      } else if (tipoInicial === 'trabalho_infantil') {
+        setNumeroAnexo('ANEXO VIII');
+      }
     }
   }, [tipoInicial, aberto]);
 
@@ -134,6 +156,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
       setModalidade('PREGÃO ELETRÔNICO');
       setProcessoEdital('');
       setOrgaoPublico('');
+      setObjetoLicitacao('');
     }
   }, [aberto, licitacaoInicial, licitacoes]);
 
@@ -147,6 +170,20 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
 
     const orgao = lic.orgao || '';
     setOrgaoPublico(orgao);
+
+    const licComObjeto = lic as unknown as { objeto?: string };
+    if (licComObjeto.objeto) {
+      setObjetoLicitacao(licComObjeto.objeto);
+    }
+  };
+
+  const handleTrocarAba = (tipo: TipoNovaDeclaracao) => {
+    setTipoAtivo(tipo);
+    if (tipo === 'responsabilidade' && (!numeroAnexo || numeroAnexo === 'ANEXO VIII')) {
+      setNumeroAnexo('ANEXO V');
+    } else if (tipo === 'trabalho_infantil' && (!numeroAnexo || numeroAnexo === 'ANEXO V')) {
+      setNumeroAnexo('ANEXO VIII');
+    }
   };
 
   // Ao trocar de licitação no select
@@ -170,6 +207,8 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
       modalidade,
       processoEdital,
       orgaoPublico,
+      comissaoLicitacao,
+      objetoLicitacao,
       dataEmissao,
       cidadeEmissao,
       numeroAnexo,
@@ -184,6 +223,8 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
     modalidade,
     processoEdital,
     orgaoPublico,
+    comissaoLicitacao,
+    objetoLicitacao,
     dataEmissao,
     cidadeEmissao,
     numeroAnexo,
@@ -291,9 +332,9 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
           </div>
         </div>
 
-        {/* Abas das 4 Declarações Solicitadas */}
+        {/* Abas das 6 Declarações Solicitadas */}
         <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#091326] shrink-0">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
             {ABAS_DECLARACOES.map(item => {
               const Icone = item.icone;
               const ativa = tipoAtivo === item.tipo;
@@ -301,22 +342,22 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 <button
                   key={item.tipo}
                   type="button"
-                  onClick={() => setTipoAtivo(item.tipo)}
-                  className={`flex items-center gap-2.5 p-2.5 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
+                  onClick={() => handleTrocarAba(item.tipo)}
+                  className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
                     ativa
                       ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30 font-semibold'
                       : 'bg-white dark:bg-[#0E1F3D]/80 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
                   }`}
                 >
                   <Icone
-                    className={`w-4 h-4 shrink-0 ${
+                    className={`w-3.5 h-3.5 shrink-0 ${
                       ativa ? 'text-white' : 'text-blue-600 dark:text-blue-400'
                     }`}
                   />
                   <div className="min-w-0 flex-1">
-                    <div className="text-xs truncate font-bold leading-tight">{item.label}</div>
+                    <div className="text-[11px] truncate font-bold leading-tight">{item.label}</div>
                     <div
-                      className={`text-[10px] truncate ${
+                      className={`text-[9px] truncate ${
                         ativa ? 'text-blue-100' : 'text-slate-400 dark:text-slate-400'
                       }`}
                     >
@@ -489,6 +530,58 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       </span>
                     </div>
                   </label>
+                </div>
+              </div>
+            )}
+
+            {/* Bloco 3.1: Opções específicas de Declaração de Responsabilidade (Anexo V) */}
+            {tipoAtivo === 'responsabilidade' && (
+              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-300">
+                  <FileCheck className="w-4 h-4 text-blue-600" />
+                  <span>Configurações do Anexo V (Responsabilidade)</span>
+                </div>
+
+                <div className="space-y-2.5">
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                        Título do Anexo no Topo
+                      </label>
+                      <input
+                        type="text"
+                        value={numeroAnexo}
+                        onChange={e => setNumeroAnexo(e.target.value)}
+                        placeholder="Ex: ANEXO V"
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                        Comissão de Licitações
+                      </label>
+                      <input
+                        type="text"
+                        value={comissaoLicitacao}
+                        onChange={e => setComissaoLicitacao(e.target.value)}
+                        placeholder="Ex: Comissão Municipal de Licitações"
+                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                      />
+                    </div>
+                  </div>
+
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                      Objeto do Edital (Cláusula 2)
+                    </label>
+                    <textarea
+                      rows={2}
+                      value={objetoLicitacao}
+                      onChange={e => setObjetoLicitacao(e.target.value)}
+                      placeholder="Ex: AQUISIÇÃO DE MATERIAIS ESPORTIVOS, UNIFORMES E EQUIPAMENTOS..."
+                      className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                    />
+                  </div>
                 </div>
               </div>
             )}
@@ -693,8 +786,8 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                     </div>
                   )}
 
-                  {/* Identificação de Processo / Promotor (Pedido do Usuário) */}
-                  {(orgaoPublico || processoEdital) && (
+                  {/* Identificação de Processo / Promotor (Pedido do Usuário - para declarações normais) */}
+                  {(orgaoPublico || processoEdital) && tipoAtivo !== 'responsabilidade' && (
                     <div className="mb-6 p-2.5 rounded border border-slate-200 bg-slate-50/70 text-xs text-slate-800">
                       {processoEdital && (
                         <div className="font-bold text-[#0F2C59] text-xs">
@@ -709,7 +802,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                     </div>
                   )}
 
-                  {/* Anexo se houver (como Anexo VIII) */}
+                  {/* Anexo se houver (como Anexo V ou Anexo VIII) */}
                   {textoCompilado.anexoCabecalho && (
                     <div className="text-center font-bold text-sm tracking-wider text-black mb-3">
                       {textoCompilado.anexoCabecalho.toUpperCase()}
@@ -717,20 +810,59 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                   )}
 
                   {/* Título Oficial da Declaração */}
-                  <div className="text-center font-black text-sm sm:text-base uppercase text-black mb-6 tracking-tight leading-snug px-4">
+                  <div
+                    className={`text-center font-black uppercase text-black tracking-tight leading-snug px-2 ${
+                      tipoAtivo === 'responsabilidade'
+                        ? 'text-[11px] sm:text-xs mb-3'
+                        : 'text-sm sm:text-base mb-6'
+                    }`}
+                  >
                     {configAtiva.tituloDoc}
                   </div>
 
+                  {/* Sub-bloco de Identificação para Declaração de Responsabilidade (conforme modelo Anexo V) */}
+                  {tipoAtivo === 'responsabilidade' && textoCompilado.cabecalhoSubBloco && (
+                    <div className="mb-4 text-xs font-bold text-slate-900 leading-tight">
+                      {textoCompilado.cabecalhoSubBloco.orgao && (
+                        <div>{textoCompilado.cabecalhoSubBloco.orgao}</div>
+                      )}
+                      {textoCompilado.cabecalhoSubBloco.comissao && (
+                        <div>{textoCompilado.cabecalhoSubBloco.comissao}</div>
+                      )}
+                      {textoCompilado.cabecalhoSubBloco.processo && (
+                        <div>{textoCompilado.cabecalhoSubBloco.processo}</div>
+                      )}
+                    </div>
+                  )}
+
                   {/* Corpo Textual da Declaração */}
-                  <div className="space-y-4 text-xs sm:text-[13px] leading-relaxed text-justify text-slate-900">
+                  <div
+                    className={`text-justify text-slate-900 ${
+                      tipoAtivo === 'responsabilidade'
+                        ? 'space-y-2 text-[10px] sm:text-[11px] leading-snug'
+                        : 'space-y-4 text-xs sm:text-[13px] leading-relaxed'
+                    }`}
+                  >
                     {(modoEdicaoLivre && textoEditado.trim()
                       ? textoEditado.split('\n\n')
                       : textoCompilado.paragrafos
-                    ).map((p, idx) => (
-                      <p key={idx} className="indent-8 font-serif leading-relaxed">
-                        {p}
-                      </p>
-                    ))}
+                    ).map((p, idx) => {
+                      const isBullet = p.startsWith('➤');
+                      return (
+                        <p
+                          key={idx}
+                          className={`font-serif ${
+                            isBullet
+                              ? 'pl-3 -indent-3 mb-2'
+                              : tipoAtivo === 'inexistencia_parentes'
+                              ? 'mb-2'
+                              : 'indent-8'
+                          }`}
+                        >
+                          {p}
+                        </p>
+                      );
+                    })}
 
                     {/* Bloco de Ressalva para Menor Aprendiz */}
                     {textoCompilado.ressalvaTexto && (
@@ -747,9 +879,17 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 </div>
 
                 {/* Base da Folha: Local, Data e Assinaturas */}
-                <div className="relative z-10 mt-12 pt-4">
+                <div
+                  className={`relative z-10 pt-4 ${
+                    tipoAtivo === 'responsabilidade' ? 'mt-6' : 'mt-12'
+                  }`}
+                >
                   {/* Local e Datação */}
-                  <div className="text-xs font-serif text-slate-900 mb-8 pl-8">
+                  <div
+                    className={`text-xs font-serif text-slate-900 pl-8 ${
+                      tipoAtivo === 'responsabilidade' ? 'mb-4' : 'mb-8'
+                    }`}
+                  >
                     {tipoAtivo === 'trabalho_infantil' ? '(Local e data) ' : ''}
                     {dataPorExtenso}
                   </div>

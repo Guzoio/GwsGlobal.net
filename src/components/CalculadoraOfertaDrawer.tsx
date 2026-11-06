@@ -17,6 +17,8 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { formatarMoeda, parseMoedaBrasileira, formatarNumeroPtBr } from '../utils/numberToWordsPtBr';
+import { GorroNatalino } from './GorroNatalino';
+import { obterTemaNatal } from '../utils/theme';
 
 interface CalculadoraOfertaDrawerProps {
   aberto: boolean;
@@ -132,8 +134,15 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
         {/* Cabeçalho Navy Moderno GWS */}
         <div className="px-4 sm:px-5 py-3.5 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D] shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
-            <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs shrink-0">
-              <Calculator className="w-4 h-4" />
+            <div className="relative shrink-0">
+              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs">
+                <Calculator className="w-4 h-4" />
+              </div>
+              {obterTemaNatal() && (
+                <div className="absolute -top-2.5 -left-2 pointer-events-none drop-shadow-xs">
+                  <GorroNatalino size={18} tilt={-16} />
+                </div>
+              )}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">

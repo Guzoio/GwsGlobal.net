@@ -12,6 +12,7 @@ import {
 } from 'firebase/firestore';
 import { db, handleFirestoreError, OperationType } from './config';
 import { Licitacao, ItemLicitacao, PapelTimbradoConfig, AcessoConfig, ContatoPrefeitura, Cobranca } from '../types';
+import { compararLicitacoesPorDataCadastroDesc } from '../utils/numberToWordsPtBr';
 
 const LICITACOES_COL = 'licitacoes';
 const ITENS_COL = 'itens';
@@ -50,8 +51,8 @@ export function ouvirLicitacoesNuvem(
           updatedAt: data.updatedAt || undefined,
         });
       });
-      // Ordena por ID decrescente
-      lista.sort((a, b) => b.id - a.id);
+      // Ordena por data de cadastro da mais recente para a mais antiga (e desempate por ID decrescente)
+      lista.sort(compararLicitacoesPorDataCadastroDesc);
       // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
       onUpdate(lista);
     },

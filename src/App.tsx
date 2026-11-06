@@ -18,6 +18,7 @@ import { ModalDeclaracaoUnificada } from './components/ModalDeclaracaoUnificada'
 import { ModalExequibilidade } from './components/ModalExequibilidade';
 import { ModalAssinadorDocumentos } from './components/ModalAssinadorDocumentos';
 import { ModalNovasDeclaracoes } from './components/ModalNovasDeclaracoes';
+import { ModalConsoleCmd } from './components/ModalConsoleCmd';
 import { TipoNovaDeclaracao } from './utils/novasDeclaracoesPdf';
 import { ContatosTab } from './components/ContatosTab';
 import { AnaliseTab } from './components/AnaliseTab';
@@ -67,9 +68,10 @@ import {
   formatarDataPtBr,
 } from './utils/cobrancasCalculo';
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
-import { converterParaFormatoInputDate } from './utils/numberToWordsPtBr';
+import { converterParaFormatoInputDate, compararLicitacoesPorDataCadastroDesc } from './utils/numberToWordsPtBr';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { obterTema, aplicarTema, alternarTema, ThemeMode } from './utils/theme';
+import { obterTema, aplicarTema, alternarTema, ThemeMode, obterTemaNatal, alternarTemaNatal } from './utils/theme';
+import { EfeitoNeve } from './components/EfeitoNeve';
 import {
   ouvirLicitacoesNuvem,
   ouvirItensNuvem,
@@ -169,7 +171,7 @@ function mesclarLicitacoesSeguro(
       mapa.set(id, merged);
     }
   }
-  return Array.from(mapa.values()).sort((a, b) => Number(b.id) - Number(a.id));
+  return Array.from(mapa.values()).sort(compararLicitacoesPorDataCadastroDesc);
 }
 
 export default function App() {
@@ -287,9 +289,11 @@ export default function App() {
   const [modalAssinadorAberto, setModalAssinadorAberto] = useState<boolean>(false);
   const [modalNovasDeclaracoesAberto, setModalNovasDeclaracoesAberto] = useState<boolean>(false);
   const [tipoNovaDeclaracaoAtiva, setTipoNovaDeclaracaoAtiva] = useState<TipoNovaDeclaracao>('me_epp');
+  const [consoleCmdAberto, setConsoleCmdAberto] = useState<boolean>(false);
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
   const [tema, setTema] = useState<ThemeMode>(() => obterTema());
+  const [temaNatal, setTemaNatal] = useState<boolean>(() => obterTemaNatal());
 
   // Aplica o tema na árvore DOM sempre que o estado mudar
   useEffect(() => {
@@ -304,6 +308,17 @@ export default function App() {
       const t = alternarTema();
       setTema(t);
     }
+  };
+
+  const handleAlternarTemaNatal = () => {
+    const novo = alternarTemaNatal();
+    setTemaNatal(novo);
+    mostrarToast(
+      novo
+        ? 'Tema de Natal ativado! 🎄 Neve, gorro e enfeites ligados.'
+        : 'Tema de Natal pausado. ❄️',
+      'sucesso'
+    );
   };
 
   // Carrega dados iniciais do banco local imediatamente
@@ -1014,6 +1029,37 @@ export default function App() {
     mostrarToast('Data da proposta salva para esta licitação.');
   };
 
+  // Altera a data de cadastro de uma licitação com sincronização imediata no servidor, nuvem e cache local
+  const handleAtualizarDataCadastro = (licId: number, novaData: string): boolean => {
+    let licModificada: Licitacao | null = null;
+    const licsAtualizadas = licitacoes.map(l => {
+      if (Number(l.id) === Number(licId)) {
+        const atualizada: Licitacao = {
+          ...l,
+          data_cadastro: novaData,
+          updatedAt: new Date().toISOString(),
+        };
+        licModificada = atualizada;
+        return atualizada;
+      }
+      return l;
+    });
+
+    if (licModificada) {
+      setLicitacoes(licsAtualizadas);
+      salvarLicitacoes(licsAtualizadas);
+      salvarLicitacaoServidor(licModificada);
+      salvarLicitacaoNuvem(licModificada).catch(err => {
+        console.warn('Aviso ao sincronizar data de cadastro na nuvem:', err);
+      });
+      mostrarToast(`✓ Data de cadastro da licitação #${licId} atualizada para ${novaData}!`);
+      return true;
+    }
+
+    mostrarToast(`Licitação #${licId} não encontrada.`, 'erro');
+    return false;
+  };
+
   const handleAtualizarUfLicitacao = (licId: number, novaUf: string) => {
     const ufFormatada = novaUf.trim().toUpperCase();
     let licModificada: Licitacao | null = null;
@@ -1404,6 +1450,7 @@ export default function App() {
         <LoginScreen
           acessoConfig={acessoConfig}
           onLoginSucesso={handleLoginSucesso}
+          temaNatal={temaNatal}
         />
         {toast && (
           <div
@@ -1426,8 +1473,11 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200">
-      {/* Barra de navegação do topo (Logo, Nuvem, Tema, Calcular e Sair) */}
+    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative">
+      {/* Efeito sutil de neve suave natalina (cobre toda a tela sem interferir em cliques) */}
+      <EfeitoNeve ativo={temaNatal} densidade="baixa" modoEscuro={tema === 'dark'} />
+
+      {/* Barra de navegação do topo (Logo, Nuvem, Tema, Natal, Calcular e Sair) */}
       <Header
         sidebarAberta={sidebarAberta}
         onToggleSidebar={() => setSidebarAberta(prev => !prev)}
@@ -1442,6 +1492,8 @@ export default function App() {
         statusNuvem={statusNuvem}
         tema={tema}
         onAlternarTema={handleAlternarTema}
+        temaNatal={temaNatal}
+        onAlternarTemaNatal={handleAlternarTemaNatal}
         alertasCobrancas={todosAlertasSininho}
         onNavegarParaAlerta={(alerta) => {
           if (alerta.tipo === 'pregoeiro_retorno') {
@@ -1534,6 +1586,14 @@ export default function App() {
         timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
 
+      {/* Modal Console CMD de Configurações & Administração (Altera Data de Cadastro e executa comandos) */}
+      <ModalConsoleCmd
+        aberto={consoleCmdAberto}
+        onFechar={() => setConsoleCmdAberto(false)}
+        licitacoes={licitacoes}
+        onAtualizarDataCadastro={handleAtualizarDataCadastro}
+      />
+
       {/* Toast flutuante */}
       {toast && (
         <div
@@ -1596,9 +1656,14 @@ export default function App() {
             setSegurancaModalAberto(true);
             setSidebarAberta(false);
           }}
+          onAbrirConsoleCmd={() => {
+            setConsoleCmdAberto(true);
+            setSidebarAberta(false);
+          }}
           abertaMobile={sidebarAberta}
           onFecharMobile={() => setSidebarAberta(false)}
           statusNuvem={statusNuvem}
+          temaNatal={temaNatal}
         />
 
         {/* Área Central / Conteúdo Principal e Rodapé */}
@@ -1631,6 +1696,8 @@ export default function App() {
               setLicitacaoParaDeclaracao(lic || null);
               setModalDeclaracaoAberto(true);
             }}
+            onAtualizarDataCadastro={handleAtualizarDataCadastro}
+            onAbrirConsoleCmd={() => setConsoleCmdAberto(true)}
           />
         )}
 
@@ -1721,6 +1788,7 @@ export default function App() {
             onSalvarConfig={handleSalvarTimbrado}
             onAtualizarDataProposta={handleAtualizarDataProposta}
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
+            temaNatal={temaNatal}
           />
         )}
       </main>
@@ -1737,6 +1805,16 @@ export default function App() {
               Provérbios 16:3
             </span>
           </div>
+
+          {/* Mensagem especial de Boas Festas & Natal GWS GLOBAL */}
+          {temaNatal && (
+            <div className="pt-2 flex items-center justify-center">
+              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 font-semibold text-xs shadow-2xs">
+                <span>🎄</span>
+                <span>A GWS GLOBAL deseja a você e à sua família um Feliz Natal e um Próspero Ano Novo! 🎅✨</span>
+              </div>
+            </div>
+          )}
 
           <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
             <span>

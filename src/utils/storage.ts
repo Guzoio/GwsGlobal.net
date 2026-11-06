@@ -5,6 +5,7 @@ import {
   obterTodasImagensIndexedDB,
   salvarImagemItemIndexedDB,
 } from './indexedDb';
+import { compararLicitacoesPorDataCadastroDesc } from './numberToWordsPtBr';
 
 const ACESSO_KEY = 'gws_acesso_config';
 const AUTH_SESSION_KEY = 'gws_auth_active';
@@ -562,7 +563,8 @@ export function obterLicitacoes(): Licitacao[] {
           avisoConcluido: Boolean(l.avisoConcluido),
           updatedAt: l.updatedAt || undefined,
         };
-      });
+      })
+      .sort(compararLicitacoesPorDataCadastroDesc);
   } catch (err) {
     console.error('Erro ao ler licitações do storage:', err);
     return [];

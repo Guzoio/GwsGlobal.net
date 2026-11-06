@@ -6,16 +6,20 @@ export type TipoNovaDeclaracao =
   | 'me_epp'
   | 'habilitacao'
   | 'fatos_impeditivos'
-  | 'trabalho_infantil';
+  | 'trabalho_infantil'
+  | 'responsabilidade'
+  | 'inexistencia_parentes';
 
 export interface DadosNovaDeclaracao {
   tipo: TipoNovaDeclaracao;
   modalidade: string; // Ex: "PREGÃO ELETRÔNICO"
-  processoEdital: string; // Ex: "Nº 26/2026"
-  orgaoPublico: string; // Ex: "PREFEITURA MUNICIPAL DE MOREIRA SALES - PR"
+  processoEdital: string; // Ex: "Nº 14/2026"
+  orgaoPublico: string; // Ex: "Prefeitura Municipal de NOVA SANTA BARBARA"
+  comissaoLicitacao?: string; // Ex: "Comissão Municipal de Licitações"
+  objetoLicitacao?: string; // Ex: "AQUISIÇÃO DE MATERIAIS ESPORTIVOS, UNIFORMES E EQUIPAMENTOS DIVERSOS..."
   dataEmissao?: string; // Ex: "2026-04-23" ou "23/04/2026"
   cidadeEmissao?: string; // Ex: "Timóteo - MG"
-  numeroAnexo?: string; // Ex: "ANEXO VIII"
+  numeroAnexo?: string; // Ex: "ANEXO V" ou "ANEXO VIII"
   ressalvaAprendiz?: boolean; // Marca "X" na condição de menor aprendiz
   estadoCivil?: string; // Ex: "solteiro"
   profissao?: string; // Ex: "empresário"
@@ -183,6 +187,23 @@ export function obterConfigDeclaracao(tipo: TipoNovaDeclaracao) {
         subtitulo: 'Constituição Federal Art. 7º XXXIII e Lei 14.133/2021',
         badge: 'Mão de Obra Infantil',
       };
+    case 'responsabilidade':
+      return {
+        id: 'responsabilidade' as TipoNovaDeclaracao,
+        nomeMenu: 'Declaração de Responsabilidade',
+        tituloDoc:
+          'DECLARAÇÃO DE SUJEIÇÃO ÀS CONDIÇÕES ESTABELECIDAS NO EDITAL E DE INEXISTÊNCIA DE FATOS SUPERVENIENTES IMPEDITIVOS DA HABILITAÇÃO/ DECLARAÇÃO DE QUE CUMPRE PLENAMENTE OS REQUISITOS DA HABILITAÇÃO E DECLARAÇÃO DE MICRO EMPRESAS QUE NO ANO-CALENDÁRIO DE REALIZAÇÃO DA LICITAÇÃO, AINDA NÃO TENHAM CELEBRADO CONTRATOS COM A ADMINISTRAÇÃO PÚBLICA CUJO VALORES SOMADOS EXTRAPOLEM A RECEITA BRUTA MÁXIMA ADMITIDA PARA FINS DE ENQUADRAMENTO COMO EMPRESA DE PEQUENO PORTE.',
+        subtitulo: 'Sujeição ao edital, requisitos de habilitação e limite de receita ME/EPP',
+        badge: 'Responsabilidade',
+      };
+    case 'inexistencia_parentes':
+      return {
+        id: 'inexistencia_parentes' as TipoNovaDeclaracao,
+        nomeMenu: 'Inexistência de Parentes',
+        tituloDoc: 'DECLARAÇÃO QUE NÃO POSSUI SERVIDOR PÚBLICO EM SEU QUADRO DE PESSOAL',
+        subtitulo: 'Ausência de servidores públicos da ativa e parentesco até 3º grau',
+        badge: 'Sem Parentesco',
+      };
   }
 }
 
@@ -197,6 +218,11 @@ export function construirTextoDeclaracao(
   paragrafos: string[];
   ressalvaTexto?: string;
   anexoCabecalho?: string;
+  cabecalhoSubBloco?: {
+    orgao?: string;
+    comissao?: string;
+    processo?: string;
+  };
 } {
   const razaoSocial = (timbrado.razaoSocial || 'GWS GLOBAL LIMITADA').toUpperCase();
   const cnpj = timbrado.cnpj || '53.080.207/0001-80';
@@ -267,6 +293,41 @@ export function construirTextoDeclaracao(
         paragrafos: [p1],
         ressalvaTexto: ressalva,
         anexoCabecalho: dados.numeroAnexo?.trim() || 'ANEXO VIII',
+      };
+    }
+
+    case 'responsabilidade': {
+      const comissaoTexto = dados.comissaoLicitacao?.trim() || 'Comissão Municipal de Licitações';
+      const objetoTexto =
+        dados.objetoLicitacao?.trim() ||
+        'AQUISIÇÃO DE MATERIAIS ESPORTIVOS, UNIFORMES E EQUIPAMENTOS DIVERSOS EM ATENDIMENTO A SECRETARIA MUNICIPAL DE ESPORTES E LAZER, conforme descrição constante do ANEXO I';
+
+      const lead = `A empresa ${razaoSocial}, inscrita no CNPJ sob o nº ${cnpj}, sediada na ${enderecoEmpresa}, neste ato representado(a) por ${nomeRep}, portador(a) do documento de identidade RG nº ${rgRep} expedido pela ${orgaoRg}, inscrito(a) no CPF nº ${cpfRep}, residente e domiciliado na ${enderecoRep}, declara que:`;
+
+      const topico1 = `➤ Que se sujeita às condições estabelecidas no Edital acima citado e que acatará integralmente qualquer decisão que venha a ser tomada pelo licitador quanto à qualificação apenas das proponentes que tenham atendido às condições estabelecidas no Edital e que demonstrem integral capacidade de executar o fornecimento do bem previsto. DECLARA, ainda, para todos os fins de direito, a inexistência de fatos supervenientes impeditivos da habilitação ou que comprometa a idoneidade da proponente nos termos do inciso I do art. 63º da Lei nº 14.133, de 1 de abril de 2021;`;
+
+      const topico2 = `➤ Conforme preceitua o art. 63, inciso I, da Lei N.º 14.133/2021, cumpre plenamente os requisitos de habilitação para o ${identificacaoProcesso || 'PREGÃO ELETRÔNICO'}, cujo objeto é ${objetoTexto}.`;
+
+      const topico3 = `➤ Sob as penas da Lei, que a mesma está estabelecida sob o regime legal de MICROEMPRESA, conforme conceito legal e fiscal de nosso ordenamento pátrio, podendo usufruir os benefícios da Lei Complementar nº 123/2006, sendo que: a) a receita bruta anual da empresa não ultrapassa o disposto nos incisos I (ME) e II (EPP) do artigo 3º da Lei Complementar nº 123/2006; b) não tem nenhum dos impedimentos do parágrafo 4º do artigo 3º da mesma lei, ciente da obrigatoriedade de declarar ocorrências posteriores.a) Não fomos declarados inidôneos para licitar ou contratar com o Poder Público, em qualquer de suas esferas.`;
+
+      return {
+        paragrafos: [lead, topico1, topico2, topico3],
+        anexoCabecalho: dados.numeroAnexo?.trim() || 'ANEXO V',
+        cabecalhoSubBloco: {
+          orgao: promotor || 'Prefeitura Municipal',
+          comissao: comissaoTexto,
+          processo: identificacaoProcesso || 'PREGÃO ELETRÔNICO',
+        },
+      };
+    }
+
+    case 'inexistencia_parentes': {
+      const p1 = `Eu, ${nomeRep},`;
+      const p2 = `Responsável legal da empresa ${razaoSocial},`;
+      const p3 = `Inscrita no CNPJ sob o n. ${cnpj}, DECLARO, sob as penas da lei, que a empresa ${razaoSocial}, não possui em seu quadro societário servidor público da ativa, ou empregado de empresa pública ou de sociedade de economia mista, bem como não ter relação de parentesco, em linha reta, colateral, ou por afinidade, até o terceiro grau, com servidores ou agentes políticos envolvidos no processo licitatório e com poder decisório capaz de influenciar no resultado${promotor ? `, perante o(a) ${promotor}` : ''}${identificacaoProcesso ? `, referente ao ${identificacaoProcesso}` : ''}.`;
+
+      return {
+        paragrafos: [p1, p2, p3],
       };
     }
   }
@@ -365,7 +426,8 @@ export async function gerarNovaDeclaracaoPdf(
     edital = `Nº ${edital}`;
   }
 
-  if (promotor || edital) {
+  // Para a declaração de responsabilidade, o bloco de promotor/comissão/processo fica abaixo do título (conforme modelo Anexo V)
+  if (dados.tipo !== 'responsabilidade' && (promotor || edital)) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(10);
     doc.setTextColor(15, 44, 89); // Azul corporativo GWS
@@ -386,11 +448,11 @@ export async function gerarNovaDeclaracaoPdf(
     doc.setLineWidth(0.2);
     doc.line(marginLeft, currentY, pageWidth - marginRight, currentY);
     currentY += 8;
-  } else {
+  } else if (dados.tipo !== 'responsabilidade') {
     currentY += 4;
   }
 
-  // 4. ANEXO (SE APLICÁVEL, COMO ANEXO VIII NO TRABALHO INFANTIL)
+  // 4. ANEXO (SE APLICÁVEL, COMO ANEXO V OU ANEXO VIII)
   if (textoCompilado.anexoCabecalho) {
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(11);
@@ -403,16 +465,42 @@ export async function gerarNovaDeclaracaoPdf(
 
   // 5. TÍTULO PRINCIPAL DA DECLARAÇÃO (Centralizado, em Negrito)
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(11.5);
+  const fontSizeTitulo = dados.tipo === 'responsabilidade' ? 9.5 : 11.5;
+  const lineSpacingTitulo = dados.tipo === 'responsabilidade' ? 4 : 5;
+  doc.setFontSize(fontSizeTitulo);
   doc.setTextColor(0, 0, 0);
 
   const linhasTitulo = doc.splitTextToSize(config.tituloDoc, contentWidth);
   doc.text(linhasTitulo, pageWidth / 2, currentY, { align: 'center' });
-  currentY += linhasTitulo.length * 5 + 8;
+  currentY += linhasTitulo.length * lineSpacingTitulo + 6;
+
+  // 5.1 SUB-BLOCO DE IDENTIFICAÇÃO DO PROCESSO (Abaixo do título no modelo Anexo V)
+  if (dados.tipo === 'responsabilidade' && textoCompilado.cabecalhoSubBloco) {
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.setTextColor(0, 0, 0);
+
+    if (textoCompilado.cabecalhoSubBloco.orgao) {
+      doc.text(textoCompilado.cabecalhoSubBloco.orgao, marginLeft, currentY);
+      currentY += 4.2;
+    }
+    if (textoCompilado.cabecalhoSubBloco.comissao) {
+      doc.text(textoCompilado.cabecalhoSubBloco.comissao, marginLeft, currentY);
+      currentY += 4.2;
+    }
+    if (textoCompilado.cabecalhoSubBloco.processo) {
+      doc.text(textoCompilado.cabecalhoSubBloco.processo, marginLeft, currentY);
+      currentY += 6;
+    }
+  }
 
   // 6. CORPO DO TEXTO
+  const fontSizeCorpo = dados.tipo === 'responsabilidade' ? 8.5 : 10;
+  const lineSpacingCorpo = dados.tipo === 'responsabilidade' ? 3.9 : 5.2;
+  const gapParagrafo = dados.tipo === 'responsabilidade' ? 3.2 : 5;
+
   doc.setFont('helvetica', 'normal');
-  doc.setFontSize(10);
+  doc.setFontSize(fontSizeCorpo);
   doc.setTextColor(15, 23, 42);
 
   const paragrafos = dados.textoPersonalizado?.trim()
@@ -422,7 +510,7 @@ export async function gerarNovaDeclaracaoPdf(
   for (const p of paragrafos) {
     const linhas = doc.splitTextToSize(p, contentWidth);
     doc.text(linhas, marginLeft, currentY, { maxWidth: contentWidth, align: 'justify' });
-    currentY += linhas.length * 5.2 + 5;
+    currentY += linhas.length * lineSpacingCorpo + gapParagrafo;
   }
 
   // 7. RESSALVA ESPECÍFICA (Ex: Menor Aprendiz)

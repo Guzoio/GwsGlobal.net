@@ -55,3 +55,39 @@ export function alternarTema(): ThemeMode {
   aplicarTema(novoTema);
   return novoTema;
 }
+
+export const TEMA_NATAL_STORAGE_KEY = 'gws_tema_natal_ativo';
+
+/**
+ * Retorna se o tema especial de Natal está ativado (padrão: true)
+ */
+export function obterTemaNatal(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    const salvo = localStorage.getItem(TEMA_NATAL_STORAGE_KEY);
+    if (salvo !== null) {
+      return salvo === 'true';
+    }
+  } catch {}
+  return true; // Ativo por padrão conforme solicitação do usuário
+}
+
+/**
+ * Salva a preferência do tema natalino
+ */
+export function salvarTemaNatal(ativo: boolean): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(TEMA_NATAL_STORAGE_KEY, String(ativo));
+  } catch {}
+}
+
+/**
+ * Alterna o tema de Natal (liga/desliga enfeites e neve)
+ */
+export function alternarTemaNatal(): boolean {
+  const atual = obterTemaNatal();
+  const novo = !atual;
+  salvarTemaNatal(novo);
+  return novo;
+}

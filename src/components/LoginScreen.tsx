@@ -1,17 +1,22 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
 import { LogoGwsGlobal } from './LogoGwsGlobal';
+import { GorroNatalino } from './GorroNatalino';
+import { EfeitoNeve } from './EfeitoNeve';
 import { AcessoConfig } from '../types';
 import { verificarSenha, ID_PADRAO } from '../utils/security';
+import { obterTemaNatal } from '../utils/theme';
 
 interface LoginScreenProps {
   acessoConfig: AcessoConfig;
   onLoginSucesso: (lembrar: boolean) => void;
+  temaNatal?: boolean;
 }
 
 export const LoginScreen: React.FC<LoginScreenProps> = ({
   acessoConfig,
   onLoginSucesso,
+  temaNatal = obterTemaNatal(),
 }) => {
   const [usuarioId, setUsuarioId] = useState('');
   const [senha, setSenha] = useState('');
@@ -53,6 +58,9 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
 
   return (
     <div className="min-h-screen bg-linear-to-br from-[#07172F] via-[#0F2C59] to-[#0A1F3D] flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
+      {/* Neve suave natalina caindo na tela de login */}
+      {temaNatal && <EfeitoNeve ativo={true} densidade="baixa" modoEscuro={true} />}
+
       {/* Elementos visuais sutis de fundo */}
       <div className="absolute top-1/4 -left-20 w-96 h-96 bg-blue-500/10 rounded-full blur-3xl pointer-events-none"></div>
       <div className="absolute bottom-1/4 -right-20 w-96 h-96 bg-amber-500/10 rounded-full blur-3xl pointer-events-none"></div>
@@ -62,12 +70,24 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
         <div className="bg-white/95 backdrop-blur-md rounded-2xl border border-white/20 shadow-2xl overflow-hidden p-6 sm:p-8">
           {/* Logo e Cabeçalho */}
           <div className="text-center mb-6">
-            <div className="inline-flex items-center justify-center mb-3">
+            <div className="inline-flex items-center justify-center mb-3 relative">
               <LogoGwsGlobal className="w-20 h-20 shadow-lg rounded-2xl hover:scale-105 transition-transform duration-200" />
+              {temaNatal && (
+                <div className="absolute -top-6 -left-4 w-12 h-12 pointer-events-none transition-transform duration-300 hover:rotate-[-8deg]">
+                  <GorroNatalino size={46} tilt={-16} />
+                </div>
+              )}
             </div>
-            <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
-              GWS GLOBAL.net
-            </h1>
+            <div className="flex items-center justify-center gap-2">
+              <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
+                GWS GLOBAL.net
+              </h1>
+              {temaNatal && (
+                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
+                  🎄 Boas Festas
+                </span>
+              )}
+            </div>
             <p className="text-xs text-slate-500 font-medium mt-1">
               Sistema de Gestão de Licitações & Catálogos
             </p>
