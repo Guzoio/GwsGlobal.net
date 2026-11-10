@@ -8,9 +8,7 @@ import {
 } from 'lucide-react';
 import { LogoGwsGlobal } from './LogoGwsGlobal';
 import { SininhoNotificacoes } from './SininhoNotificacoes';
-import { GorroNatalino } from './GorroNatalino';
-import { DoceNatalino } from './DoceNatalino';
-import { LuzesNatalinas, RamoAzevinho } from './LuzesNatalinas';
+import { LuzesNatalinas } from './LuzesNatalinas';
 import { AlertaCobranca } from '../types';
 
 interface HeaderProps {
@@ -69,17 +67,9 @@ export const Header: React.FC<HeaderProps> = ({
             className="flex items-center gap-3 cursor-pointer group select-none relative"
             title="GWS GLOBAL.net — Sistema de Gestão de Licitações"
           >
-            {/* Logo com Gorro de Papai Noel estilizado no topo */}
+            {/* Logo oficial */}
             <div className="relative shrink-0">
               <LogoGwsGlobal className="w-10 h-10 transition-transform duration-200 group-hover:scale-105 rounded-xl shadow-xs" />
-              {temaNatal && (
-                <div
-                  className="absolute -top-3.5 -left-2.5 w-7 h-7 pointer-events-none transition-transform duration-300 group-hover:rotate-[-8deg] group-hover:scale-110"
-                  title="Feliz Natal! 🎅"
-                >
-                  <GorroNatalino size={28} tilt={-14} />
-                </div>
-              )}
             </div>
 
             <div className="flex flex-col relative">
@@ -87,19 +77,9 @@ export const Header: React.FC<HeaderProps> = ({
                 <span className="text-lg sm:text-xl font-black tracking-tight text-slate-900 dark:text-white leading-none">
                   GWS GLOBAL.net
                 </span>
-                {temaNatal && (
-                  <span
-                    className="text-[10px] font-black tracking-wider uppercase text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/70 border border-red-200 dark:border-red-900/60 px-2 py-0.5 rounded-full hidden sm:inline-flex items-center gap-1 shadow-2xs"
-                    title="Tema de Natal Ativo! Boas Festas"
-                  >
-                    <DoceNatalino size={12} tilt={12} />
-                    <span>Natal</span>
-                  </span>
-                )}
               </div>
               <span className="text-[10px] font-semibold tracking-wider uppercase text-slate-400 dark:text-slate-400 hidden sm:flex items-center gap-1 mt-0.5">
                 <span>CRM de Licitações & Propostas</span>
-                {temaNatal && <RamoAzevinho size={13} className="inline opacity-80" />}
               </span>
             </div>
           </div>
@@ -107,7 +87,7 @@ export const Header: React.FC<HeaderProps> = ({
 
         {/* Lado direito: Sininho de Cobranças, Botão Natal, Tema, CALCULAR e SAIR */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
-          {/* Botão de Alternar Tema de Natal (Neve e Enfeites) */}
+          {/* Botão de Alternar Tema de Natal (Neve e Pisca-Pisca) */}
           <button
             type="button"
             onClick={onAlternarTemaNatal}
@@ -118,8 +98,8 @@ export const Header: React.FC<HeaderProps> = ({
             }`}
             title={
               temaNatal
-                ? 'Tema de Natal Ativo (Clique para desativar enfeites)'
-                : 'Ativar Tema de Natal (Gorro, renas, boneco e enfeites festivos)'
+                ? 'Tema de Natal Ativo (Neve e pisca-pisca ligados)'
+                : 'Ativar Tema de Natal (Neve e pisca-pisca festivo)'
             }
             aria-label="Alternar tema de natal"
           >
@@ -153,18 +133,13 @@ export const Header: React.FC<HeaderProps> = ({
             )}
           </button>
 
-          {/* Botão CALCULAR (Abre calculadora de oferta) com Gorro de Papai Noel */}
+          {/* Botão CALCULAR (Abre calculadora de oferta) */}
           <button
             type="button"
             onClick={onAbrirCalculadora}
             className="relative px-4 py-2 text-xs font-bold text-white bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 rounded-xl shadow-xs hover:shadow-sm flex items-center gap-2 transition-all cursor-pointer whitespace-nowrap active:scale-98"
             title="Abrir Calculadora de Limite de Oferta e Custos"
           >
-            {temaNatal && (
-              <div className="absolute -top-3 -right-1.5 pointer-events-none drop-shadow-xs">
-                <GorroNatalino size={18} tilt={14} />
-              </div>
-            )}
             <Calculator className="w-3.5 h-3.5 text-amber-400" />
             <span>Calcular</span>
           </button>

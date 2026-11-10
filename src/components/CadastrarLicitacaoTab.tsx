@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
-import { PlusCircle, Building2, Calendar, FileText, User, MapPin } from 'lucide-react';
-import { ModalidadeLic, Licitacao } from '../types';
+import { PlusCircle, Building2, Calendar, FileText, User, MapPin, Globe } from 'lucide-react';
+import { ModalidadeLic, Licitacao, PlataformaLicitacao } from '../types';
 import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
 
 interface CadastrarLicitacaoTabProps {
@@ -29,6 +29,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
   const [ufSelecionada, setUfSelecionada] = useState<string>('SP');
   const [ufModificadaManualmente, setUfModificadaManualmente] = useState(false);
   const [processo, setProcesso] = useState('');
+  const [plataforma, setPlataforma] = useState<PlataformaLicitacao>('BLL');
   const [modalidade, setModalidade] = useState<ModalidadeLic>('Pregão Eletrônico');
   const [dataCadastro, setDataCadastro] = useState(dataHojePadrao);
   const [responsavelSelecionado, setResponsavelSelecionado] = useState<string>(
@@ -47,6 +48,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+
     if (!orgao.trim() || !processo.trim()) {
       setErro('Preencha os campos obrigatórios (Órgão Público e Processo/Pregão).');
       return;
@@ -70,6 +72,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
     const idCriado = onCadastrar({
       orgao: orgao.trim(),
       processo_pregao: processo.trim(),
+      plataforma,
       modalidade,
       data_cadastro: dataCadastro || dataHojePadrao,
       responsavel: responsavelFinal,
@@ -83,6 +86,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
     // Reset form
     setOrgao('');
     setProcesso('');
+    setPlataforma('BLL');
     setUfSelecionada('SP');
     setUfModificadaManualmente(false);
     setResponsavelCustom('');
@@ -113,6 +117,46 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
+          {/* Seletor de Plataforma: BLL e BNC */}
+          <div className="p-3 bg-slate-50/90 dark:bg-[#0E1F3D]/60 border border-slate-200 dark:border-slate-700/80 rounded-xl">
+            <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
+              <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Globe className="w-4 h-4 text-slate-600 dark:text-slate-400" />
+                Plataforma *
+              </label>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={() => setPlataforma('BLL')}
+                  className={`px-4 py-2 text-xs font-black rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                    plataforma === 'BLL'
+                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-400/40'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-emerald-400 hover:text-emerald-700'
+                  }`}
+                  title="Plataforma BLL"
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${plataforma === 'BLL' ? 'bg-white' : 'bg-emerald-500'}`} />
+                  <span>BLL</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => setPlataforma('BNC')}
+                  className={`px-4 py-2 text-xs font-black rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                    plataforma === 'BNC'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400/40'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:text-blue-700'
+                  }`}
+                  title="Plataforma BNC"
+                >
+                  <span className={`w-2.5 h-2.5 rounded-full ${plataforma === 'BNC' ? 'bg-white' : 'bg-blue-500'}`} />
+                  <span>BNC</span>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">

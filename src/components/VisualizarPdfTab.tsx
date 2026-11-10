@@ -4,8 +4,6 @@ import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { TIMBRADO_PADRAO } from '../utils/storage';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
-import { BonequinhoNeve } from './BonequinhoNeve';
-import { DoceNatalino } from './DoceNatalino';
 import { obterTemaNatal } from '../utils/theme';
 
 interface VisualizarPdfTabProps {
@@ -442,13 +440,6 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
 
               {/* TABELA DE PROPOSTA COMERCIAL DE PREÇOS */}
               <div className="pt-2 relative">
-                {/* Bonequinho de Neve natalino descansando e acenando em cima da tabela de pré-visualização */}
-                {natalAtivo && (
-                  <div className="absolute -top-12 sm:-top-14 right-2 sm:right-6 z-20 pointer-events-auto print:hidden">
-                    <BonequinhoNeve mensagem="Tabela Conferida! ⛄ Boas Festas!" />
-                  </div>
-                )}
-
                 <h4 className="text-xs font-bold uppercase tracking-wider text-slate-800 mb-2 border-b border-slate-300 pb-1">
                   Tabela de Itens e Proposta Comercial de Preços
                 </h4>

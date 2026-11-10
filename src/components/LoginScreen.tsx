@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, User, Eye, EyeOff, ShieldCheck, AlertCircle, ArrowRight } from 'lucide-react';
 import { LogoGwsGlobal } from './LogoGwsGlobal';
-import { GorroNatalino } from './GorroNatalino';
 import { EfeitoNeve } from './EfeitoNeve';
 import { AcessoConfig } from '../types';
 import { verificarSenha, ID_PADRAO } from '../utils/security';
@@ -72,21 +71,11 @@ export const LoginScreen: React.FC<LoginScreenProps> = ({
           <div className="text-center mb-6">
             <div className="inline-flex items-center justify-center mb-3 relative">
               <LogoGwsGlobal className="w-20 h-20 shadow-lg rounded-2xl hover:scale-105 transition-transform duration-200" />
-              {temaNatal && (
-                <div className="absolute -top-6 -left-4 w-12 h-12 pointer-events-none transition-transform duration-300 hover:rotate-[-8deg]">
-                  <GorroNatalino size={46} tilt={-16} />
-                </div>
-              )}
             </div>
             <div className="flex items-center justify-center gap-2">
               <h1 className="text-xl sm:text-2xl font-black text-slate-900 tracking-tight">
                 GWS GLOBAL.net
               </h1>
-              {temaNatal && (
-                <span className="text-xs font-black px-2 py-0.5 rounded-full bg-red-100 text-red-700 border border-red-200">
-                  🎄 Boas Festas
-                </span>
-              )}
             </div>
             <p className="text-xs text-slate-500 font-medium mt-1">
               Sistema de Gestão de Licitações & Catálogos

@@ -9,6 +9,7 @@ import {
   Eye,
   Check,
   AlertCircle,
+  AlertTriangle,
   Plus,
   Sliders,
   Target,
@@ -134,6 +135,40 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [salvandoManual, setSalvandoManual] = useState<boolean>(false);
   const [ultimoSalvoTimestamp, setUltimoSalvoTimestamp] = useState<string | null>(null);
   const [feedbackSalvar, setFeedbackSalvar] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
+  const [copiadoBadgeId, setCopiadoBadgeId] = useState<string | null>(null);
+  const [itemParaExcluir, setItemParaExcluir] = useState<ItemLicitacao | null>(null);
+
+  const handleCopiarLanceValor = (
+    e: React.MouseEvent,
+    valor: number,
+    badgeKey: string,
+    tipo: 'Mínimo' | 'Lote'
+  ) => {
+    e.stopPropagation();
+    const textoParaCopiar = formatarNumeroPtBr(valor);
+    try {
+      if (navigator && navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(textoParaCopiar);
+      } else {
+        const ta = document.createElement('textarea');
+        ta.value = textoParaCopiar;
+        document.body.appendChild(ta);
+        ta.select();
+        document.execCommand('copy');
+        document.body.removeChild(ta);
+      }
+      setCopiadoBadgeId(badgeKey);
+      setNotificacao({
+        tipo: 'sucesso',
+        texto: `Lance ${tipo} copiado: ${textoParaCopiar} (pronto para colar no portal do pregão!)`,
+      });
+      setTimeout(() => {
+        setCopiadoBadgeId(prev => (prev === badgeKey ? null : prev));
+      }, 2000);
+    } catch (err) {
+      console.warn('Erro ao copiar valor de lance:', err);
+    }
+  };
 
   // Sempre que a licitação ativa mudar (inclusive ao criar nova), limpa o formulário de itens e inicia no item 1
   useEffect(() => {
@@ -1470,22 +1505,55 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                           <div className="flex flex-wrap items-center gap-1.5 mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-800">
                             <span className="text-[10px] font-semibold text-slate-400 dark:text-slate-400">Lances:</span>
                             {it.lance_minimo !== undefined && it.lance_minimo > 0 ? (
-                              <span
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-amber-900 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/50 border border-amber-200 dark:border-amber-800/60 px-1.5 py-0.5 rounded shadow-2xs"
-                                title="Lance Mínimo Unitário Aceito"
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopiarLanceValor(e, it.lance_minimo!, `${it.id}-min`, 'Mínimo')}
+                                className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-2xs cursor-pointer transition-all active:scale-95 group ${
+                                  copiadoBadgeId === `${it.id}-min`
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300 ring-1 ring-emerald-400'
+                                    : 'bg-amber-100 hover:bg-amber-200 text-amber-950 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 dark:text-amber-200 border-amber-300 dark:border-amber-700/80 hover:shadow-xs'
+                                }`}
+                                title={`Clique para copiar ${formatarNumeroPtBr(it.lance_minimo)} (Lance Mínimo)`}
                               >
-                                <Target className="w-2.5 h-2.5 text-amber-600 dark:text-amber-400" />
-                                Mín: {formatarMoeda(it.lance_minimo)}
-                              </span>
+                                {copiadoBadgeId === `${it.id}-min` ? (
+                                  <>
+                                    <Check className="w-2.5 h-2.5 text-emerald-700 dark:text-emerald-300" />
+                                    <span>Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Target className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                                    <span>Mín: {formatarMoeda(it.lance_minimo)}</span>
+                                    <Copy className="w-2 h-2 opacity-50 group-hover:opacity-100 transition-opacity ml-0.5" />
+                                  </>
+                                )}
+                              </button>
                             ) : null}
+
                             {it.lance_lote !== undefined && it.lance_lote > 0 ? (
-                              <span
-                                className="inline-flex items-center gap-1 text-[10px] font-mono font-bold text-blue-900 dark:text-blue-300 bg-blue-50 dark:bg-blue-950/50 border border-blue-200 dark:border-blue-800/60 px-1.5 py-0.5 rounded shadow-2xs"
-                                title="Lance Mínimo por Lote"
+                              <button
+                                type="button"
+                                onClick={(e) => handleCopiarLanceValor(e, it.lance_lote!, `${it.id}-lote`, 'Lote')}
+                                className={`inline-flex items-center gap-1 text-[10px] font-mono font-bold px-2 py-0.5 rounded-md border shadow-2xs cursor-pointer transition-all active:scale-95 group ${
+                                  copiadoBadgeId === `${it.id}-lote`
+                                    ? 'bg-emerald-100 text-emerald-800 border-emerald-400 dark:bg-emerald-950 dark:text-emerald-300 ring-1 ring-emerald-400'
+                                    : 'bg-amber-100 hover:bg-amber-200 text-amber-950 dark:bg-amber-950/70 dark:hover:bg-amber-900/80 dark:text-amber-200 border-amber-300 dark:border-amber-700/80 hover:shadow-xs'
+                                }`}
+                                title={`Clique para copiar ${formatarNumeroPtBr(it.lance_lote)} (Lance Lote)`}
                               >
-                                <Layers className="w-2.5 h-2.5 text-blue-600 dark:text-blue-400" />
-                                Lote: {formatarMoeda(it.lance_lote)}
-                              </span>
+                                {copiadoBadgeId === `${it.id}-lote` ? (
+                                  <>
+                                    <Check className="w-2.5 h-2.5 text-emerald-700 dark:text-emerald-300" />
+                                    <span>Copiado!</span>
+                                  </>
+                                ) : (
+                                  <>
+                                    <Layers className="w-2.5 h-2.5 text-amber-700 dark:text-amber-400 group-hover:scale-110 transition-transform" />
+                                    <span>Lote: {formatarMoeda(it.lance_lote)}</span>
+                                    <Copy className="w-2 h-2 opacity-50 group-hover:opacity-100 transition-opacity ml-0.5" />
+                                  </>
+                                )}
+                              </button>
                             ) : null}
                             {onAtualizarItem && (
                               <button
@@ -1517,30 +1585,14 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       <td className="py-3 px-4 text-slate-700 dark:text-slate-300 font-medium">{it.marca}</td>
                       <td className="py-3 px-4 text-center font-mono tabular-nums text-slate-800 dark:text-slate-200">{it.quantidade}</td>
 
-                      {/* Valor Unitário com Lance Mínimo pequeno embaixo */}
+                      {/* Valor Unitário */}
                       <td className="py-3 px-4 text-right font-mono tabular-nums text-slate-700 dark:text-slate-200">
-                        <div>{formatarMoeda(it.valor_unitario)}</div>
-                        {it.lance_minimo !== undefined && it.lance_minimo > 0 && (
-                          <div
-                            className="text-[10px] text-amber-700 dark:text-amber-400 font-semibold font-mono tracking-tight mt-0.5"
-                            title="Lance Mínimo Unitário"
-                          >
-                            Mín: {formatarMoeda(it.lance_minimo)}
-                          </div>
-                        )}
+                        {formatarMoeda(it.valor_unitario)}
                       </td>
 
-                      {/* Valor Total com Lance Lote pequeno embaixo e Badge de Lucro se houver */}
+                      {/* Valor Total */}
                       <td className="py-3 px-4 text-right font-mono font-semibold tabular-nums text-slate-900 dark:text-white">
-                        <div>{formatarMoeda(it.valor_total)}</div>
-                        {it.lance_lote !== undefined && it.lance_lote > 0 && (
-                          <div
-                            className="text-[10px] text-blue-700 dark:text-blue-400 font-semibold font-mono tracking-tight mt-0.5"
-                            title="Lance Total do Lote"
-                          >
-                            Lote: {formatarMoeda(it.lance_lote)}
-                          </div>
-                        )}
+                        {formatarMoeda(it.valor_total)}
                       </td>
 
                       <td className="py-3 px-4 text-center">
@@ -1613,14 +1665,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                           )}
                           <button
                             type="button"
-                            onClick={() => {
-                              if (idItemEditando === it.id) {
-                                handleCancelarEdicao();
-                              }
-                              onExcluirItem(it.id);
-                            }}
+                            onClick={() => setItemParaExcluir(it)}
                             className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded transition-colors cursor-pointer"
-                            title="Remover Item"
+                            title={`Excluir Item #${it.num_item}`}
                           >
                             <Trash2 className="w-3.5 h-3.5" />
                           </button>
@@ -2008,6 +2055,79 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
           </div>
         );
       })()}
+
+      {/* ========================================================================= */}
+      {/* MODAL DE CONFIRMAÇÃO PARA EXCLUIR ITEM DA PROPOSTA */}
+      {/* ========================================================================= */}
+      {itemParaExcluir && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setItemParaExcluir(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 shrink-0">
+                <Trash2 className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Excluir Item da Proposta?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                  Tem certeza que deseja apagar o <strong className="text-slate-900 dark:text-white font-semibold">Item #{itemParaExcluir.num_item}</strong>?
+                </p>
+
+                <div className="mt-2.5 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl space-y-1 text-xs">
+                  <div className="font-semibold text-slate-800 dark:text-slate-200 line-clamp-2">
+                    {itemParaExcluir.descricao_curta}
+                  </div>
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[11px] text-slate-500 dark:text-slate-400 pt-1">
+                    {itemParaExcluir.marca && (
+                      <span>Marca: <strong className="text-slate-700 dark:text-slate-300">{itemParaExcluir.marca}</strong></span>
+                    )}
+                    <span>Qtd: <strong className="text-slate-700 dark:text-slate-300">{itemParaExcluir.quantidade}</strong></span>
+                    <span>Total: <strong className="font-mono text-slate-700 dark:text-slate-300">{formatarMoeda(itemParaExcluir.valor_total || (itemParaExcluir.quantidade * itemParaExcluir.valor_unitario))}</strong></span>
+                  </div>
+                </div>
+
+                <div className="mt-2.5 p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-800/60 rounded-xl text-[11px] text-rose-800 dark:text-rose-300 flex items-start gap-1.5">
+                  <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <span>Este item e suas especificações técnicas serão removidos da proposta comercial.</span>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setItemParaExcluir(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const itId = itemParaExcluir.id;
+                  if (idItemEditando === itId) {
+                    handleCancelarEdicao();
+                  }
+                  setItemParaExcluir(null);
+                  onExcluirItem(itId);
+                }}
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 active:scale-98"
+              >
+                <Trash2 className="w-3.5 h-3.5" />
+                Sim, Excluir Item
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Modal de Análise de Lucro Líquido & Margem (%) */}
       <ModalLucroItem
         item={itemParaCalculoLucro}

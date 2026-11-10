@@ -37,13 +37,10 @@ import {
   ChevronRight,
   MoreVertical,
 } from 'lucide-react';
-import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
+import { Licitacao, ItemLicitacao, PapelTimbradoConfig, PlataformaLicitacao } from '../types';
 import { formatarMoeda, compararLicitacoesPorDataCadastroDesc } from '../utils/numberToWordsPtBr';
 import { obterPapelTimbradoConfig } from '../utils/storage';
 import { ModalDeclaracaoUnificada } from './ModalDeclaracaoUnificada';
-import { GorroNatalino } from './GorroNatalino';
-import { RenaNatalina } from './RenaNatalina';
-import { DoceNatalino } from './DoceNatalino';
 import { obterTemaNatal } from '../utils/theme';
 
 // Funções utilitárias para conversão e comparação de datas
@@ -90,6 +87,7 @@ interface HistoricoTabProps {
   onAbrirDeclaracao?: (lic?: Licitacao) => void;
   onAtualizarDataCadastro?: (licId: number, novaData: string) => void;
   onAbrirConsoleCmd?: () => void;
+  onAtualizarPlataforma?: (id: number, novaPlataforma: 'BLL' | 'BNC') => void;
 }
 
 export const HistoricoTab: React.FC<HistoricoTabProps> = ({
@@ -114,12 +112,20 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   onAbrirDeclaracao,
   onAtualizarDataCadastro,
   onAbrirConsoleCmd,
+  onAtualizarPlataforma,
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroResponsavel, setFiltroResponsavel] = useState<string>('Todos');
   const [filtroData, setFiltroData] = useState<string>(''); // formato YYYY-MM-DD
   const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>('todos');
+  const [filtroPlataforma, setFiltroPlataforma] = useState<'todas' | 'BLL' | 'BNC'>('todas');
   const [licitacaoParaExcluir, setLicitacaoParaExcluir] = useState<Licitacao | null>(null);
+
+  // Modal de Confirmação para Mudança de Plataforma (BLL <-> BNC)
+  const [confirmarMudancaPlataforma, setConfirmarMudancaPlataforma] = useState<{
+    licitacao: Licitacao;
+    novaPlataforma: PlataformaLicitacao;
+  } | null>(null);
 
   // Modal de Edição Rápida da Data de Cadastro (Discreta e Sem Poluição)
   const [modalEditarDataLic, setModalEditarDataLic] = useState<Licitacao | null>(null);
@@ -202,9 +208,15 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         matchAcompanhamento = !!lic.homologada;
       }
 
-      return matchTexto && matchResponsavel && matchData && matchAcompanhamento;
+      let matchPlataforma = true;
+      if (filtroPlataforma !== 'todas') {
+        const plat = (lic.plataforma || 'BLL').toUpperCase();
+        matchPlataforma = plat === filtroPlataforma;
+      }
+
+      return matchTexto && matchResponsavel && matchData && matchAcompanhamento && matchPlataforma;
     }).sort(compararLicitacoesPorDataCadastroDesc);
-  }, [licitacoes, busca, filtroResponsavel, filtroData, filtroAcompanhamento]);
+  }, [licitacoes, busca, filtroResponsavel, filtroData, filtroAcompanhamento, filtroPlataforma]);
 
   // Contagem de licitações por acompanhamento e concluídas
   const contagemAcompanhar = useMemo(() => {
@@ -213,6 +225,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
 
   const contagemHomologadas = useMemo(() => {
     return licitacoes.filter(l => !!l.homologada).length;
+  }, [licitacoes]);
+
+  const contagemBLL = useMemo(() => {
+    return licitacoes.filter(l => (l.plataforma || 'BLL').toUpperCase() === 'BLL').length;
+  }, [licitacoes]);
+
+  const contagemBNC = useMemo(() => {
+    return licitacoes.filter(l => (l.plataforma || 'BLL').toUpperCase() === 'BNC').length;
   }, [licitacoes]);
 
   // Contagem de licitações por responsável
@@ -350,11 +370,6 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shadow-2xs">
                 <Landmark className="w-6 h-6" />
               </div>
-              {natalAtivo && (
-                <div className="absolute -top-3 -left-2.5 pointer-events-none drop-shadow-xs">
-                  <GorroNatalino size={24} tilt={-16} />
-                </div>
-              )}
             </div>
             <div className="min-w-0">
               <div className="text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider truncate">
@@ -394,11 +409,6 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-1.5 shrink-0">
-            {natalAtivo && (
-              <div className="hidden sm:block">
-                <DoceNatalino duplo size={22} tilt={10} />
-              </div>
-            )}
             <ChevronRight className="w-5 h-5 text-slate-300 dark:text-slate-600" />
           </div>
         </div>
@@ -422,11 +432,6 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            {natalAtivo && (
-              <div className="hidden sm:block">
-                <RenaNatalina size={26} pose="head" mensagem="Vitórias de Natal! 🦌✨" />
-              </div>
-            )}
             {valorTotalDisputa > 0 && (
               <span className="hidden sm:inline-block bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
                 {((valorTotalVencidos / valorTotalDisputa) * 100).toFixed(0)}%
@@ -674,6 +679,48 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <span>Homologadas ({contagemHomologadas})</span>
             </button>
           </div>
+
+          {/* Filtro Rápido por Plataforma: Todas / BLL (Verde) / BNC (Azul) */}
+          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs w-full sm:w-auto">
+            <button
+              type="button"
+              onClick={() => setFiltroPlataforma('todas')}
+              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+                filtroPlataforma === 'todas'
+                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
+              }`}
+              title="Mostrar todas as plataformas"
+            >
+              Todas Plat.
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroPlataforma('BLL')}
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                filtroPlataforma === 'BLL'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300'
+              }`}
+              title="Filtrar licitações BLL"
+            >
+              <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" />
+              <span>BLL ({contagemBLL})</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => setFiltroPlataforma('BNC')}
+              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+                filtroPlataforma === 'BNC'
+                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-xs'
+                  : 'text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-300'
+              }`}
+              title="Filtrar licitações BNC"
+            >
+              <span className="w-2 h-2 rounded-full bg-blue-500" />
+              <span>BNC ({contagemBNC})</span>
+            </button>
+          </div>
         </div>
 
         {/* Botão de Atalho Rápido para Criar Nova Licitação */}
@@ -695,12 +742,17 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
             <h4 className="text-sm font-semibold text-slate-800">Nenhuma licitação encontrada</h4>
             <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
-              {busca || filtroResponsavel !== 'Todos' || filtroData ? (
+              {busca || filtroResponsavel !== 'Todos' || filtroData || filtroPlataforma !== 'todas' ? (
                 <>
                   Nenhuma licitação corresponde aos filtros aplicados{' '}
                   {filtroData && (
                     <span className="font-semibold text-slate-700">
                       (Data: {normalizarData(filtroData)})
+                    </span>
+                  )}
+                  {filtroPlataforma !== 'todas' && (
+                    <span className="font-semibold text-slate-700">
+                      (Plataforma: {filtroPlataforma})
                     </span>
                   )}
                   .
@@ -710,13 +762,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               )}
             </p>
             <div className="mt-4 flex items-center justify-center gap-2 flex-wrap">
-              {(busca || filtroResponsavel !== 'Todos' || filtroData) && (
+              {(busca || filtroResponsavel !== 'Todos' || filtroData || filtroPlataforma !== 'todas') && (
                 <button
                   type="button"
                   onClick={() => {
                     setBusca('');
                     setFiltroResponsavel('Todos');
                     setFiltroData('');
+                    setFiltroPlataforma('todas');
                   }}
                   className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-semibold rounded-lg transition-colors cursor-pointer"
                 >
@@ -737,6 +790,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <thead>
                 <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-4">ID</th>
+                  <th className="py-3 px-2 text-center text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16">
+                    Plat.
+                  </th>
                   <th className="py-3 px-4">Órgão Público</th>
                   <th className="py-3 px-4">Processo / Pregão</th>
                   <th className="py-3 px-4">Modalidade</th>
@@ -757,11 +813,39 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   const itensDaLic = itens.filter(i => Number(i.licitacao_id) === Number(lic.id));
                   const totalLic = itensDaLic.reduce((acc, it) => acc + (it.valor_total || 0), 0);
                   const responsavelAtual = lic.responsavel || 'Gustavo';
+                  const plat = (lic.plataforma || 'BLL').toUpperCase();
 
                   return (
                     <tr key={lic.id} className="hover:bg-slate-50/80 dark:hover:bg-[#162238] transition-colors">
                       <td className="py-3.5 px-4 font-mono text-slate-400 font-medium tabular-nums">
                         #{lic.id}
+                      </td>
+                      <td className="py-3.5 px-2 text-center whitespace-nowrap">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            const novaPlat: PlataformaLicitacao = plat === 'BNC' ? 'BLL' : 'BNC';
+                            setConfirmarMudancaPlataforma({
+                              licitacao: lic,
+                              novaPlataforma: novaPlat,
+                            });
+                          }}
+                          className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold border cursor-pointer transition-colors ${
+                            plat === 'BNC'
+                              ? 'bg-blue-50/80 hover:bg-blue-100 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800/50'
+                              : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50'
+                          }`}
+                          title={`Plataforma ${plat} (Clique para alterar para ${plat === 'BNC' ? 'BLL' : 'BNC'})`}
+                        >
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              plat === 'BNC'
+                                ? 'bg-blue-500 dark:bg-blue-400'
+                                : 'bg-emerald-500 dark:bg-emerald-400'
+                            }`}
+                          />
+                          <span>{plat}</span>
+                        </button>
                       </td>
                       <td className="py-3.5 px-4 font-semibold text-slate-900 max-w-xs truncate">
                         {lic.orgao}
@@ -1165,6 +1249,97 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Sim, Excluir Definitivamente
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* ========================================================================= */}
+      {/* MODAL DE CONFIRMAÇÃO DE MUDANÇA DE PLATAFORMA (BLL <-> BNC) */}
+      {/* ========================================================================= */}
+      {confirmarMudancaPlataforma && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          onClick={() => setConfirmarMudancaPlataforma(null)}
+        >
+          <div
+            className="bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            onClick={e => e.stopPropagation()}
+          >
+            <div className="flex items-start gap-3">
+              <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shrink-0">
+                <ArrowRightLeft className="w-5 h-5" />
+              </div>
+              <div className="flex-1">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">
+                  Alterar Plataforma da Licitação?
+                </h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
+                  Deseja mudar a plataforma do processo{' '}
+                  <strong className="text-slate-900 dark:text-white font-semibold">
+                    {confirmarMudancaPlataforma.licitacao.processo_pregao}
+                  </strong>{' '}
+                  ({confirmarMudancaPlataforma.licitacao.orgao})?
+                </p>
+
+                {/* Comparativo Visual De -> Para */}
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl flex items-center justify-center gap-3 text-xs">
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Atual:</span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black text-[10px] ${
+                        (confirmarMudancaPlataforma.licitacao.plataforma || 'BLL').toUpperCase() === 'BNC'
+                          ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300'
+                          : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
+                      }`}
+                    >
+                      {confirmarMudancaPlataforma.licitacao.plataforma || 'BLL'}
+                    </span>
+                  </div>
+
+                  <span className="text-slate-400 font-bold">➔</span>
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="text-[11px] text-slate-500 dark:text-slate-400">Novo:</span>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black text-[10px] shadow-xs text-white ${
+                        confirmarMudancaPlataforma.novaPlataforma === 'BNC'
+                          ? 'bg-blue-600'
+                          : 'bg-emerald-600'
+                      }`}
+                    >
+                      {confirmarMudancaPlataforma.novaPlataforma}
+                    </span>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-end gap-2 pt-2 border-t border-slate-100 dark:border-slate-800">
+              <button
+                type="button"
+                onClick={() => setConfirmarMudancaPlataforma(null)}
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={() => {
+                  const licId = confirmarMudancaPlataforma.licitacao.id;
+                  const novaPlat = confirmarMudancaPlataforma.novaPlataforma;
+                  setConfirmarMudancaPlataforma(null);
+                  onAtualizarPlataforma?.(licId, novaPlat);
+                }}
+                className={`px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 active:scale-98 ${
+                  confirmarMudancaPlataforma.novaPlataforma === 'BNC'
+                    ? 'bg-blue-600 hover:bg-blue-500'
+                    : 'bg-emerald-600 hover:bg-emerald-500'
+                }`}
+              >
+                <Check className="w-3.5 h-3.5 stroke-[2.5]" />
+                Confirmar Mudança
               </button>
             </div>
           </div>

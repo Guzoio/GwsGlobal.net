@@ -158,6 +158,7 @@ function mesclarLicitacoesSeguro(
       const merged: Licitacao = {
         ...prev,
         ...inc,
+        plataforma: inc.plataforma || prev.plataforma || 'BLL',
         acompanhamento: acomp,
         homologada: homol,
         avisoData: tInc > tPrev ? (inc.avisoData || prev.avisoData) : (prev.avisoData || inc.avisoData),
@@ -315,7 +316,7 @@ export default function App() {
     setTemaNatal(novo);
     mostrarToast(
       novo
-        ? 'Tema de Natal ativado! 🎄 Neve, gorro e enfeites ligados.'
+        ? 'Tema de Natal ativado! 🎄 Neve e pisca-pisca festivo ligados.'
         : 'Tema de Natal pausado. ❄️',
       'sucesso'
     );
@@ -1253,6 +1254,7 @@ export default function App() {
       novaLic.data_proposta || converterParaFormatoInputDate(novaLic.data_cadastro);
     const itemCriado: Licitacao = {
       ...novaLic,
+      plataforma: novaLic.plataforma || 'BLL',
       id: novoId,
       data_proposta: dataPropostaInicial,
       acompanhamento: false,
@@ -1273,6 +1275,33 @@ export default function App() {
     setAbaAtiva('montar');
     mostrarToast(`Licitação "${novaLic.orgao}" criada com sucesso! Proposta limpa pronta para inserção de itens.`);
     return novoId;
+  };
+
+  const handleAtualizarPlataformaLicitacao = (licId: number, novaPlat: 'BLL' | 'BNC') => {
+    let licModificada: Licitacao | null = null;
+    const licsAtualizadas = licitacoes.map(l => {
+      if (Number(l.id) === Number(licId)) {
+        const atualizada: Licitacao = {
+          ...l,
+          plataforma: novaPlat,
+          updatedAt: new Date().toISOString(),
+        };
+        licModificada = atualizada;
+        return atualizada;
+      }
+      return l;
+    });
+
+    setLicitacoes(licsAtualizadas);
+    salvarLicitacoes(licsAtualizadas);
+
+    if (licModificada) {
+      salvarLicitacaoServidor(licModificada);
+      salvarLicitacaoNuvem(licModificada).catch(err => {
+        console.warn('Aviso ao atualizar plataforma na nuvem:', err);
+      });
+    }
+    mostrarToast(`Plataforma alterada para ${novaPlat}!`, 'sucesso');
   };
 
   // Gerenciamento de Itens
@@ -1698,6 +1727,7 @@ export default function App() {
             }}
             onAtualizarDataCadastro={handleAtualizarDataCadastro}
             onAbrirConsoleCmd={() => setConsoleCmdAberto(true)}
+            onAtualizarPlataforma={handleAtualizarPlataformaLicitacao}
           />
         )}
 

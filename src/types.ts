@@ -4,6 +4,8 @@ export type ModalidadeLic =
   | 'Concorrência Eletrônica'
   | 'Leilão Eletrônico';
 
+export type PlataformaLicitacao = 'BLL' | 'BNC';
+
 export const RESPONSAVEIS_PADRAO = ['Gustavo', 'Victor'] as const;
 export type ResponsavelLic = string;
 
@@ -12,6 +14,7 @@ export interface Licitacao {
   orgao: string;
   processo_pregao: string;
   modalidade: ModalidadeLic;
+  plataforma?: PlataformaLicitacao | string; // 'BLL' (verde) | 'BNC' (azul)
   data_cadastro: string; // DD/MM/AAAA
   data_proposta?: string; // Data específica da proposta no documento PDF desta licitação (YYYY-MM-DD ou DD/MM/AAAA)
   responsavel: string; // 'Gustavo' | 'Victor' | nome personalizado

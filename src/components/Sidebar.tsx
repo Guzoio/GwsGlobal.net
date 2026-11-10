@@ -23,10 +23,6 @@ import {
   Terminal,
 } from 'lucide-react';
 import { PalavraDoDiaCard } from './PalavraDoDiaCard';
-import { GorroNatalino } from './GorroNatalino';
-import { RenaNatalina } from './RenaNatalina';
-import { DoceNatalino } from './DoceNatalino';
-import { BonequinhoNeve } from './BonequinhoNeve';
 import { TipoNovaDeclaracao } from '../utils/novasDeclaracoesPdf';
 
 interface SidebarProps {
@@ -184,20 +180,10 @@ export const Sidebar: React.FC<SidebarProps> = ({
                       >
                         <Icone className="w-4 h-4" />
                       </div>
-                      {/* Gorro de Papai Noel no botão Nova Licitação */}
-                      {item.id === 'cadastrar' && temaNatal && (
-                        <div className="absolute -top-2.5 -left-1.5 pointer-events-none drop-shadow-xs">
-                          <GorroNatalino size={18} tilt={-16} />
-                        </div>
-                      )}
                     </div>
                     <div className="min-w-0">
                       <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
                         <span>{item.label}</span>
-                        {/* Bengala doce estilizada ao lado de Montar Proposta */}
-                        {item.id === 'montar' && temaNatal && (
-                          <DoceNatalino size={14} tilt={14} />
-                        )}
                       </div>
                       <div
                         className={`text-[10px] truncate mt-0.5 leading-none ${
@@ -288,65 +274,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                 </span>
               )}
             </button>
-
-            {/* Novo Botão: 💰 Cobranças (Controle de faturamento, liquidação e pagamentos) */}
-            <button
-              type="button"
-              onClick={() => {
-                setAbaAtiva('cobrancas');
-                onFecharMobile();
-              }}
-              className={`relative w-full group flex items-center justify-between p-3 rounded-xl transition-all duration-150 cursor-pointer text-left border ${
-                abaAtiva === 'cobrancas'
-                  ? 'bg-emerald-600 text-white border-emerald-500/50 shadow-sm font-medium'
-                  : 'bg-slate-50/80 dark:bg-[#0E1F3D]/60 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white border-slate-200/70 dark:border-transparent'
-              }`}
-            >
-              <div className="flex items-center gap-3 min-w-0">
-                <div
-                  className={`p-2 rounded-lg transition-colors shrink-0 ${
-                    abaAtiva === 'cobrancas'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-emerald-500/15 text-emerald-600 dark:text-emerald-400 group-hover:bg-emerald-500/25'
-                  }`}
-                >
-                  <DollarSign className="w-4 h-4" />
-                </div>
-                <div className="min-w-0">
-                  <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
-                    <span>Cobranças</span>
-                    {totalAlertasCobrancas > 0 && (
-                      <span className="w-2 h-2 rounded-full bg-rose-500 animate-pulse" />
-                    )}
-                  </div>
-                  <div
-                    className={`text-[10px] truncate mt-0.5 leading-none ${
-                      abaAtiva === 'cobrancas'
-                        ? 'text-emerald-100'
-                        : 'text-slate-400 group-hover:text-slate-600 dark:text-slate-400 dark:group-hover:text-slate-300'
-                    }`}
-                  >
-                    Entrega, NF e liquidação
-                  </div>
-                </div>
-              </div>
-
-              {totalAlertasCobrancas > 0 ? (
-                <span className="text-[10px] font-mono font-black px-2 py-0.5 rounded-full shrink-0 ml-2 bg-rose-500 text-white animate-pulse">
-                  {totalAlertasCobrancas}
-                </span>
-              ) : totalCobrancas > 0 ? (
-                <span
-                  className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full shrink-0 ml-2 ${
-                    abaAtiva === 'cobrancas'
-                      ? 'bg-white/20 text-white'
-                      : 'bg-slate-200/80 dark:bg-white/10 text-slate-700 dark:text-slate-300'
-                  }`}
-                >
-                  {totalCobrancas}
-                </span>
-              ) : null}
-            </button>
           </div>
 
           {/* Divisor Suave */}
@@ -415,9 +342,6 @@ export const Sidebar: React.FC<SidebarProps> = ({
                   <div className="min-w-0">
                     <div className="text-xs font-bold truncate leading-tight flex items-center gap-1.5">
                       <span>Documentos Oficiais</span>
-                      {temaNatal && (
-                        <DoceNatalino size={13} tilt={-12} />
-                      )}
                     </div>
                     <div className="text-[10px] text-slate-400 dark:text-slate-400 truncate mt-0.5 leading-none">
                       Declarações e certidões
@@ -689,33 +613,8 @@ export const Sidebar: React.FC<SidebarProps> = ({
           </div>
         </div>
 
-        {/* Card Especial de Boas Festas com Rena Rudolph, Boneco de Neve e Bengala Doce */}
-        {temaNatal && (
-          <div className="mt-auto pt-3 pb-1">
-            <div className="p-3 rounded-2xl bg-gradient-to-r from-red-500/10 via-amber-500/10 to-emerald-500/10 dark:from-red-950/40 dark:via-amber-950/30 dark:to-emerald-950/40 border border-red-200/70 dark:border-red-900/40 shadow-xs relative overflow-hidden group transition-all hover:shadow-sm">
-              <div className="flex items-center gap-2.5 relative z-10">
-                <div className="shrink-0 flex items-center -space-x-1.5">
-                  <RenaNatalina size={34} pose="head" mensagem="Rudolph: Boas Festas! 🦌" />
-                  <BonequinhoNeve size={32} mensagem="Boneco de Neve: Feliz Natal! ⛄" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1">
-                    <span className="text-xs font-black text-slate-900 dark:text-white truncate">
-                      Boas Festas! 🎅
-                    </span>
-                    <DoceNatalino size={14} tilt={15} />
-                  </div>
-                  <p className="text-[10px] text-slate-600 dark:text-slate-300 leading-tight mt-0.5">
-                    Paz, saúde e licitações ganhas! 🎄✨
-                  </p>
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-
         {/* Card Palavra Bíblica do Dia & Reflexão Diária (posicionado lá embaixo, rente ao rodapé do Sistema Online) */}
-        <div className={temaNatal ? 'pt-1 pb-1' : 'mt-auto pt-4 pb-1'}>
+        <div className="mt-auto pt-4 pb-1">
           <PalavraDoDiaCard />
         </div>
       </div>

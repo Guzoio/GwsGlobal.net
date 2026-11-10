@@ -17,7 +17,6 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { formatarMoeda, parseMoedaBrasileira, formatarNumeroPtBr } from '../utils/numberToWordsPtBr';
-import { GorroNatalino } from './GorroNatalino';
 import { obterTemaNatal } from '../utils/theme';
 
 interface CalculadoraOfertaDrawerProps {
@@ -138,11 +137,6 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
               <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs">
                 <Calculator className="w-4 h-4" />
               </div>
-              {obterTemaNatal() && (
-                <div className="absolute -top-2.5 -left-2 pointer-events-none drop-shadow-xs">
-                  <GorroNatalino size={18} tilt={-16} />
-                </div>
-              )}
             </div>
             <div className="min-w-0">
               <div className="flex items-center gap-2">

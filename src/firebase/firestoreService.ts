@@ -48,6 +48,7 @@ export function ouvirLicitacoesNuvem(
           avisoHora: data.avisoHora || undefined,
           avisoMensagem: data.avisoMensagem || undefined,
           avisoConcluido: data.avisoConcluido !== undefined ? Boolean(data.avisoConcluido) : undefined,
+          plataforma: data.plataforma || 'BLL',
           updatedAt: data.updatedAt || undefined,
         });
       });
@@ -212,6 +213,7 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       avisoHora: lic.avisoHora || '',
       avisoMensagem: lic.avisoMensagem || '',
       avisoConcluido: Boolean(lic.avisoConcluido),
+      plataforma: lic.plataforma || 'BLL',
       updatedAt: new Date().toISOString(),
     }, { merge: true });
   } catch (error) {

@@ -515,6 +515,7 @@ app.post('/api/sync/merge', (req, res) => {
         const licLimpa = {
           ...lic,
           id,
+          plataforma: lic.plataforma || 'BLL',
           acompanhamento: Boolean(lic.acompanhamento),
           homologada: Boolean(lic.homologada),
         };
@@ -552,6 +553,7 @@ app.post('/api/sync/merge', (req, res) => {
             ...atual,
             ...lic,
             id,
+            plataforma: lic.plataforma || atual.plataforma || 'BLL',
             acompanhamento: novoAcomp,
             homologada: novoHomol,
             avisoData: dataInc > dataAtual ? (lic.avisoData || atual.avisoData) : (atual.avisoData || lic.avisoData),
@@ -566,6 +568,7 @@ app.post('/api/sync/merge', (req, res) => {
             atual.acompanhamento !== mesclado.acompanhamento ||
             atual.homologada !== mesclado.homologada ||
             atual.responsavel !== mesclado.responsavel ||
+            atual.plataforma !== mesclado.plataforma ||
             atual.data_proposta !== mesclado.data_proposta ||
             atual.avisoData !== mesclado.avisoData ||
             atual.avisoHora !== mesclado.avisoHora ||
@@ -695,6 +698,7 @@ app.post('/api/sync/licitacao', (req, res) => {
       avisoHora: lic.avisoHora !== undefined ? lic.avisoHora : (index >= 0 ? dbData.licitacoes[index]?.avisoHora : undefined),
       avisoMensagem: lic.avisoMensagem !== undefined ? lic.avisoMensagem : (index >= 0 ? dbData.licitacoes[index]?.avisoMensagem : undefined),
       avisoConcluido: lic.avisoConcluido !== undefined ? Boolean(lic.avisoConcluido) : (index >= 0 ? Boolean(dbData.licitacoes[index]?.avisoConcluido) : false),
+      plataforma: lic.plataforma || (index >= 0 ? dbData.licitacoes[index]?.plataforma : 'BLL') || 'BLL',
       updatedAt: lic.updatedAt || new Date().toISOString(),
     };
     if (index >= 0) {
