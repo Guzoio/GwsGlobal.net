@@ -510,6 +510,60 @@ export function salvarLicitacaoExcluida(id: number): void {
   }
 }
 
+export function removerLicitacaoExcluida(id: number): void {
+  try {
+    const numId = Number(id);
+    const atuais = obterLicitacoesExcluidas().filter(i => Number(i) !== numId);
+    localStorage.setItem(LICITACOES_EXCLUIDAS_KEY, JSON.stringify(atuais));
+  } catch (err) {
+    console.warn('Aviso ao remover licitação da lista de excluídas:', err);
+  }
+}
+
+const HISTORICO_TROCAS_ID_KEY = 'historico_trocas_id_db_v1';
+
+export interface TrocaIdRegistro {
+  timestamp: string;
+  idAntigo: number;
+  idNovo: number;
+  orgao?: string;
+  processo?: string;
+}
+
+export function obterHistoricoTrocasId(): TrocaIdRegistro[] {
+  try {
+    const raw = localStorage.getItem(HISTORICO_TROCAS_ID_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+export function salvarTrocaIdHistorico(troca: Omit<TrocaIdRegistro, 'timestamp'>): void {
+  try {
+    const historico = obterHistoricoTrocasId();
+    historico.push({
+      ...troca,
+      timestamp: new Date().toISOString(),
+    });
+    localStorage.setItem(HISTORICO_TROCAS_ID_KEY, JSON.stringify(historico));
+  } catch (err) {
+    console.warn('Aviso ao salvar histórico de troca de ID:', err);
+  }
+}
+
+export function desfazerUltimaTrocaIdLocal(): TrocaIdRegistro | null {
+  try {
+    const historico = obterHistoricoTrocasId();
+    if (historico.length === 0) return null;
+    const ultima = historico.pop()!;
+    localStorage.setItem(HISTORICO_TROCAS_ID_KEY, JSON.stringify(historico));
+    return ultima;
+  } catch {
+    return null;
+  }
+}
+
 export function obterItensExcluidos(): number[] {
   try {
     const data = localStorage.getItem(ITENS_EXCLUIDOS_KEY);

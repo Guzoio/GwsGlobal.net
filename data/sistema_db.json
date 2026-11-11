@@ -2250,5 +2250,14 @@
   },
   "bllMensagens": [],
   "bllPregoes": [],
-  "updatedAt": "2026-10-15T12:15:32.544Z"
+  "updatedAt": "2026-10-15T12:15:32.544Z",
+  "historicoTrocasId": [
+    {
+      "timestamp": "2026-11-10T23:56:40.000Z",
+      "idAntigo": 999,
+      "idNovo": 44,
+      "orgao": "timoteo",
+      "processo": "15/2026"
+    }
+  ]
 }

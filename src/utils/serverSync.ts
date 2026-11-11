@@ -170,6 +170,40 @@ export async function salvarLicitacaoServidor(lic: Licitacao): Promise<boolean> 
 }
 
 /**
+ * Renumera o ID de uma licitação e atualiza todos os itens vinculados no servidor
+ */
+export async function renumerarIdLicitacaoServidor(idAntigo: number, idNovo: number): Promise<boolean> {
+  try {
+    const res = await fetch('/api/sync/licitacao/renumerar-id', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ idAntigo, idNovo }),
+    });
+    return res.ok;
+  } catch (err) {
+    console.warn('[Sync] Erro ao renumerar ID no servidor:', err);
+    return false;
+  }
+}
+
+/**
+ * Desfaz a última troca de ID gravada no servidor
+ */
+export async function desfazerRenumeracaoServidor(): Promise<{ sucesso: boolean; idAntigo?: number; idNovo?: number; mensagem?: string }> {
+  try {
+    const res = await fetch('/api/sync/licitacao/desfazer-renumeracao', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+    });
+    const data = await res.json();
+    return { sucesso: res.ok, idAntigo: data.idAntigo, idNovo: data.idNovo, mensagem: data.mensagem || data.erro };
+  } catch (err: any) {
+    console.warn('[Sync] Erro ao desfazer renomeação no servidor:', err);
+    return { sucesso: false, mensagem: err?.message };
+  }
+}
+
+/**
  * Exclui uma licitação no servidor
  */
 export async function removerLicitacaoServidor(licId: number): Promise<boolean> {

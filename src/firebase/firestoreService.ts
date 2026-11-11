@@ -253,6 +253,55 @@ export async function removerLicitacaoNuvem(licId: number): Promise<void> {
   }
 }
 
+// Renumerar ID de licitação na nuvem, transferindo todos os itens associados de forma atômica
+export async function trocarIdLicitacaoNuvem(
+  idAntigo: number,
+  idNovo: number,
+  licAtualizada: Licitacao,
+  itensDaLic: ItemLicitacao[]
+): Promise<void> {
+  const path = `${LICITACOES_COL}/${idNovo}`;
+  try {
+    const batch = writeBatch(db);
+
+    // 1. Cria a licitação com o novo ID
+    const novaLicRef = doc(db, LICITACOES_COL, String(idNovo));
+    batch.set(novaLicRef, {
+      id: Number(idNovo),
+      orgao: licAtualizada.orgao || '',
+      processo_pregao: licAtualizada.processo_pregao || '',
+      modalidade: licAtualizada.modalidade || 'Pregão Eletrônico',
+      data_cadastro: licAtualizada.data_cadastro || '',
+      data_proposta: licAtualizada.data_proposta || '',
+      responsavel: licAtualizada.responsavel || 'Gustavo',
+      status: licAtualizada.status || 'Ativa',
+      acompanhamento: Boolean(licAtualizada.acompanhamento),
+      homologada: Boolean(licAtualizada.homologada),
+      uf: licAtualizada.uf || 'SP',
+      avisoData: licAtualizada.avisoData || '',
+      avisoHora: licAtualizada.avisoHora || '',
+      avisoMensagem: licAtualizada.avisoMensagem || '',
+      avisoConcluido: Boolean(licAtualizada.avisoConcluido),
+      plataforma: licAtualizada.plataforma || 'BLL',
+      updatedAt: new Date().toISOString(),
+    });
+
+    // 2. Remove o documento antigo da licitação
+    const antigaLicRef = doc(db, LICITACOES_COL, String(idAntigo));
+    batch.delete(antigaLicRef);
+
+    // 3. Atualiza os itens da licitação para o novo ID
+    itensDaLic.forEach(it => {
+      const itRef = doc(db, ITENS_COL, String(it.id));
+      batch.update(itRef, { licitacao_id: Number(idNovo) });
+    });
+
+    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, path);
+  }
+}
+
 // Salvar ou atualizar item na nuvem
 export async function salvarItemNuvem(item: ItemLicitacao): Promise<void> {
   const path = `${ITENS_COL}/${item.id}`;

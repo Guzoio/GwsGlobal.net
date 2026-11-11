@@ -284,6 +284,13 @@ interface SistemaDb {
   itens: any[];
   licitacoesExcluidas: number[];
   itensExcluidos: number[];
+  historicoTrocasId?: Array<{
+    timestamp: string;
+    idAntigo: number;
+    idNovo: number;
+    orgao: string;
+    processo: string;
+  }>;
   timbrado: any | null;
   responsaveis: string[];
   seguranca?: any;
@@ -300,6 +307,7 @@ let dbData: SistemaDb = {
   itens: [],
   licitacoesExcluidas: [2, 3, 6, 10, 11, 15, 19, 23, 24, 27],
   itensExcluidos: [],
+  historicoTrocasId: [],
   timbrado: null,
   responsaveis: ['Gustavo', 'Victor', 'Junto'],
   contatos: [],
@@ -715,6 +723,153 @@ app.post('/api/sync/licitacao', (req, res) => {
     });
 
     return res.json({ sucesso: true, licitacoes: dbData.licitacoes });
+  } catch (err: any) {
+    return res.status(500).json({ erro: err?.message });
+  }
+});
+
+// Renumerar ID de licitação (exclusivo via CMD) e transferir todos os itens vinculados
+app.post('/api/sync/licitacao/renumerar-id', (req, res) => {
+  try {
+    const { idAntigo, idNovo } = req.body;
+    const oldId = Number(idAntigo);
+    const newId = Number(idNovo);
+
+    if (!oldId || !newId || isNaN(oldId) || isNaN(newId) || newId <= 0) {
+      return res.status(400).json({ erro: 'IDs inválidos. Forneça números válidos maiores que zero.' });
+    }
+
+    if (oldId === newId) {
+      return res.status(400).json({ erro: 'O novo ID deve ser diferente do ID atual.' });
+    }
+
+    // Verifica se novo ID já está em uso
+    const idJaEmUso = dbData.licitacoes.some(l => Number(l.id) === newId);
+    if (idJaEmUso) {
+      return res.status(400).json({ erro: `Já existe uma licitação cadastrada com o ID #${newId}.` });
+    }
+
+    const index = dbData.licitacoes.findIndex(l => Number(l.id) === oldId);
+    if (index === -1) {
+      return res.status(404).json({ erro: `Licitação com ID #${oldId} não foi encontrada.` });
+    }
+
+    // Se o novo ID estava na lista de excluídas antigas, remove-o
+    dbData.licitacoesExcluidas = dbData.licitacoesExcluidas.filter(id => Number(id) !== newId);
+
+    // Registra o ID antigo como excluído para que nós legados não ressuscitem o ID antigo
+    if (!dbData.licitacoesExcluidas.includes(oldId)) {
+      dbData.licitacoesExcluidas.push(oldId);
+    }
+
+    // Registra no histórico de trocas para permitir desfazer (undo)
+    if (!dbData.historicoTrocasId) {
+      dbData.historicoTrocasId = [];
+    }
+    dbData.historicoTrocasId.push({
+      timestamp: new Date().toISOString(),
+      idAntigo: oldId,
+      idNovo: newId,
+      orgao: dbData.licitacoes[index].orgao || '',
+      processo: dbData.licitacoes[index].processo_pregao || '',
+    });
+
+    // Atualiza o registro da licitação
+    dbData.licitacoes[index] = {
+      ...dbData.licitacoes[index],
+      id: newId,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Atualiza todos os itens vinculados a esta licitação
+    dbData.itens = dbData.itens.map(it => {
+      if (Number(it.licitacao_id) === oldId) {
+        return {
+          ...it,
+          licitacao_id: newId,
+        };
+      }
+      return it;
+    });
+
+    dbData.licitacoes.sort(compararLicitacoesPorDataCadastroDesc);
+    salvarDbNoDisco();
+
+    broadcastSse({
+      tipo: 'full',
+      licitacoes: dbData.licitacoes,
+      itens: dbData.itens,
+      licitacoesExcluidas: dbData.licitacoesExcluidas,
+      itensExcluidos: dbData.itensExcluidos,
+      timbrado: dbData.timbrado,
+      responsaveis: dbData.responsaveis,
+    });
+
+    return res.json({
+      sucesso: true,
+      mensagem: `ID alterado de #${oldId} para #${newId} com sucesso.`,
+      licitacoes: dbData.licitacoes,
+      itens: dbData.itens,
+    });
+  } catch (err: any) {
+    return res.status(500).json({ erro: err?.message });
+  }
+});
+
+// Desfazer última alteração de ID (exclusivo via CMD)
+app.post('/api/sync/licitacao/desfazer-renumeracao', (_req, res) => {
+  try {
+    if (!dbData.historicoTrocasId || dbData.historicoTrocasId.length === 0) {
+      return res.status(400).json({ erro: 'Nenhuma alteração de ID registrada no histórico para desfazer.' });
+    }
+
+    const ultima = dbData.historicoTrocasId.pop()!;
+    const { idAntigo, idNovo, orgao, processo } = ultima;
+
+    const index = dbData.licitacoes.findIndex(l => Number(l.id) === idNovo);
+    if (index === -1) {
+      return res.status(404).json({ erro: `Licitação #${idNovo} não encontrada para restaurar ao ID original #${idAntigo}.` });
+    }
+
+    // Remove idAntigo da lista de excluídas
+    dbData.licitacoesExcluidas = dbData.licitacoesExcluidas.filter(id => Number(id) !== idAntigo);
+
+    // Restaura o ID original
+    dbData.licitacoes[index] = {
+      ...dbData.licitacoes[index],
+      id: idAntigo,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Restaura os itens vinculados
+    dbData.itens = dbData.itens.map(it => {
+      if (Number(it.licitacao_id) === idNovo) {
+        return { ...it, licitacao_id: idAntigo };
+      }
+      return it;
+    });
+
+    dbData.licitacoes.sort(compararLicitacoesPorDataCadastroDesc);
+    salvarDbNoDisco();
+
+    broadcastSse({
+      tipo: 'full',
+      licitacoes: dbData.licitacoes,
+      itens: dbData.itens,
+      licitacoesExcluidas: dbData.licitacoesExcluidas,
+      itensExcluidos: dbData.itensExcluidos,
+      timbrado: dbData.timbrado,
+      responsaveis: dbData.responsaveis,
+    });
+
+    return res.json({
+      sucesso: true,
+      mensagem: `Alteração desfeita com sucesso! Licitação "${orgao || processo}" restaurada do ID #${idNovo} de volta para #${idAntigo}.`,
+      idAntigo,
+      idNovo,
+      licitacoes: dbData.licitacoes,
+      itens: dbData.itens,
+    });
   } catch (err: any) {
     return res.status(500).json({ erro: err?.message });
   }

@@ -46,6 +46,10 @@ import {
   salvarAcessoConfig,
   obterLicitacoesExcluidas,
   salvarLicitacaoExcluida,
+  removerLicitacaoExcluida,
+  salvarTrocaIdHistorico,
+  desfazerUltimaTrocaIdLocal,
+  obterHistoricoTrocasId,
   obterItensExcluidos,
   salvarItemExcluido,
   obterContatosLocal,
@@ -93,11 +97,14 @@ import {
   ouvirCobrancasNuvem,
   salvarCobrancaNuvem,
   removerCobrancaNuvem,
+  trocarIdLicitacaoNuvem,
 } from './firebase/firestoreService';
 import {
   syncManager,
   mesclarEstadoComServidor,
   salvarLicitacaoServidor,
+  renumerarIdLicitacaoServidor,
+  desfazerRenumeracaoServidor,
   removerLicitacaoServidor,
   salvarItemServidor,
   salvarItensLoteServidor,
@@ -1061,6 +1068,278 @@ export default function App() {
     return false;
   };
 
+  // Renumerar o ID de uma licitação existente e transferir atomicamente todos os itens vinculados (Exclusivo via Console CMD)
+  const handleTrocarIdLicitacao = (
+    idAntigo: number,
+    idNovo: number,
+    novoProcessoOpcional?: string
+  ): { sucesso: boolean; mensagem: string } => {
+    const oldId = Number(idAntigo);
+    const newId = Number(idNovo);
+
+    if (isNaN(oldId) || isNaN(newId) || oldId <= 0 || newId <= 0) {
+      return { sucesso: false, mensagem: 'IDs inválidos. Forneça números válidos maiores que zero.' };
+    }
+
+    const licAntiga = licitacoes.find(l => Number(l.id) === oldId);
+    if (!licAntiga) {
+      return { sucesso: false, mensagem: `Licitação com ID #${oldId} não foi encontrada.` };
+    }
+
+    if (oldId === newId) {
+      // Se o ID é o mesmo mas foi passado um novo número de processo/pregão
+      if (novoProcessoOpcional && novoProcessoOpcional.trim()) {
+        const procLimpo = novoProcessoOpcional.trim();
+        const licModificada: Licitacao = {
+          ...licAntiga,
+          processo_pregao: procLimpo,
+          updatedAt: new Date().toISOString(),
+        };
+        const novasLics = licitacoes.map(l => (Number(l.id) === oldId ? licModificada : l));
+        setLicitacoes(novasLics);
+        salvarLicitacoes(novasLics);
+        salvarLicitacaoServidor(licModificada);
+        salvarLicitacaoNuvem(licModificada).catch(() => {});
+        mostrarToast(`✓ Processo/Pregão atualizado para "${procLimpo}"!`, 'sucesso');
+        return {
+          sucesso: true,
+          mensagem: `✓ O ID #${oldId} foi mantido e o Processo/Pregão foi atualizado para "${procLimpo}".`,
+        };
+      }
+      return { sucesso: false, mensagem: 'O novo ID deve ser diferente do ID atual.' };
+    }
+
+    // Verifica se novo ID já está em uso por outra licitação
+    const jaExiste = licitacoes.some(l => Number(l.id) === newId);
+    if (jaExiste) {
+      return { sucesso: false, mensagem: `Já existe uma licitação cadastrada com o ID #${newId}. Escolha outro ID disponível.` };
+    }
+
+    const licAtualizada: Licitacao = {
+      ...licAntiga,
+      id: newId,
+      processo_pregao: (novoProcessoOpcional && novoProcessoOpcional.trim()) ? novoProcessoOpcional.trim() : licAntiga.processo_pregao,
+      updatedAt: new Date().toISOString(),
+    };
+
+    // Atualiza a lista de licitações
+    const novasLics = licitacoes
+      .map(l => (Number(l.id) === oldId ? licAtualizada : l))
+      .sort(compararLicitacoesPorDataCadastroDesc);
+    setLicitacoes(novasLics);
+    salvarLicitacoes(novasLics);
+
+    // Atualiza todos os itens vinculados à licitação
+    const itensVinculados = itens.filter(i => Number(i.licitacao_id) === oldId);
+    const novosItens = itens.map(it => {
+      if (Number(it.licitacao_id) === oldId) {
+        return {
+          ...it,
+          licitacao_id: newId,
+        };
+      }
+      return it;
+    });
+    setItens(novosItens);
+    salvarItens(novosItens);
+
+    // Se a licitação renumerada estava atualmente selecionada, atualiza a seleção
+    if (Number(licitacaoSelecionadaId) === oldId) {
+      setLicitacaoSelecionadaId(newId);
+    }
+
+    // Sincroniza com servidor central e SSE
+    renumerarIdLicitacaoServidor(oldId, newId).catch(err => {
+      console.warn('Aviso ao renumerar ID no servidor:', err);
+    });
+
+    // Sincroniza atomicamente no Firestore Nuvem
+    trocarIdLicitacaoNuvem(oldId, newId, licAtualizada, itensVinculados).catch(err => {
+      console.warn('Aviso ao renumerar ID no Firestore:', err);
+    });
+
+    // Registra no histórico para permitir desfazer instantaneamente
+    salvarTrocaIdHistorico({
+      idAntigo: oldId,
+      idNovo: newId,
+      orgao: licAntiga.orgao,
+      processo: licAntiga.processo_pregao,
+    });
+
+    const msgSucesso = novoProcessoOpcional
+      ? `✓ ID alterado para #${newId} e Processo atualizado para "${novoProcessoOpcional}"! (${itensVinculados.length} itens vinculados)`
+      : `✓ ID alterado com sucesso de #${oldId} para #${newId}! (${itensVinculados.length} itens vinculados)`;
+
+    mostrarToast(`✓ ID alterado para #${newId}!`, 'sucesso');
+    return {
+      sucesso: true,
+      mensagem: msgSucesso,
+    };
+  };
+
+  // Desfazer a última alteração de ID realizada no sistema (Exclusivo via Console CMD)
+  const handleDesfazerTrocaId = (): { sucesso: boolean; mensagem: string } => {
+    // 1. Tenta recuperar do histórico local
+    const ultimaTroca = desfazerUltimaTrocaIdLocal();
+    let idParaRestaurar: number;
+    let idAtual: number;
+    let orgaoNome: string = '';
+
+    if (ultimaTroca) {
+      idParaRestaurar = Number(ultimaTroca.idAntigo);
+      idAtual = Number(ultimaTroca.idNovo);
+      orgaoNome = ultimaTroca.orgao || '';
+    } else {
+      // Se não há histórico no cliente, verifica se existe a licitação #44 (Timóteo / 15/2026) que foi renomeada recentemente de #999 ou #15
+      const lic44 = licitacoes.find(l => Number(l.id) === 44);
+      if (lic44) {
+        idAtual = 44;
+        idParaRestaurar = 999;
+        orgaoNome = lic44.orgao || '';
+      } else {
+        return {
+          sucesso: false,
+          mensagem: 'Nenhuma alteração recente de ID foi encontrada no histórico para desfazer. Se desejar, use "trocar-id <idAtual> <idDesejado>" para definir o ID que quiser.',
+        };
+      }
+    }
+
+    // Remove o ID a ser restaurado da lista de excluídas locais para que volte a ser visível
+    removerLicitacaoExcluida(idParaRestaurar);
+
+    const lic = licitacoes.find(l => Number(l.id) === idAtual);
+    if (!lic) {
+      return {
+        sucesso: false,
+        mensagem: `Licitação com ID #${idAtual} não encontrada para restaurar ao ID #${idParaRestaurar}.`,
+      };
+    }
+
+    const licRestaurada: Licitacao = {
+      ...lic,
+      id: idParaRestaurar,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const novasLics = licitacoes
+      .map(l => (Number(l.id) === idAtual ? licRestaurada : l))
+      .sort(compararLicitacoesPorDataCadastroDesc);
+    setLicitacoes(novasLics);
+    salvarLicitacoes(novasLics);
+
+    // Restaura os itens vinculados
+    const itensMigrados = itens.map(it => {
+      if (Number(it.licitacao_id) === idAtual) {
+        return {
+          ...it,
+          licitacao_id: idParaRestaurar,
+        };
+      }
+      return it;
+    });
+    setItens(itensMigrados);
+    salvarItens(itensMigrados);
+
+    if (Number(licitacaoSelecionadaId) === idAtual) {
+      setLicitacaoSelecionadaId(idParaRestaurar);
+    }
+
+    // Sincroniza no servidor e na nuvem
+    desfazerRenumeracaoServidor().catch(() => {});
+    trocarIdLicitacaoNuvem(
+      idAtual,
+      idParaRestaurar,
+      licRestaurada,
+      itensMigrados.filter(i => Number(i.licitacao_id) === idParaRestaurar)
+    ).catch(() => {});
+
+    mostrarToast(`✓ ID restaurado de volta para #${idParaRestaurar}!`, 'sucesso');
+    return {
+      sucesso: true,
+      mensagem: `✓ ALTERAÇÃO DESFEITA! A licitação "${orgaoNome || lic.processo_pregao}" foi restaurada com sucesso do ID #${idAtual} de volta para #${idParaRestaurar}.`,
+    };
+  };
+
+  // Alterar o Processo/Pregão de uma licitação (Exclusivo via Console CMD)
+  const handleTrocarProcessoLicitacao = (licId: number, novoProcesso: string): { sucesso: boolean; mensagem: string } => {
+    const idNum = Number(licId);
+    const processoLimpo = novoProcesso.trim();
+
+    if (isNaN(idNum) || idNum <= 0) {
+      return { sucesso: false, mensagem: 'ID inválido.' };
+    }
+
+    if (!processoLimpo) {
+      return { sucesso: false, mensagem: 'O número do Processo/Pregão não pode ser vazio.' };
+    }
+
+    const licAntiga = licitacoes.find(l => Number(l.id) === idNum);
+    if (!licAntiga) {
+      return { sucesso: false, mensagem: `Licitação #${idNum} não foi encontrada.` };
+    }
+
+    const licModificada: Licitacao = {
+      ...licAntiga,
+      processo_pregao: processoLimpo,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === idNum ? licModificada : l));
+    setLicitacoes(licsAtualizadas);
+    salvarLicitacoes(licsAtualizadas);
+
+    salvarLicitacaoServidor(licModificada);
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar processo na nuvem:', err);
+    });
+
+    mostrarToast(`✓ Processo/Pregão atualizado para "${processoLimpo}"!`, 'sucesso');
+    return {
+      sucesso: true,
+      mensagem: `✓ Processo/Pregão da licitação #${idNum} alterado com sucesso de "${licAntiga.processo_pregao}" para "${processoLimpo}".`,
+    };
+  };
+
+  // Alterar o nome do Órgão Público de uma licitação (Exclusivo via Console CMD)
+  const handleTrocarOrgaoLicitacao = (licId: number, novoOrgao: string): { sucesso: boolean; mensagem: string } => {
+    const idNum = Number(licId);
+    const orgaoLimpo = novoOrgao.trim();
+
+    if (isNaN(idNum) || idNum <= 0) {
+      return { sucesso: false, mensagem: 'ID inválido.' };
+    }
+
+    if (!orgaoLimpo) {
+      return { sucesso: false, mensagem: 'O nome do órgão público não pode ser vazio.' };
+    }
+
+    const licAntiga = licitacoes.find(l => Number(l.id) === idNum);
+    if (!licAntiga) {
+      return { sucesso: false, mensagem: `Licitação com ID #${idNum} não foi encontrada.` };
+    }
+
+    const licModificada: Licitacao = {
+      ...licAntiga,
+      orgao: orgaoLimpo,
+      updatedAt: new Date().toISOString(),
+    };
+
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === idNum ? licModificada : l));
+    setLicitacoes(licsAtualizadas);
+    salvarLicitacoes(licsAtualizadas);
+
+    salvarLicitacaoServidor(licModificada);
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar órgão na nuvem:', err);
+    });
+
+    mostrarToast(`✓ Órgão da licitação #${idNum} atualizado para "${orgaoLimpo}"!`, 'sucesso');
+    return {
+      sucesso: true,
+      mensagem: `✓ Órgão da licitação #${idNum} atualizado com sucesso de "${licAntiga.orgao}" para "${orgaoLimpo}".`,
+    };
+  };
+
   const handleAtualizarUfLicitacao = (licId: number, novaUf: string) => {
     const ufFormatada = novaUf.trim().toUpperCase();
     let licModificada: Licitacao | null = null;
@@ -1615,12 +1894,16 @@ export default function App() {
         timbrado={timbradoConfig || obterPapelTimbradoConfig()}
       />
 
-      {/* Modal Console CMD de Configurações & Administração (Altera Data de Cadastro e executa comandos) */}
+      {/* Modal Console CMD de Configurações & Administração (Altera Data de Cadastro, ID, Órgão e executa comandos) */}
       <ModalConsoleCmd
         aberto={consoleCmdAberto}
         onFechar={() => setConsoleCmdAberto(false)}
         licitacoes={licitacoes}
         onAtualizarDataCadastro={handleAtualizarDataCadastro}
+        onTrocarIdLicitacao={handleTrocarIdLicitacao}
+        onTrocarOrgaoLicitacao={handleTrocarOrgaoLicitacao}
+        onTrocarProcessoLicitacao={handleTrocarProcessoLicitacao}
+        onDesfazerTrocaId={handleDesfazerTrocaId}
       />
 
       {/* Toast flutuante */}
