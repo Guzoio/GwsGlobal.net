@@ -26,6 +26,8 @@ export interface Licitacao {
   avisoHora?: string; // HH:mm horário do retorno (ex: 14:30)
   avisoMensagem?: string; // Mensagem/motivo do aviso (ex: 'Pregoeiro volta para fase de lances')
   avisoConcluido?: boolean; // Se o alerta de retorno já foi atendido/concluído
+  version?: number; // Versão sequencial para controle de concorrência e idempotência
+  deletedAt?: string; // Marcador de exclusão (tombstone) para sincronização tardia
   updatedAt?: string; // Timestamp ISO da última alteração para resolução de concorrência e sincronização
 }
 
@@ -49,6 +51,9 @@ export interface ItemLicitacao {
   valor_ganho?: number; // Valor unitário final por quanto ganhou a licitação na disputa
   aliquota_imposto?: number; // Alíquota percentual de imposto (ex: 10% editável)
   outros_custos?: number; // Custos adicionais de frete ou taxas operacionais
+  version?: number; // Versão sequencial do item
+  deletedAt?: string; // Marcador de exclusão
+  updatedAt?: string; // Timestamp ISO da última alteração
 }
 
 export interface EmpresaDados {
@@ -214,6 +219,9 @@ export interface ContatoPrefeitura {
   favorito?: boolean;
   dataCadastro: string; // Data de cadastro (ISO)
   licitacaoId?: number; // Vinculado a uma licitação do CRM (opcional)
+  version?: number;
+  deletedAt?: string;
+  updatedAt?: string;
 }
 
 // ====================================================================
@@ -277,6 +285,21 @@ export interface Cobranca {
   // Metadados
   criadoEm: string;
   atualizadoEm: string;
+  version?: number;
+  deletedAt?: string;
+}
+
+export type NuvemStatusTipo = 'sincronizado' | 'aguardando_nuvem' | 'cota_esgotada' | 'offline' | 'erro';
+
+export interface CloudSyncStatus {
+  servidorOnline: boolean;
+  nuvemStatus: NuvemStatusTipo;
+  filaPendente: number;
+  totalOperacoes: number;
+  ultimaSincronizacao?: string;
+  ultimoErro?: string | null;
+  ultimaTentativa?: string;
+  detalhes?: string;
 }
 
 export interface AlertaCobranca {

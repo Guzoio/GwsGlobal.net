@@ -670,115 +670,149 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                     A empresa <strong>{timbrado.razaoSocial || 'GWS GLOBAL LIMITADA'}</strong>, inscrita no CNPJ sob o nº <strong>{timbrado.cnpj || '53.080.207/0001-80'}</strong>, sediada na {timbrado.endereco || 'Rua Alpercata, nº 261, Bairro Ana Malaquias'}, {timbrado.cidadeEmissao || 'Timóteo - MG'}, por intermédio de seu representante legal, apresenta tempestivamente a presente <strong>PLANILHA DE COMPOSIÇÃO DE CUSTOS E FORMAÇÃO DE PREÇOS</strong> dos itens arrematados/ganhos no certame em epígrafe, comprovando analiticamente a plena <strong>EXEQUIBILIDADE</strong> de sua proposta (art. 59, III da Lei Federal nº 14.133/2021). Demonstra-se que os preços pactuados cobrem com segurança todos os custos de aquisição, tributos e logística, assegurando a fiel entrega dos produtos.
                   </p>
 
-                  {/* 5. CARDS ANALÍTICOS DE CADA PRODUTO */}
-                  <div className="space-y-3">
-                    <div className="text-[11px] font-bold text-[#0F2C59] uppercase tracking-wider border-b border-slate-200 pb-1">
-                      Composição Analítica dos Itens Arrematados ({itensCalculados.length}):
-                    </div>
-
-                    {itensCalculados.map(itCalc => {
-                      const ehPositivo = itCalc.lucroLiquidoTotal >= 0;
-                      return (
-                        <div
-                          key={itCalc.id}
-                          className="border border-slate-300 rounded p-3 bg-slate-50/60 text-xs space-y-2"
-                        >
-                          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-1 border-b border-slate-200 pb-1.5">
-                            <span className="font-bold text-slate-900">
-                              Item #{itCalc.num_item} — {itCalc.descricao_curta}
-                            </span>
-                            <span className="font-mono text-[11px] text-slate-600">
-                              Qtd: <strong>{itCalc.quantidade} un.</strong>
-                            </span>
-                          </div>
-
-                          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                            <div>
-                              <span className="text-slate-500 block text-[10px]">Preço Ganho:</span>
-                              <span className="font-mono font-bold text-slate-900">
-                                {formatarMoeda(itCalc.valor_ganho)}
-                              </span>
-                              <span className="text-[9px] text-slate-500 block">
-                                Tot: {formatarMoeda(itCalc.totalGanho)}
-                              </span>
-                            </div>
-
-                            <div>
-                              <span className="text-slate-500 block text-[10px]">Custo Fornecedor:</span>
-                              <span className="font-mono font-bold text-slate-700">
-                                {formatarMoeda(itCalc.custo_fornecedor)}
-                              </span>
-                              <span className="text-[9px] text-slate-500 block">
-                                Tot: {formatarMoeda(itCalc.totalCustoFornecedor)}
-                              </span>
-                            </div>
-
-                            <div>
-                              <span className="text-slate-500 block text-[10px]">Impostos ({itCalc.aliquota_imposto}%):</span>
-                              <span className="font-mono font-bold text-rose-700">
-                                -{formatarMoeda(itCalc.totalImposto)}
-                              </span>
-                              <span className="text-[9px] text-slate-500 block">
-                                Frete: -{formatarMoeda(itCalc.outros_custos)}
-                              </span>
-                            </div>
-
-                            <div className="bg-white p-1.5 rounded border border-slate-200 text-right">
-                              <span className="text-slate-500 block text-[10px]">Lucro Líquido:</span>
-                              <span
-                                className={`font-mono font-bold block ${
-                                  ehPositivo ? 'text-emerald-700' : 'text-rose-700'
-                                }`}
-                              >
-                                {formatarMoeda(itCalc.lucroLiquidoTotal)}
-                              </span>
-                              <span
-                                className={`text-[10px] font-bold ${
-                                  ehPositivo ? 'text-emerald-700' : 'text-rose-700'
-                                }`}
-                              >
-                                Margem: {itCalc.margemLiquidaPct.toFixed(1)}% {ehPositivo ? '✓' : '⚠'}
-                              </span>
-                            </div>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-
-                  {/* 6. SÍNTESE FINANCEIRA GLOBAL */}
-                  <div className="border-2 border-emerald-600 bg-emerald-50/70 rounded p-3 text-xs">
-                    <div className="font-bold text-emerald-950 uppercase text-[11px] mb-2 border-b border-emerald-200 pb-1 flex items-center justify-between">
-                      <span>Síntese Consolidada de Exequibilidade</span>
-                      <span className="text-emerald-800 font-bold">
-                        {totais.ehExequivel ? '✓ PROPOSTA EXEQUÍVEL' : '⚠ ATENÇÃO'}
+                  {/* 5. PLANILHA DE COMPOSIÇÃO DE CUSTOS E FORMAÇÃO DE PREÇOS (ESTILO PLANILHA) */}
+                  <div className="space-y-2">
+                    <div className="flex items-center justify-between border-b-2 border-[#0F2C59] pb-1">
+                      <span className="text-[11px] font-black text-[#0F2C59] uppercase tracking-wider">
+                        Planilha Analítica de Composição de Custos e Formação de Preços ({itensCalculados.length} Itens Arrematados)
+                      </span>
+                      <span className="text-[10px] font-mono text-slate-500">
+                        Valores em Reais (R$) • Cotação Oficial
                       </span>
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 text-[11px]">
-                      <div>
-                        <span className="text-slate-600 block text-[10px]">Faturamento Total:</span>
-                        <span className="font-mono font-bold text-slate-900">
-                          {formatarMoeda(totais.totGanho)}
-                        </span>
+                    <div className="overflow-x-auto border border-slate-300 rounded shadow-xs">
+                      <table className="w-full text-left border-collapse font-sans text-[11px]">
+                        <thead>
+                          <tr className="bg-[#0F2C59] text-white text-[10px] uppercase font-bold tracking-wider">
+                            <th className="py-2 px-2 text-center border-r border-[#1B3B6F] w-10">Item</th>
+                            <th className="py-2 px-2.5 border-r border-[#1B3B6F]">Descrição do Produto & Marca</th>
+                            <th className="py-2 px-2 text-center border-r border-[#1B3B6F] w-14">Qtd</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Custo Unit. (R$)</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Custo Insumos</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Tributos / Frete</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Preço Ganho</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Faturamento</th>
+                            <th className="py-2 px-2 text-right border-r border-[#1B3B6F]">Lucro Líquido</th>
+                            <th className="py-2 px-2 text-center w-24">Margem / Parecer</th>
+                          </tr>
+                        </thead>
+                        <tbody className="divide-y divide-slate-200">
+                          {itensCalculados.map((itCalc, idx) => {
+                            const ehPositivo = itCalc.lucroLiquidoTotal >= 0;
+                            return (
+                              <tr
+                                key={itCalc.id}
+                                className={idx % 2 === 0 ? 'bg-white hover:bg-amber-50/50' : 'bg-slate-50/80 hover:bg-amber-50/50'}
+                              >
+                                <td className="py-2 px-2 text-center font-mono font-bold text-slate-900 border-r border-slate-200">
+                                  #{itCalc.num_item}
+                                </td>
+                                <td className="py-2 px-2.5 border-r border-slate-200">
+                                  <div className="font-semibold text-slate-900 leading-tight">
+                                    {itCalc.descricao_curta}
+                                  </div>
+                                  <div className="text-[10px] text-slate-500 font-medium">
+                                    Marca: <span className="text-slate-700">{itCalc.marca || 'Conforme Edital'}</span>
+                                  </div>
+                                </td>
+                                <td className="py-2 px-2 text-center font-mono font-semibold text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                                  {itCalc.quantidade} un
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono text-slate-700 border-r border-slate-200 whitespace-nowrap">
+                                  {formatarMoeda(itCalc.custo_fornecedor)}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono font-semibold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                                  {formatarMoeda(itCalc.totalCustoFornecedor)}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono text-rose-700 border-r border-slate-200 whitespace-nowrap">
+                                  <div>-{formatarMoeda(itCalc.totalImposto)} <span className="text-[9px] text-slate-500">({itCalc.aliquota_imposto}%)</span></div>
+                                  {itCalc.outros_custos > 0 && (
+                                    <div className="text-[9px] text-slate-500">Frete: -{formatarMoeda(itCalc.outros_custos)}</div>
+                                  )}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono text-slate-800 border-r border-slate-200 whitespace-nowrap">
+                                  {formatarMoeda(itCalc.valor_ganho)}
+                                </td>
+                                <td className="py-2 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-200 whitespace-nowrap">
+                                  {formatarMoeda(itCalc.totalGanho)}
+                                </td>
+                                <td className={`py-2 px-2 text-right font-mono font-black border-r border-slate-200 whitespace-nowrap ${
+                                  ehPositivo ? 'text-emerald-700' : 'text-rose-700'
+                                }`}>
+                                  {formatarMoeda(itCalc.lucroLiquidoTotal)}
+                                </td>
+                                <td className="py-2 px-2 text-center whitespace-nowrap">
+                                  <span className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[10px] font-bold border ${
+                                    ehPositivo
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-300'
+                                      : 'bg-rose-50 text-rose-800 border-rose-300'
+                                  }`}>
+                                    {itCalc.margemLiquidaPct.toFixed(1)}% {ehPositivo ? '✓ Exeq.' : '⚠ Neg.'}
+                                  </span>
+                                </td>
+                              </tr>
+                            );
+                          })}
+                        </tbody>
+                        <tfoot>
+                          <tr className="bg-slate-100 border-t-2 border-slate-400 font-bold text-slate-900">
+                            <td colSpan={3} className="py-2.5 px-3 text-left uppercase text-[10px] tracking-wider text-slate-700 border-r border-slate-300">
+                              TOTAIS CONSOLIDADOS DA PLANILHA:
+                            </td>
+                            <td className="py-2.5 px-2 text-right border-r border-slate-300 text-slate-400 font-mono">—</td>
+                            <td className="py-2.5 px-2 text-right font-mono font-bold text-slate-900 border-r border-slate-300 whitespace-nowrap">
+                              {formatarMoeda(totais.totFornec)}
+                            </td>
+                            <td className="py-2.5 px-2 text-right font-mono font-bold text-rose-800 border-r border-slate-300 whitespace-nowrap">
+                              -{formatarMoeda(totais.totImposto + totais.totOutros)}
+                            </td>
+                            <td className="py-2.5 px-2 text-right border-r border-slate-300 text-slate-400 font-mono">—</td>
+                            <td className="py-2.5 px-2 text-right font-mono font-black text-slate-950 border-r border-slate-300 whitespace-nowrap">
+                              {formatarMoeda(totais.totGanho)}
+                            </td>
+                            <td className="py-2.5 px-2 text-right font-mono font-black text-emerald-800 border-r border-slate-300 whitespace-nowrap">
+                              {formatarMoeda(totais.totLucro)}
+                            </td>
+                            <td className="py-2.5 px-2 text-center font-bold text-emerald-800 text-[11px] whitespace-nowrap">
+                              {totais.margemMedia.toFixed(1)}% ✓
+                            </td>
+                          </tr>
+                        </tfoot>
+                      </table>
+                    </div>
+                  </div>
+
+                  {/* 6. DEMONSTRATIVO CONTÁBIL DE RESULTADO (DRE SIMPLIFICADA) */}
+                  <div className="border border-slate-300 rounded overflow-hidden">
+                    <div className="bg-[#0F2C59] text-white px-3 py-1.5 flex items-center justify-between text-xs font-bold">
+                      <span className="uppercase tracking-wider">Demonstrativo Sintético de Formação de Preço & Exequibilidade</span>
+                      <span className="px-2 py-0.5 rounded bg-emerald-500 text-white text-[10px] font-black">
+                        {totais.ehExequivel ? '✓ PROPOSTA TOTALMENTE EXEQUÍVEL' : '⚠ ATENÇÃO'}
+                      </span>
+                    </div>
+                    <div className="p-3 bg-slate-50 text-xs space-y-1.5 font-mono">
+                      <div className="flex justify-between py-1 border-b border-slate-200">
+                        <span className="text-slate-700">(+) Receita Bruta Arrematada (Faturamento dos Itens Ganhos):</span>
+                        <strong className="text-slate-900">{formatarMoeda(totais.totGanho)} (100,0%)</strong>
                       </div>
-                      <div>
-                        <span className="text-slate-600 block text-[10px]">Custos Totais:</span>
-                        <span className="font-mono font-bold text-slate-800">
-                          {formatarMoeda(totais.totFornec + totais.totOutros)}
-                        </span>
+                      <div className="flex justify-between py-1 border-b border-slate-200">
+                        <span className="text-slate-600">(-) Custo Direto de Aquisição dos Produtos (Fornecedores):</span>
+                        <strong className="text-slate-800">-{formatarMoeda(totais.totFornec)} ({totais.totGanho > 0 ? ((totais.totFornec / totais.totGanho) * 100).toFixed(1) : 0}%)</strong>
                       </div>
-                      <div>
-                        <span className="text-slate-600 block text-[10px]">Impostos Totais:</span>
-                        <span className="font-mono font-bold text-rose-700">
-                          -{formatarMoeda(totais.totImposto)}
-                        </span>
+                      <div className="flex justify-between py-1 border-b border-slate-200">
+                        <span className="text-slate-600">(-) Carga Tributária Incidente (Impostos Fiscais):</span>
+                        <strong className="text-rose-700">-{formatarMoeda(totais.totImposto)} ({totais.totGanho > 0 ? ((totais.totImposto / totais.totGanho) * 100).toFixed(1) : 0}%)</strong>
                       </div>
-                      <div className="text-right">
-                        <span className="text-slate-600 block text-[10px]">Lucro Líquido Global:</span>
-                        <span className="font-mono font-black text-emerald-800 text-xs block">
-                          {formatarMoeda(totais.totLucro)} ({totais.margemMedia.toFixed(1)}%)
-                        </span>
+                      {totais.totOutros > 0 && (
+                        <div className="flex justify-between py-1 border-b border-slate-200">
+                          <span className="text-slate-600">(-) Despesas Operacionais de Logística e Frete:</span>
+                          <strong className="text-rose-700">-{formatarMoeda(totais.totOutros)} ({totais.totGanho > 0 ? ((totais.totOutros / totais.totGanho) * 100).toFixed(1) : 0}%)</strong>
+                        </div>
+                      )}
+                      <div className="flex justify-between py-1.5 bg-emerald-100/70 px-2 rounded font-black text-sm text-emerald-950 border border-emerald-300">
+                        <span>(=) RESULTADO LÍQUIDO OPERACIONAL (LUCRO LÍQUIDO):</span>
+                        <span>{formatarMoeda(totais.totLucro)} (Margem Líquida: {totais.margemMedia.toFixed(1)}%)</span>
                       </div>
                     </div>
                   </div>

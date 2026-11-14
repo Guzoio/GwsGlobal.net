@@ -5,7 +5,6 @@ import {
   deleteDoc,
   onSnapshot,
   getDocs,
-  getDoc,
   query,
   where,
   writeBatch,
@@ -20,15 +19,31 @@ const CONTATOS_COL = 'contatos';
 const COBRANCAS_COL = 'cobrancas';
 const CONFIG_COL = 'configuracoes';
 
+function removerUndefined<T extends Record<string, any>>(obj: T): Partial<T> {
+  const limpo: Record<string, any> = {};
+  for (const [k, v] of Object.entries(obj)) {
+    if (v !== undefined) {
+      limpo[k] = v;
+    }
+  }
+  return limpo as Partial<T>;
+}
+
 // Ouvir licitações em tempo real (qualquer inserção, alteração ou exclusão reflete instantaneamente)
 export function ouvirLicitacoesNuvem(
-  onUpdate: (licitacoes: Licitacao[]) => void,
+  onUpdate: (licitacoes: Licitacao[], excluidos?: number[]) => void,
   onError?: (err: any) => void
 ): () => void {
   const colRef = collection(db, LICITACOES_COL);
   return onSnapshot(
     colRef,
     (snapshot) => {
+      const removidos: number[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') {
+          removidos.push(Number(change.doc.data().id ?? change.doc.id));
+        }
+      });
       const lista: Licitacao[] = [];
       snapshot.forEach((d) => {
         const data = d.data();
@@ -52,27 +67,31 @@ export function ouvirLicitacoesNuvem(
           updatedAt: data.updatedAt || undefined,
         });
       });
-      // Ordena por data de cadastro da mais recente para a mais antiga (e desempate por ID decrescente)
       lista.sort(compararLicitacoesPorDataCadastroDesc);
-      // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
-      onUpdate(lista);
+      onUpdate(lista, removidos);
     },
     (error) => {
-      console.warn('Aviso sincronização licitações:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, LICITACOES_COL);
     }
   );
 }
 
 // Ouvir itens de licitação em tempo real
 export function ouvirItensNuvem(
-  onUpdate: (itens: ItemLicitacao[]) => void,
+  onUpdate: (itens: ItemLicitacao[], excluidos?: number[]) => void,
   onError?: (err: any) => void
 ): () => void {
   const colRef = collection(db, ITENS_COL);
   return onSnapshot(
     colRef,
     (snapshot) => {
+      const removidos: number[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') {
+          removidos.push(Number(change.doc.data().id ?? change.doc.id));
+        }
+      });
       const lista: ItemLicitacao[] = [];
       snapshot.forEach((d) => {
         const data = d.data();
@@ -98,49 +117,52 @@ export function ouvirItensNuvem(
           outros_custos: data.outros_custos !== undefined ? Number(data.outros_custos) : undefined,
         });
       });
-      // Notifica o app com a lista atualizada (inclusive se estiver vazia [])
-      onUpdate(lista);
+      onUpdate(lista, removidos);
     },
     (error) => {
-      console.warn('Aviso sincronização itens:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, ITENS_COL);
     }
   );
 }
 
-// Salvar múltiplos itens em lote (Batch write) para garantir persistência atômica e forçar salvamento
+// Salvar múltiplos itens em lote (Batch write) no Firestore
 export async function salvarTodosItensNuvem(itens: ItemLicitacao[]): Promise<void> {
   if (!itens || itens.length === 0) return;
   const chunkSize = 400;
-  for (let i = 0; i < itens.length; i += chunkSize) {
-    const chunk = itens.slice(i, i + chunkSize);
-    const batch = writeBatch(db);
-    for (const item of chunk) {
-      const docRef = doc(db, ITENS_COL, String(item.id));
-      batch.set(docRef, {
-        id: Number(item.id),
-        licitacao_id: Number(item.licitacao_id),
-        num_item: Number(item.num_item),
-        descricao_curta: item.descricao_curta || '',
-        descricao_tecnica: item.descricao_tecnica || '',
-        marca: item.marca || '',
-        quantidade: Number(item.quantidade) || 0,
-        valor_unitario: Number(item.valor_unitario) || 0,
-        valor_total: Number(item.valor_total) || 0,
-        lance_minimo: item.lance_minimo !== undefined && Number(item.lance_minimo) > 0 ? Number(item.lance_minimo) : 0,
-        lance_lote: item.lance_lote !== undefined && Number(item.lance_lote) > 0 ? Number(item.lance_lote) : 0,
-        link_produto: item.link_produto || '',
-        caminho_imagem: (item.caminho_imagem && item.caminho_imagem.length < 500000) ? item.caminho_imagem : '',
-        selecionado: item.selecionado !== false,
-        observacoes: item.observacoes || '',
-        custo_fornecedor: Number(item.custo_fornecedor) || 0,
-        valor_ganho: Number(item.valor_ganho) || 0,
-        aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
-        outros_custos: Number(item.outros_custos) || 0,
-        updatedAt: new Date().toISOString(),
-      }, { merge: true });
+  try {
+    for (let i = 0; i < itens.length; i += chunkSize) {
+      const chunk = itens.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      for (const item of chunk) {
+        const docRef = doc(db, ITENS_COL, String(item.id));
+        batch.set(docRef, {
+          id: Number(item.id),
+          licitacao_id: Number(item.licitacao_id),
+          num_item: Number(item.num_item),
+          descricao_curta: item.descricao_curta || '',
+          descricao_tecnica: item.descricao_tecnica || '',
+          marca: item.marca || '',
+          quantidade: Number(item.quantidade) || 0,
+          valor_unitario: Number(item.valor_unitario) || 0,
+          valor_total: Number(item.valor_total) || 0,
+          lance_minimo: item.lance_minimo !== undefined && Number(item.lance_minimo) > 0 ? Number(item.lance_minimo) : 0,
+          lance_lote: item.lance_lote !== undefined && Number(item.lance_lote) > 0 ? Number(item.lance_lote) : 0,
+          link_produto: item.link_produto || '',
+          caminho_imagem: (item.caminho_imagem && item.caminho_imagem.length < 500000) ? item.caminho_imagem : '',
+          selecionado: item.selecionado !== false,
+          observacoes: item.observacoes || '',
+          custo_fornecedor: Number(item.custo_fornecedor) || 0,
+          valor_ganho: Number(item.valor_ganho) || 0,
+          aliquota_imposto: item.aliquota_imposto !== undefined ? Number(item.aliquota_imposto) : 10,
+          outros_custos: Number(item.outros_custos) || 0,
+          updatedAt: new Date().toISOString(),
+        }, { merge: true });
+      }
+      await batch.commit();
     }
-    await batch.commit();
+  } catch (error) {
+    handleFirestoreError(error, OperationType.WRITE, ITENS_COL);
   }
 }
 
@@ -149,6 +171,7 @@ export function ouvirPapelTimbradoNuvem(
   onUpdate: (config: PapelTimbradoConfig) => void,
   onError?: (err: any) => void
 ): () => void {
+  const path = `${CONFIG_COL}/papel_timbrado`;
   const docRef = doc(db, CONFIG_COL, 'papel_timbrado');
   return onSnapshot(
     docRef,
@@ -159,8 +182,8 @@ export function ouvirPapelTimbradoNuvem(
       }
     },
     (error) => {
-      console.warn('Aviso sincronização timbrado:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
     }
   );
 }
@@ -170,6 +193,7 @@ export function ouvirResponsaveisNuvem(
   onUpdate: (responsaveis: string[]) => void,
   onError?: (err: any) => void
 ): () => void {
+  const path = `${CONFIG_COL}/lista_responsaveis`;
   const docRef = doc(db, CONFIG_COL, 'lista_responsaveis');
   return onSnapshot(
     docRef,
@@ -187,8 +211,8 @@ export function ouvirResponsaveisNuvem(
       }
     },
     (error) => {
-      console.warn('Aviso sincronização responsáveis:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
     }
   );
 }
@@ -214,7 +238,7 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
       avisoMensagem: lic.avisoMensagem || '',
       avisoConcluido: Boolean(lic.avisoConcluido),
       plataforma: lic.plataforma || 'BLL',
-      updatedAt: new Date().toISOString(),
+      updatedAt: lic.updatedAt || new Date().toISOString(),
     }, { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
@@ -225,31 +249,23 @@ export async function salvarLicitacaoNuvem(lic: Licitacao): Promise<void> {
 export async function removerLicitacaoNuvem(licId: number): Promise<void> {
   const path = `${LICITACOES_COL}/${licId}`;
   try {
-    const batch = writeBatch(db);
+    const refsParaDeletar = [doc(db, LICITACOES_COL, String(licId))];
 
-    // 1. Remove o documento principal da licitação
-    const licRef = doc(db, LICITACOES_COL, String(licId));
-    batch.delete(licRef);
+    const qNum = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(licId)));
+    const snapNum = await getDocs(qNum);
+    snapNum.forEach((d) => {
+      refsParaDeletar.push(d.ref);
+    });
 
-    // 2. Busca e remove todos os itens desta licitação na nuvem
-    try {
-      const qNum = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(licId)));
-      const snapNum = await getDocs(qNum);
-      snapNum.forEach((d) => {
-        batch.delete(d.ref);
-      });
-    } catch (errQ) {
-      console.warn('Aviso ao consultar itens para exclusão por número:', errQ);
+    const chunkSize = 400;
+    for (let i = 0; i < refsParaDeletar.length; i += chunkSize) {
+      const chunk = refsParaDeletar.slice(i, i + chunkSize);
+      const batch = writeBatch(db);
+      chunk.forEach(ref => batch.delete(ref));
+      await batch.commit();
     }
-
-    await batch.commit();
   } catch (error) {
-    // Se o batch falhar, tenta exclusão direta do documento principal
-    try {
-      await deleteDoc(doc(db, LICITACOES_COL, String(licId)));
-    } catch {
-      handleFirestoreError(error, OperationType.DELETE, path);
-    }
+    handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
 
@@ -262,11 +278,12 @@ export async function trocarIdLicitacaoNuvem(
 ): Promise<void> {
   const path = `${LICITACOES_COL}/${idNovo}`;
   try {
-    const batch = writeBatch(db);
+    const nowIso = new Date().toISOString();
+    const batchPrincipal = writeBatch(db);
 
     // 1. Cria a licitação com o novo ID
     const novaLicRef = doc(db, LICITACOES_COL, String(idNovo));
-    batch.set(novaLicRef, {
+    batchPrincipal.set(novaLicRef, {
       id: Number(idNovo),
       orgao: licAtualizada.orgao || '',
       processo_pregao: licAtualizada.processo_pregao || '',
@@ -283,20 +300,43 @@ export async function trocarIdLicitacaoNuvem(
       avisoMensagem: licAtualizada.avisoMensagem || '',
       avisoConcluido: Boolean(licAtualizada.avisoConcluido),
       plataforma: licAtualizada.plataforma || 'BLL',
-      updatedAt: new Date().toISOString(),
+      updatedAt: nowIso,
     });
 
     // 2. Remove o documento antigo da licitação
     const antigaLicRef = doc(db, LICITACOES_COL, String(idAntigo));
-    batch.delete(antigaLicRef);
+    batchPrincipal.delete(antigaLicRef);
 
-    // 3. Atualiza os itens da licitação para o novo ID
-    itensDaLic.forEach(it => {
-      const itRef = doc(db, ITENS_COL, String(it.id));
-      batch.update(itRef, { licitacao_id: Number(idNovo) });
+    // 3. Coleta todos os itens vinculados (em memória + nuvem) para atualização garantida
+    const idsItens = new Set<string>(itensDaLic.map(it => String(it.id)));
+    const qAntigos = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(idAntigo)));
+    const snapAntigos = await getDocs(qAntigos);
+    snapAntigos.forEach(d => idsItens.add(d.id));
+
+    const itemIdsLista = Array.from(idsItens);
+    const firstChunk = itemIdsLista.slice(0, 350);
+    firstChunk.forEach(itemIdStr => {
+      batchPrincipal.set(
+        doc(db, ITENS_COL, itemIdStr),
+        { licitacao_id: Number(idNovo), updatedAt: nowIso },
+        { merge: true }
+      );
     });
+    await batchPrincipal.commit();
 
-    await batch.commit();
+    // Lotes adicionais caso haja mais de 350 itens
+    for (let i = 350; i < itemIdsLista.length; i += 400) {
+      const chunk = itemIdsLista.slice(i, i + 400);
+      const batchExtra = writeBatch(db);
+      chunk.forEach(itemIdStr => {
+        batchExtra.set(
+          doc(db, ITENS_COL, itemIdStr),
+          { licitacao_id: Number(idNovo), updatedAt: nowIso },
+          { merge: true }
+        );
+      });
+      await batchExtra.commit();
+    }
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -343,45 +383,14 @@ export async function removerItemNuvem(itemId: number): Promise<void> {
   }
 }
 
-// Excluir todos os itens de uma licitação na nuvem
-export async function removerItensDaLicitacaoNuvem(licId: number, itens?: ItemLicitacao[]): Promise<void> {
-  try {
-    const batch = writeBatch(db);
-    let count = 0;
-
-    // Se temos a lista de itens local
-    if (itens && itens.length > 0) {
-      const paraRemover = itens.filter((i) => Number(i.licitacao_id) === Number(licId));
-      for (const it of paraRemover) {
-        batch.delete(doc(db, ITENS_COL, String(it.id)));
-        count++;
-      }
-    }
-
-    // Consulta também o banco para garantir itens órfãos
-    const q = query(collection(db, ITENS_COL), where('licitacao_id', '==', Number(licId)));
-    const snap = await getDocs(q);
-    snap.forEach((d) => {
-      batch.delete(d.ref);
-      count++;
-    });
-
-    if (count > 0) {
-      await batch.commit();
-    }
-  } catch (err) {
-    console.warn('Aviso ao remover itens da licitação:', err);
-  }
-}
-
 // Salvar configurações de papel timbrado
 export async function salvarPapelTimbradoNuvem(config: PapelTimbradoConfig): Promise<void> {
   const path = `${CONFIG_COL}/papel_timbrado`;
   try {
-    await setDoc(doc(db, CONFIG_COL, 'papel_timbrado'), {
+    await setDoc(doc(db, CONFIG_COL, 'papel_timbrado'), removerUndefined({
       ...config,
       updatedAt: new Date().toISOString(),
-    });
+    }));
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -405,6 +414,7 @@ export function ouvirAcessoConfigNuvem(
   onUpdate: (config: AcessoConfig) => void,
   onError?: (err: any) => void
 ): () => void {
+  const path = `${CONFIG_COL}/seguranca`;
   const docRef = doc(db, CONFIG_COL, 'seguranca');
   return onSnapshot(
     docRef,
@@ -421,8 +431,8 @@ export function ouvirAcessoConfigNuvem(
       }
     },
     (error) => {
-      console.warn('Aviso sincronização segurança:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, path);
     }
   );
 }
@@ -441,60 +451,21 @@ export async function salvarAcessoConfigNuvem(config: AcessoConfig): Promise<voi
   }
 }
 
-// Sincronizar dados locais com a nuvem na PRIMEIRA vez que o banco existir.
-// Se o banco já tiver sido marcado como inicializado, NUNCA recria dados fictícios.
-export async function sincronizarBancoInicialSeVazio(
-  licsLocais: Licitacao[],
-  itensLocais: ItemLicitacao[],
-  timbradoLocal: PapelTimbradoConfig,
-  responsaveisLocais: string[]
-): Promise<void> {
-  try {
-    const initDocRef = doc(db, CONFIG_COL, 'inicializacao');
-    const initSnap = await getDoc(initDocRef);
-
-    // Se já foi inicializado pela empresa, respeita 100% as exclusões do usuário!
-    if (initSnap.exists()) {
-      return;
-    }
-
-    // Se já existem licitações no Firestore, marca como inicializado e não recria
-    const licsSnap = await getDocs(collection(db, LICITACOES_COL));
-    if (!licsSnap.empty) {
-      await setDoc(initDocRef, { inicializado: true, data: new Date().toISOString() });
-      return;
-    }
-
-    // Se é a primeiríssima vez da instalação:
-    await setDoc(initDocRef, { inicializado: true, data: new Date().toISOString() });
-
-    // Salva timbrado e responsáveis padrão
-    await salvarPapelTimbradoNuvem(timbradoLocal);
-    await salvarResponsaveisNuvem(responsaveisLocais);
-
-    // Sobe as licitações locais se houver
-    if (licsLocais && licsLocais.length > 0) {
-      for (const lic of licsLocais) {
-        await salvarLicitacaoNuvem(lic);
-      }
-      for (const item of itensLocais) {
-        await salvarItemNuvem(item);
-      }
-    }
-  } catch (err) {
-    console.warn('Aviso na verificação de inicialização:', err);
-  }
-}
-
 // Ouvir contatos de prefeituras em tempo real na nuvem
 export function ouvirContatosNuvem(
-  onUpdate: (contatos: ContatoPrefeitura[]) => void,
+  onUpdate: (contatos: ContatoPrefeitura[], excluidos?: string[]) => void,
   onError?: (err: any) => void
 ): () => void {
   const colRef = collection(db, CONTATOS_COL);
   return onSnapshot(
     colRef,
     (snapshot) => {
+      const removidos: string[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') {
+          removidos.push(String(change.doc.data().id ?? change.doc.id));
+        }
+      });
       const lista: ContatoPrefeitura[] = [];
       snapshot.forEach((d) => {
         const data = d.data();
@@ -511,20 +482,19 @@ export function ouvirContatosNuvem(
           observacoes: data.observacoes || '',
           favorito: Boolean(data.favorito),
           dataCadastro: data.dataCadastro || new Date().toISOString(),
-          licitacaoId: data.licitacaoId !== undefined ? Number(data.licitacaoId) : undefined,
+          licitacaoId: data.licitacaoId !== undefined && data.licitacaoId !== null ? Number(data.licitacaoId) : undefined,
         });
       });
-      // Ordena: favoritos primeiro, depois ordem alfabética por prefeitura
       lista.sort((a, b) => {
         if (a.favorito && !b.favorito) return -1;
         if (!a.favorito && b.favorito) return 1;
         return a.prefeitura.localeCompare(b.prefeitura);
       });
-      onUpdate(lista);
+      onUpdate(lista, removidos);
     },
     (error) => {
-      console.warn('Aviso sincronização contatos:', error.message);
-      if (onError) onError(error);
+      onError?.(error);
+      handleFirestoreError(error, OperationType.GET, CONTATOS_COL);
     }
   );
 }
@@ -570,25 +540,32 @@ export async function removerContatoNuvem(contatoId: string): Promise<void> {
 
 // Ouvir cobranças em tempo real na nuvem
 export function ouvirCobrancasNuvem(
-  onUpdate: (cobrancas: Cobranca[]) => void,
+  onUpdate: (cobrancas: Cobranca[], excluidos?: string[]) => void,
   onError?: (err: any) => void
 ): () => void {
   const colRef = collection(db, COBRANCAS_COL);
   return onSnapshot(
     colRef,
     (snapshot) => {
+      const removidos: string[] = [];
+      snapshot.docChanges().forEach((change) => {
+        if (change.type === 'removed') {
+          removidos.push(String(change.doc.data().id ?? change.doc.id));
+        }
+      });
       const lista: Cobranca[] = [];
       snapshot.forEach((d) => {
         const data = d.data();
         lista.push({
           id: String(data.id ?? d.id),
           prefeitura: data.prefeitura || '',
+          responsavel: data.responsavel || undefined,
           processo: data.processo || undefined,
-          licitacaoId: data.licitacaoId !== undefined ? Number(data.licitacaoId) : undefined,
+          licitacaoId: data.licitacaoId !== undefined && data.licitacaoId !== null ? Number(data.licitacaoId) : undefined,
           ordemFornecimento: data.ordemFornecimento || undefined,
           numeroNota: data.numeroNota || undefined,
           produto: data.produto || '',
-          quantidade: data.quantidade !== undefined ? Number(data.quantidade) : undefined,
+          quantidade: data.quantidade !== undefined && data.quantidade !== null ? Number(data.quantidade) : undefined,
           valorNota: Number(data.valorNota) || 0,
           observacoes: data.observacoes || undefined,
 
@@ -616,13 +593,12 @@ export function ouvirCobrancasNuvem(
           atualizadoEm: data.atualizadoEm || new Date().toISOString(),
         });
       });
-      // Ordena por data de criação / mais recente
       lista.sort((a, b) => b.criadoEm.localeCompare(a.criadoEm));
-      onUpdate(lista);
+      onUpdate(lista, removidos);
     },
     (error) => {
-      handleFirestoreError(error, OperationType.GET, COBRANCAS_COL);
       onError?.(error);
+      handleFirestoreError(error, OperationType.GET, COBRANCAS_COL);
     }
   );
 }
@@ -632,12 +608,12 @@ export async function salvarCobrancaNuvem(cobranca: Cobranca): Promise<void> {
   const path = `${COBRANCAS_COL}/${cobranca.id}`;
   try {
     const docRef = doc(db, COBRANCAS_COL, String(cobranca.id));
-    await setDoc(docRef, {
+    await setDoc(docRef, removerUndefined({
       ...cobranca,
       id: String(cobranca.id),
       valorNota: Number(cobranca.valorNota) || 0,
       updatedAt: new Date().toISOString(),
-    }, { merge: true });
+    }), { merge: true });
   } catch (error) {
     handleFirestoreError(error, OperationType.WRITE, path);
   }
@@ -652,5 +628,3 @@ export async function removerCobrancaNuvem(cobrancaId: string): Promise<void> {
     handleFirestoreError(error, OperationType.DELETE, path);
   }
 }
-
-

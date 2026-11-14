@@ -9,13 +9,19 @@
         "orgao": { "type": "string", "maxLength": 1000, "description": "Órgão público ou processo administrativo" },
         "processo_pregao": { "type": "string", "maxLength": 500, "description": "Número do pregão ou edital" },
         "modalidade": { "type": "string", "maxLength": 200, "description": "Modalidade da licitação" },
+        "plataforma": { "type": "string", "maxLength": 100, "description": "Plataforma da disputa (BLL ou BNC)" },
         "data_cadastro": { "type": "string", "maxLength": 100, "description": "Data do cadastro DD/MM/AAAA" },
         "data_proposta": { "type": "string", "maxLength": 100, "description": "Data específica do documento da proposta desta licitação" },
         "responsavel": { "type": "string", "maxLength": 200, "description": "Nome do responsável (Gustavo, Victor, etc)" },
         "status": { "type": "string", "maxLength": 100, "description": "Status da licitação" },
         "acompanhamento": { "type": "boolean", "description": "Se a licitação está marcada para acompanhamento" },
         "homologada": { "type": "boolean", "description": "Se a licitação foi homologada ou concluída" },
-        "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
+        "uf": { "type": "string", "maxLength": 20, "description": "Unidade Federativa (UF) do órgão" },
+        "avisoData": { "type": "string", "maxLength": 50, "description": "Data do aviso de retorno do pregoeiro" },
+        "avisoHora": { "type": "string", "maxLength": 20, "description": "Horário do aviso de retorno do pregoeiro" },
+        "avisoMensagem": { "type": "string", "maxLength": 2000, "description": "Mensagem do lembrete de retorno do pregoeiro" },
+        "avisoConcluido": { "type": "boolean", "description": "Se o aviso de retorno já foi concluído" },
+        "updatedAt": { "type": "string", "maxLength": 100, "description": "Data ISO da última atualização" }
       },
       "required": ["id", "orgao", "processo_pregao", "modalidade", "data_cadastro", "responsavel"]
     },
@@ -28,20 +34,84 @@
         "licitacao_id": { "type": "number", "description": "ID da licitação à qual o item pertence" },
         "num_item": { "type": "number", "description": "Número de ordem do item no edital" },
         "descricao_curta": { "type": "string", "maxLength": 5000, "description": "Resumo do produto" },
-        "descricao_tecnica": { "type": "string", "maxLength": 10000, "description": "Especificações técnicas completas" },
+        "descricao_tecnica": { "type": "string", "maxLength": 20000, "description": "Especificações técnicas completas" },
         "marca": { "type": "string", "maxLength": 500, "description": "Marca ou modelo do item" },
         "quantidade": { "type": "number", "description": "Quantidade solicitada" },
         "valor_unitario": { "type": "number", "description": "Valor unitário estimado" },
         "valor_total": { "type": "number", "description": "Valor total estimado" },
         "lance_minimo": { "type": "number", "description": "Lance mínimo unitário" },
         "lance_lote": { "type": "number", "description": "Lance mínimo total do lote" },
-        "link_produto": { "type": "string", "maxLength": 1000, "description": "Link do produto de referência" },
-        "caminho_imagem": { "type": "string", "description": "Imagem do produto ou data URL" },
+        "link_produto": { "type": "string", "maxLength": 2000, "description": "Link do produto de referência" },
+        "caminho_imagem": { "type": "string", "maxLength": 500000, "description": "Imagem comprimida do produto ou data URL" },
         "selecionado": { "type": "boolean", "description": "Se está selecionado para o PDF" },
         "observacoes": { "type": "string", "maxLength": 10000, "description": "Anotações internas e links reservas de uso interno" },
-        "updatedAt": { "type": "string", "description": "Data ISO da última atualização" }
+        "custo_fornecedor": { "type": "number", "description": "Custo unitário do fornecedor" },
+        "valor_ganho": { "type": "number", "description": "Valor unitário arrematado na disputa" },
+        "aliquota_imposto": { "type": "number", "description": "Alíquota percentual de imposto" },
+        "outros_custos": { "type": "number", "description": "Custos operacionais e frete" },
+        "updatedAt": { "type": "string", "maxLength": 100, "description": "Data ISO da última atualização" }
       },
       "required": ["id", "licitacao_id", "num_item", "descricao_curta", "marca", "quantidade", "valor_unitario"]
+    },
+    "ContatoPrefeitura": {
+      "title": "ContatoPrefeitura",
+      "description": "Contato de prefeitura ou órgão público na agenda CRM",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "prefeitura": { "type": "string", "maxLength": 1000 },
+        "cidadeUf": { "type": "string", "maxLength": 200 },
+        "nomeContato": { "type": "string", "maxLength": 300 },
+        "cargoSetor": { "type": "string", "maxLength": 200 },
+        "whatsapp": { "type": "string", "maxLength": 100 },
+        "telefoneFixo": { "type": "string", "maxLength": 100 },
+        "ramal": { "type": "string", "maxLength": 50 },
+        "email": { "type": "string", "maxLength": 200 },
+        "observacoes": { "type": "string", "maxLength": 5000 },
+        "favorito": { "type": "boolean" },
+        "dataCadastro": { "type": "string", "maxLength": 100 },
+        "licitacaoId": { "type": "number" },
+        "updatedAt": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "prefeitura", "nomeContato"]
+    },
+    "Cobranca": {
+      "title": "Cobranca",
+      "description": "Registro de faturamento, entrega, nota fiscal, liquidação e pagamento",
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "maxLength": 128 },
+        "prefeitura": { "type": "string", "maxLength": 1000 },
+        "responsavel": { "type": "string", "maxLength": 200 },
+        "processo": { "type": "string", "maxLength": 500 },
+        "licitacaoId": { "type": "number" },
+        "ordemFornecimento": { "type": "string", "maxLength": 300 },
+        "numeroNota": { "type": "string", "maxLength": 200 },
+        "produto": { "type": "string", "maxLength": 2000 },
+        "quantidade": { "type": "number" },
+        "valorNota": { "type": "number" },
+        "observacoes": { "type": "string", "maxLength": 5000 },
+        "dataEnvioProdutos": { "type": "string", "maxLength": 50 },
+        "dataPrevisaoEntrega": { "type": "string", "maxLength": 50 },
+        "dataRealEntrega": { "type": "string", "maxLength": 50 },
+        "produtoRecebido": { "type": "boolean" },
+        "dataEnvioNota": { "type": "string", "maxLength": 50 },
+        "notaEnviada": { "type": "boolean" },
+        "diasLiquidacao": { "type": "number" },
+        "tipoDiasLiquidacao": { "type": "string", "maxLength": 20 },
+        "eventoInicioLiquidacao": { "type": "string", "maxLength": 30 },
+        "dataRealLiquidacao": { "type": "string", "maxLength": 50 },
+        "liquidado": { "type": "boolean" },
+        "diasPagamento": { "type": "number" },
+        "tipoDiasPagamento": { "type": "string", "maxLength": 20 },
+        "eventoInicioPagamento": { "type": "string", "maxLength": 30 },
+        "dataRealPagamento": { "type": "string", "maxLength": 50 },
+        "pago": { "type": "boolean" },
+        "criadoEm": { "type": "string", "maxLength": 100 },
+        "atualizadoEm": { "type": "string", "maxLength": 100 },
+        "updatedAt": { "type": "string", "maxLength": 100 }
+      },
+      "required": ["id", "prefeitura", "produto", "valorNota", "criadoEm", "atualizadoEm"]
     },
     "PapelTimbradoConfig": {
       "title": "PapelTimbradoConfig",
@@ -57,16 +127,17 @@
         "banco": { "type": "string", "maxLength": 200 },
         "agencia": { "type": "string", "maxLength": 100 },
         "contaCorrente": { "type": "string", "maxLength": 100 },
-        "chavePix": { "type": "string", "maxLength": 200 },
         "nomeRepresentante": { "type": "string", "maxLength": 300 },
         "rgRepresentante": { "type": "string", "maxLength": 100 },
         "cpfRepresentante": { "type": "string", "maxLength": 100 },
         "cargoRepresentante": { "type": "string", "maxLength": 200 },
         "enderecoRepresentante": { "type": "string", "maxLength": 500 },
-        "assinaturaImagem": { "type": "string" },
-        "prazoEntrega": { "type": "string", "maxLength": 300 },
+        "assinaturaImagem": { "type": "string", "maxLength": 800000 },
+        "cabecalhoImagem": { "type": "string", "maxLength": 800000 },
+        "rodapeImagem": { "type": "string", "maxLength": 800000 },
+        "prazoEntrega": { "type": "string", "maxLength": 500 },
         "prazoValidade": { "type": "string", "maxLength": 300 },
-        "declaracaoTrabalhista": { "type": "string", "maxLength": 3000 },
+        "declaracaoTrabalhista": { "type": "string", "maxLength": 5000 },
         "cidadeEmissao": { "type": "string", "maxLength": 200 },
         "dataEmissao": { "type": "string", "maxLength": 100 }
       },
@@ -79,21 +150,23 @@
       "properties": {
         "nomes": {
           "type": "string",
-          "description": "Nomes dos responsáveis separados por vírgula ou JSON string"
-        }
+          "maxLength": 5000,
+          "description": "Nomes dos responsáveis em JSON string"
+        },
+        "updatedAt": { "type": "string", "maxLength": 100 }
       },
       "required": ["nomes"]
     },
     "AcessoConfig": {
       "title": "AcessoConfig",
-      "description": "Credenciais de acesso simples (ID e Senha) para proteger o site",
+      "description": "Credenciais de acesso compartilhadas do sistema",
       "type": "object",
       "properties": {
         "usuarioId": { "type": "string", "maxLength": 100 },
-        "senha": { "type": "string", "maxLength": 100 },
-        "atualizadoEm": { "type": "string" }
+        "senhaHash": { "type": "string", "maxLength": 150 },
+        "atualizadoEm": { "type": "string", "maxLength": 100 }
       },
-      "required": ["usuarioId", "senha"]
+      "required": ["usuarioId", "senhaHash"]
     },
     "InicializacaoConfig": {
       "title": "InicializacaoConfig",
@@ -101,7 +174,7 @@
       "type": "object",
       "properties": {
         "inicializado": { "type": "boolean" },
-        "data": { "type": "string" }
+        "data": { "type": "string", "maxLength": 100 }
       },
       "required": ["inicializado"]
     }
@@ -109,11 +182,19 @@
   "firestore": {
     "/licitacoes/{licitacaoId}": {
       "schema": "Licitacao",
-      "description": "Coleção de licitações compartilhadas em tempo real"
+      "description": "Coleção de licitações sincronizadas em tempo real direto no Firestore"
     },
     "/itens/{itemId}": {
       "schema": "ItemLicitacao",
-      "description": "Coleção de itens de licitações compartilhados em tempo real"
+      "description": "Coleção de itens de licitações sincronizados em tempo real direto no Firestore"
+    },
+    "/contatos/{contatoId}": {
+      "schema": "ContatoPrefeitura",
+      "description": "Agenda compartilhada de contatos de prefeituras"
+    },
+    "/cobrancas/{cobrancaId}": {
+      "schema": "Cobranca",
+      "description": "Controle de cobranças, entregas, notas fiscais, liquidações e pagamentos"
     },
     "/configuracoes/papel_timbrado": {
       "schema": "PapelTimbradoConfig",

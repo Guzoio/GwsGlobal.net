@@ -1,7 +1,7 @@
 {
   "licitacoes": [
     {
-      "orgao": "timoteo",
+      "orgao": "FUNDACAO MUNICIPAL DE CULTURA",
       "processo_pregao": "15/2026",
       "modalidade": "Pregão Eletrônico",
       "data_cadastro": "16/10/2026",
@@ -11,7 +11,8 @@
       "data_proposta": "2026-10-16",
       "acompanhamento": false,
       "homologada": false,
-      "avisoConcluido": false
+      "avisoConcluido": false,
+      "updatedAt": "2026-11-11T11:35:00.147Z"
     },
     {
       "id": 43,
@@ -2169,12 +2170,10 @@
     6,
     10,
     11,
-    15,
     19,
     23,
     24,
-    27,
-    999
+    27
   ],
   "itensExcluidos": [],
   "timbrado": {

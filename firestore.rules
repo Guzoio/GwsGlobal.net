@@ -2,7 +2,7 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
 
-    // Default-deny catch-all para todas as outras coleções não mapeadas
+    // Default-deny catch-all para coleções não mapeadas
     match /{document=**} {
       allow read, write: if false;
     }
@@ -12,17 +12,25 @@ service cloud.firestore {
     }
 
     function isValidId(id) {
-      return id is string && id.size() > 0 && id.size() <= 128;
+      return id is string && id.size() > 0 && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
     }
 
     function isValidLicitacao(data) {
       return data.keys().hasAll(['id', 'orgao', 'processo_pregao', 'modalidade', 'data_cadastro', 'responsavel'])
+        && data.keys().hasOnly([
+          'id', 'orgao', 'processo_pregao', 'modalidade', 'plataforma',
+          'data_cadastro', 'data_proposta', 'responsavel', 'status',
+          'acompanhamento', 'homologada', 'uf',
+          'avisoData', 'avisoHora', 'avisoMensagem', 'avisoConcluido',
+          'updatedAt'
+        ])
         && data.id is number
         && data.orgao is string && data.orgao.size() <= 1000
         && data.processo_pregao is string && data.processo_pregao.size() <= 500
         && data.modalidade is string && data.modalidade.size() <= 200
         && data.data_cadastro is string && data.data_cadastro.size() <= 100
         && data.responsavel is string && data.responsavel.size() <= 200
+        && (!('plataforma' in data) || (data.plataforma is string && data.plataforma.size() <= 100))
         && (!('data_proposta' in data) || (data.data_proposta is string && data.data_proposta.size() <= 100))
         && (!('status' in data) || (data.status is string && data.status.size() <= 100))
         && (!('acompanhamento' in data) || data.acompanhamento is bool)
@@ -37,6 +45,13 @@ service cloud.firestore {
 
     function isValidItem(data) {
       return data.keys().hasAll(['id', 'licitacao_id', 'num_item', 'descricao_curta', 'marca', 'quantidade', 'valor_unitario'])
+        && data.keys().hasOnly([
+          'id', 'licitacao_id', 'num_item', 'descricao_curta', 'descricao_tecnica',
+          'marca', 'quantidade', 'valor_unitario', 'valor_total',
+          'lance_minimo', 'lance_lote', 'link_produto', 'caminho_imagem',
+          'selecionado', 'observacoes', 'custo_fornecedor', 'valor_ganho',
+          'aliquota_imposto', 'outros_custos', 'updatedAt'
+        ])
         && data.id is number
         && data.licitacao_id is number
         && data.num_item is number
@@ -44,7 +59,85 @@ service cloud.firestore {
         && data.marca is string && data.marca.size() <= 500
         && data.quantidade is number
         && data.valor_unitario is number
-        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 10000));
+        && (!('descricao_tecnica' in data) || (data.descricao_tecnica is string && data.descricao_tecnica.size() <= 20000))
+        && (!('valor_total' in data) || data.valor_total is number)
+        && (!('lance_minimo' in data) || data.lance_minimo is number)
+        && (!('lance_lote' in data) || data.lance_lote is number)
+        && (!('link_produto' in data) || (data.link_produto is string && data.link_produto.size() <= 2000))
+        && (!('caminho_imagem' in data) || (data.caminho_imagem is string && data.caminho_imagem.size() <= 500000))
+        && (!('selecionado' in data) || data.selecionado is bool)
+        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 10000))
+        && (!('custo_fornecedor' in data) || data.custo_fornecedor is number)
+        && (!('valor_ganho' in data) || data.valor_ganho is number)
+        && (!('aliquota_imposto' in data) || data.aliquota_imposto is number)
+        && (!('outros_custos' in data) || data.outros_custos is number)
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
+    }
+
+    function isValidContato(data) {
+      return data.keys().hasAll(['id', 'prefeitura', 'nomeContato'])
+        && data.keys().hasOnly([
+          'id', 'prefeitura', 'cidadeUf', 'nomeContato', 'cargoSetor',
+          'whatsapp', 'telefoneFixo', 'ramal', 'email', 'observacoes',
+          'favorito', 'dataCadastro', 'licitacaoId', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() <= 128
+        && data.prefeitura is string && data.prefeitura.size() <= 1000
+        && data.nomeContato is string && data.nomeContato.size() <= 300
+        && (!('cidadeUf' in data) || (data.cidadeUf is string && data.cidadeUf.size() <= 200))
+        && (!('cargoSetor' in data) || (data.cargoSetor is string && data.cargoSetor.size() <= 200))
+        && (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() <= 100))
+        && (!('telefoneFixo' in data) || (data.telefoneFixo is string && data.telefoneFixo.size() <= 100))
+        && (!('ramal' in data) || (data.ramal is string && data.ramal.size() <= 50))
+        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
+        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000))
+        && (!('favorito' in data) || data.favorito is bool)
+        && (!('licitacaoId' in data) || data.licitacaoId == null || data.licitacaoId is number)
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
+        && (!('dataCadastro' in data) || (data.dataCadastro is string && data.dataCadastro.size() <= 100));
+    }
+
+    function isValidCobranca(data) {
+      return data.keys().hasAll(['id', 'prefeitura', 'produto', 'valorNota', 'criadoEm', 'atualizadoEm'])
+        && data.keys().hasOnly([
+          'id', 'prefeitura', 'responsavel', 'processo', 'licitacaoId',
+          'ordemFornecimento', 'numeroNota', 'produto', 'quantidade', 'valorNota', 'observacoes',
+          'dataEnvioProdutos', 'dataPrevisaoEntrega', 'dataRealEntrega', 'produtoRecebido',
+          'dataEnvioNota', 'notaEnviada',
+          'diasLiquidacao', 'tipoDiasLiquidacao', 'eventoInicioLiquidacao', 'dataRealLiquidacao', 'liquidado',
+          'diasPagamento', 'tipoDiasPagamento', 'eventoInicioPagamento', 'dataRealPagamento', 'pago',
+          'criadoEm', 'atualizadoEm', 'updatedAt'
+        ])
+        && data.id is string && data.id.size() <= 128
+        && data.prefeitura is string && data.prefeitura.size() <= 1000
+        && data.produto is string && data.produto.size() <= 2000
+        && data.valorNota is number
+        && data.criadoEm is string && data.criadoEm.size() <= 100
+        && data.atualizadoEm is string && data.atualizadoEm.size() <= 100
+        && (!('responsavel' in data) || (data.responsavel is string && data.responsavel.size() <= 200))
+        && (!('processo' in data) || (data.processo is string && data.processo.size() <= 500))
+        && (!('licitacaoId' in data) || data.licitacaoId == null || data.licitacaoId is number)
+        && (!('ordemFornecimento' in data) || (data.ordemFornecimento is string && data.ordemFornecimento.size() <= 300))
+        && (!('numeroNota' in data) || (data.numeroNota is string && data.numeroNota.size() <= 200))
+        && (!('quantidade' in data) || data.quantidade == null || data.quantidade is number)
+        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000))
+        && (!('dataEnvioProdutos' in data) || (data.dataEnvioProdutos is string && data.dataEnvioProdutos.size() <= 50))
+        && (!('dataPrevisaoEntrega' in data) || (data.dataPrevisaoEntrega is string && data.dataPrevisaoEntrega.size() <= 50))
+        && (!('dataRealEntrega' in data) || (data.dataRealEntrega is string && data.dataRealEntrega.size() <= 50))
+        && (!('produtoRecebido' in data) || data.produtoRecebido is bool)
+        && (!('dataEnvioNota' in data) || (data.dataEnvioNota is string && data.dataEnvioNota.size() <= 50))
+        && (!('notaEnviada' in data) || data.notaEnviada is bool)
+        && (!('diasLiquidacao' in data) || data.diasLiquidacao is number)
+        && (!('tipoDiasLiquidacao' in data) || (data.tipoDiasLiquidacao is string && data.tipoDiasLiquidacao.size() <= 20))
+        && (!('eventoInicioLiquidacao' in data) || (data.eventoInicioLiquidacao is string && data.eventoInicioLiquidacao.size() <= 30))
+        && (!('dataRealLiquidacao' in data) || (data.dataRealLiquidacao is string && data.dataRealLiquidacao.size() <= 50))
+        && (!('liquidado' in data) || data.liquidado is bool)
+        && (!('diasPagamento' in data) || data.diasPagamento is number)
+        && (!('tipoDiasPagamento' in data) || (data.tipoDiasPagamento is string && data.tipoDiasPagamento.size() <= 20))
+        && (!('eventoInicioPagamento' in data) || (data.eventoInicioPagamento is string && data.eventoInicioPagamento.size() <= 30))
+        && (!('dataRealPagamento' in data) || (data.dataRealPagamento is string && data.dataRealPagamento.size() <= 50))
+        && (!('pago' in data) || data.pago is bool)
+        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100));
     }
 
     function isValidTimbrado(data) {
@@ -67,42 +160,32 @@ service cloud.firestore {
         );
     }
 
-    function isValidContato(data) {
-      return data.keys().hasAll(['id', 'prefeitura', 'nomeContato'])
-        && data.id is string && data.id.size() <= 128
-        && data.prefeitura is string && data.prefeitura.size() <= 1000
-        && data.nomeContato is string && data.nomeContato.size() <= 300
-        && (!('cidadeUf' in data) || (data.cidadeUf is string && data.cidadeUf.size() <= 200))
-        && (!('cargoSetor' in data) || (data.cargoSetor is string && data.cargoSetor.size() <= 200))
-        && (!('whatsapp' in data) || (data.whatsapp is string && data.whatsapp.size() <= 100))
-        && (!('telefoneFixo' in data) || (data.telefoneFixo is string && data.telefoneFixo.size() <= 100))
-        && (!('ramal' in data) || (data.ramal is string && data.ramal.size() <= 50))
-        && (!('email' in data) || (data.email is string && data.email.size() <= 200))
-        && (!('observacoes' in data) || (data.observacoes is string && data.observacoes.size() <= 5000))
-        && (!('favorito' in data) || data.favorito is bool)
-        && (!('licitacaoId' in data) || data.licitacaoId == null || data.licitacaoId is number || data.licitacaoId is string)
-        && (!('updatedAt' in data) || (data.updatedAt is string && data.updatedAt.size() <= 100))
-        && (!('dataCadastro' in data) || (data.dataCadastro is string && data.dataCadastro.size() <= 100));
-    }
-
-    // Licitações Collection - Sincronização em tempo real da equipe
+    // Licitações Collection - Sincronização direta em tempo real no Firestore
     match /licitacoes/{licitacaoId} {
-      allow read, write: if true;
+      allow list: if true;
+      allow get, delete: if isValidId(licitacaoId);
+      allow create, update: if isValidId(licitacaoId) && isValidLicitacao(incoming());
     }
 
     // Itens de Licitação Collection
     match /itens/{itemId} {
-      allow read, write: if true;
+      allow list: if true;
+      allow get, delete: if isValidId(itemId);
+      allow create, update: if isValidId(itemId) && isValidItem(incoming());
     }
 
     // Contatos de Prefeituras Collection - Agenda e WhatsApp
     match /contatos/{contatoId} {
-      allow read, write: if true;
+      allow list: if true;
+      allow get, delete: if isValidId(contatoId);
+      allow create, update: if isValidId(contatoId) && isValidContato(incoming());
     }
 
     // Cobranças de Prefeituras - Envio, Entrega, NF, Liquidação e Pagamento
     match /cobrancas/{cobrancaId} {
-      allow read, write: if true;
+      allow list: if true;
+      allow get, delete: if isValidId(cobrancaId);
+      allow create, update: if isValidId(cobrancaId) && isValidCobranca(incoming());
     }
 
     // Configurações Documentos
@@ -125,7 +208,9 @@ service cloud.firestore {
     }
 
     match /configuracoes/inicializacao {
-      allow read, write: if true;
+      allow read: if true;
+      allow create, update: if incoming().keys().hasAll(['inicializado']) && incoming().inicializado is bool;
+      allow delete: if false;
     }
 
     // Test connection doc

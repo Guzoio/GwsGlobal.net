@@ -330,179 +330,11 @@ export async function gerarExequibilidadePdf(
   currentY += linhasPreambulo.length * 3.8 + 4;
 
   // =========================================================================
-  // 3. QUADRINHOS DOS CÁLCULOS DE CADA PRODUTO GANHO
+  // 3. PLANILHA DE COMPOSIÇÃO DE CUSTOS E FORMAÇÃO DE PREÇOS (ESTILO PLANILHA)
   // =========================================================================
   const itens = dados.itensGanhos || [];
 
-  for (let i = 0; i < itens.length; i++) {
-    const it = itens[i];
-    const alturaQuadrinho = 38; // altura necessária para o card do item
-
-    // Se não couber na página atual, cria uma nova página
-    if (currentY + alturaQuadrinho > bottomLimit) {
-      doc.addPage();
-      currentY = desenharCabecalhoPagina();
-    }
-
-    const cardX = marginLeft;
-    const cardY = currentY;
-    const cardW = contentWidth;
-    const cardH = alturaQuadrinho;
-
-    // Fundo do card
-    doc.setFillColor(248, 250, 252);
-    doc.setDrawColor(203, 213, 225);
-    doc.setLineWidth(0.3);
-    doc.roundedRect(cardX, cardY, cardW, cardH, 2, 2, 'FD');
-
-    // Faixa Superior do Quadrinho (Cabeçalho do Item)
-    const ehPositivo = it.lucroLiquidoTotal >= 0;
-    doc.setFillColor(15, 44, 89);
-    doc.roundedRect(cardX, cardY, cardW, 8.5, 2, 2, 'F');
-    // Retângulo para cobrir cantos inferiores da faixa superior
-    doc.rect(cardX, cardY + 5, cardW, 3.5, 'F');
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(255, 255, 255);
-    const tituloItem = `ITEM #${it.num_item} — ${it.descricao_curta.toUpperCase()}`;
-    const tituloTruncado = doc.splitTextToSize(tituloItem, cardW - 40)[0];
-    doc.text(tituloTruncado, cardX + 3.5, cardY + 5.8);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(226, 232, 240);
-    const qtdTexto = `Qtd: ${it.quantidade} un. | Marca: ${it.marca || 'Conforme Edital'}`;
-    doc.text(qtdTexto, cardX + cardW - 3.5, cardY + 5.8, { align: 'right' });
-
-    // Grid interno do Quadrinho: 3 Colunas de Dados Financeiros
-    const colY = cardY + 12;
-    const colW = (cardW - 7) / 3;
-
-    // --- COLUNA 1: PREÇO ARREMATADO / FATURAMENTO ---
-    const col1X = cardX + 3.5;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(15, 44, 89);
-    doc.text('1. PREÇO ARREMATADO (GANHO)', col1X, colY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.setTextColor(51, 65, 85);
-    doc.text('Preço Unitário Ganho:', col1X, colY + 4.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(it.valor_ganho), col1X + colW - 4, colY + 4.5, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.text('Faturamento Total:', col1X, colY + 8.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(15, 23, 42);
-    doc.text(formatarMoeda(it.totalGanho), col1X + colW - 4, colY + 8.5, { align: 'right' });
-
-    // Linha divisória vertical 1
-    doc.setDrawColor(226, 232, 240);
-    doc.setLineWidth(0.25);
-    doc.line(col1X + colW, colY - 1, col1X + colW, cardY + cardH - 3);
-
-    // --- COLUNA 2: COMPOSIÇÃO DE CUSTOS & TRIBUTOS ---
-    const col2X = col1X + colW + 3;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(15, 44, 89);
-    doc.text('2. CUSTOS DIRETOS & IMPOSTOS', col2X, colY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.setTextColor(51, 65, 85);
-    doc.text(`Custo Fornecedor (Unit.):`, col2X, colY + 4.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(it.custo_fornecedor), col2X + colW - 4, colY + 4.5, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Total Insumos / Compra:`, col2X, colY + 8.5);
-    doc.setFont('helvetica', 'bold');
-    doc.text(formatarMoeda(it.totalCustoFornecedor), col2X + colW - 4, colY + 8.5, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.text(`Impostos (${it.aliquota_imposto}%):`, col2X, colY + 12.5);
-    doc.setFont('helvetica', 'bold');
-    doc.setTextColor(185, 28, 28);
-    doc.text(`-${formatarMoeda(it.totalImposto)}`, col2X + colW - 4, colY + 12.5, { align: 'right' });
-
-    if (it.outros_custos > 0) {
-      doc.setFont('helvetica', 'normal');
-      doc.setTextColor(51, 65, 85);
-      doc.text(`Logística / Frete:`, col2X, colY + 16.5);
-      doc.setFont('helvetica', 'bold');
-      doc.setTextColor(185, 28, 28);
-      doc.text(`-${formatarMoeda(it.outros_custos)}`, col2X + colW - 4, colY + 16.5, { align: 'right' });
-    }
-
-    // Linha divisória vertical 2
-    doc.setDrawColor(226, 232, 240);
-    doc.line(col2X + colW, colY - 1, col2X + colW, cardY + cardH - 3);
-
-    // --- COLUNA 3: RESULTADO & EXEQUIBILIDADE ---
-    const col3X = col2X + colW + 3;
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(7.5);
-    doc.setTextColor(15, 44, 89);
-    doc.text('3. RESULTADO & MARGEM', col3X, colY);
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.2);
-    doc.setTextColor(51, 65, 85);
-    doc.text('Lucro Líquido Unit.:', col3X, colY + 4.5);
-    doc.setFont('helvetica', 'bold');
-    if (ehPositivo) {
-      doc.setTextColor(16, 120, 60);
-    } else {
-      doc.setTextColor(185, 28, 28);
-    }
-    doc.text(formatarMoeda(it.lucroLiquidoUnit), col3X + colW - 6, colY + 4.5, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(51, 65, 85);
-    doc.text('Lucro Líquido Total:', col3X, colY + 8.5);
-    doc.setFont('helvetica', 'bold');
-    if (ehPositivo) {
-      doc.setTextColor(16, 120, 60);
-    } else {
-      doc.setTextColor(185, 28, 28);
-    }
-    doc.text(formatarMoeda(it.lucroLiquidoTotal), col3X + colW - 6, colY + 8.5, { align: 'right' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setTextColor(51, 65, 85);
-    doc.text('Margem Líquida:', col3X, colY + 12.5);
-    doc.setFont('helvetica', 'bold');
-    if (ehPositivo) {
-      doc.setTextColor(16, 120, 60);
-    } else {
-      doc.setTextColor(185, 28, 28);
-    }
-    doc.text(`${it.margemLiquidaPct.toFixed(2).replace('.', ',')}%`, col3X + colW - 6, colY + 12.5, { align: 'right' });
-
-    // Badge de Conclusão da Exequibilidade
-    const badgeY = colY + 17;
-    doc.setFillColor(ehPositivo ? 220 : 254, ehPositivo ? 252 : 226, ehPositivo ? 231 : 226);
-    doc.roundedRect(col3X - 1, badgeY, colW - 4, 5.5, 1, 1, 'F');
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(6.8);
-    if (ehPositivo) {
-      doc.setTextColor(21, 128, 61);
-    } else {
-      doc.setTextColor(153, 27, 27);
-    }
-    const badgeTexto = ehPositivo ? '✓ PROPOSTA EXEQUÍVEL' : '⚠ MARGEM NEGATIVA';
-    doc.text(badgeTexto, col3X + (colW - 5) / 2, badgeY + 3.8, { align: 'center' });
-
-    currentY += cardH + 4;
-  }
-
-  // =========================================================================
-  // 4. QUADRO SÍNTESE / RESUMO CONSOLIDADO DA LICITAÇÃO
-  // =========================================================================
+  // Totais consolidados pré-calculados
   const totGanhoGeral = itens.reduce((acc, it) => acc + it.totalGanho, 0);
   const totCustoFornecGeral = itens.reduce((acc, it) => acc + it.totalCustoFornecedor, 0);
   const totImpostosGeral = itens.reduce((acc, it) => acc + it.totalImposto, 0);
@@ -510,78 +342,460 @@ export async function gerarExequibilidadePdf(
   const totLucroGeral = itens.reduce((acc, it) => acc + it.lucroLiquidoTotal, 0);
   const margemMediaGeral = totGanhoGeral > 0 ? (totLucroGeral / totGanhoGeral) * 100 : 0;
 
-  // Se o resumo consolidado não couber junto com preâmbulo de assinatura, quebra página
-  if (currentY + 60 > bottomLimit) {
+  // Definição das colunas da planilha (Soma exata = 178mm)
+  const cols = [
+    { id: 'item', title: 'Item', width: 9, align: 'center' },
+    { id: 'desc', title: 'Descrição & Marca', width: 37, align: 'left' },
+    { id: 'qtd', title: 'Qtd', width: 9, align: 'center' },
+    { id: 'custoUnit', title: 'Custo Un.', width: 15, align: 'right' },
+    { id: 'custoTot', title: 'Custo Tot.', width: 18, align: 'right' },
+    { id: 'tribFrete', title: 'Trib./Frete', width: 18, align: 'right' },
+    { id: 'prGanho', title: 'Pr. Ganho', width: 16, align: 'right' },
+    { id: 'faturamento', title: 'Faturamento', width: 19, align: 'right' },
+    { id: 'lucro', title: 'Lucro Líq.', width: 18, align: 'right' },
+    { id: 'parecer', title: 'Margem/Parecer', width: 19, align: 'center' },
+  ];
+
+  // Função interna para desenhar o cabeçalho da planilha
+  const desenharCabecalhoTabela = (yPos: number): number => {
+    // Título da planilha
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8.2);
+    doc.setTextColor(15, 44, 89);
+    doc.text(
+      `PLANILHA ANALÍTICA DE COMPOSIÇÃO DE CUSTOS E FORMAÇÃO DE PREÇOS (${itens.length} ITENS)`,
+      marginLeft,
+      yPos
+    );
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.5);
+    doc.setTextColor(100, 116, 139);
+    doc.text('Valores em Reais (R$) • Apuração Analítica', pageWidth - marginRight, yPos, {
+      align: 'right',
+    });
+
+    const headerY = yPos + 2.5;
+    const headerH = 6.8;
+
+    // Fundo do cabeçalho da tabela
+    doc.setFillColor(15, 44, 89);
+    doc.rect(marginLeft, headerY, contentWidth, headerH, 'F');
+
+    // Texto dos cabeçalhos das colunas
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.0);
+    doc.setTextColor(255, 255, 255);
+
+    let curX = marginLeft;
+    for (let c = 0; c < cols.length; c++) {
+      const col = cols[c];
+      let textX = curX + 1.5;
+      if (col.align === 'center') {
+        textX = curX + col.width / 2;
+      } else if (col.align === 'right') {
+        textX = curX + col.width - 1.5;
+      }
+
+      doc.text(col.title, textX, headerY + 4.5, {
+        align: col.align as 'left' | 'center' | 'right',
+      });
+
+      // Linha vertical divisória sutil
+      if (c < cols.length - 1) {
+        doc.setDrawColor(27, 59, 111);
+        doc.setLineWidth(0.2);
+        doc.line(curX + col.width, headerY, curX + col.width, headerY + headerH);
+      }
+      curX += col.width;
+    }
+
+    return headerY + headerH;
+  };
+
+  // Se o início da tabela não couber, cria nova página
+  if (currentY + 25 > bottomLimit) {
     doc.addPage();
     currentY = desenharCabecalhoPagina();
   }
 
-  doc.setFillColor(241, 245, 249);
+  currentY = desenharCabecalhoTabela(currentY);
+
+  // Renderização das linhas da planilha (estilo Excel/planilha contábil)
+  for (let i = 0; i < itens.length; i++) {
+    const it = itens[i];
+    const ehPositivo = it.lucroLiquidoTotal >= 0;
+    const temFrete = it.outros_custos > 0;
+    const rowH = temFrete ? 9.0 : 7.6;
+
+    // Se a linha ultrapassar o limite inferior, quebra a página e redesenha o cabeçalho
+    if (currentY + rowH + 15 > bottomLimit) {
+      doc.addPage();
+      currentY = desenharCabecalhoPagina();
+      currentY = desenharCabecalhoTabela(currentY);
+    }
+
+    const rowY = currentY;
+
+    // Fundo zebra alternado
+    if (i % 2 === 0) {
+      doc.setFillColor(255, 255, 255);
+    } else {
+      doc.setFillColor(248, 250, 252);
+    }
+    doc.rect(marginLeft, rowY, contentWidth, rowH, 'F');
+
+    // Borda inferior da linha
+    doc.setDrawColor(226, 232, 240);
+    doc.setLineWidth(0.2);
+    doc.line(marginLeft, rowY + rowH, marginLeft + contentWidth, rowY + rowH);
+
+    // Linhas verticais da grade
+    let gridX = marginLeft;
+    for (let c = 0; c < cols.length; c++) {
+      gridX += cols[c].width;
+      doc.line(gridX, rowY, gridX, rowY + rowH);
+    }
+
+    // --- COLUNA 0: ITEM ---
+    let colX = marginLeft;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.8);
+    doc.setTextColor(15, 23, 42);
+    doc.text(`#${it.num_item}`, colX + cols[0].width / 2, rowY + 4.8, { align: 'center' });
+
+    // --- COLUNA 1: DESCRIÇÃO & MARCA ---
+    colX += cols[0].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(30, 41, 59);
+    const descTruncada = doc.splitTextToSize(it.descricao_curta.toUpperCase(), cols[1].width - 2)[0];
+    doc.text(descTruncada, colX + 1.2, rowY + 3.4);
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(5.2);
+    doc.setTextColor(100, 116, 139);
+    const marcaTexto = `Marca: ${(it.marca || 'Conforme Edital').slice(0, 22)}`;
+    doc.text(marcaTexto, colX + 1.2, rowY + 6.6);
+
+    // --- COLUNA 2: QUANTIDADE ---
+    colX += cols[1].width;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.3);
+    doc.setTextColor(30, 41, 59);
+    doc.text(`${it.quantidade} un`, colX + cols[2].width / 2, rowY + 4.8, { align: 'center' });
+
+    // --- COLUNA 3: CUSTO UNITÁRIO ---
+    colX += cols[2].width;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.0);
+    doc.setTextColor(51, 65, 85);
+    doc.text(formatarMoeda(it.custo_fornecedor), colX + cols[3].width - 1.2, rowY + 4.8, {
+      align: 'right',
+    });
+
+    // --- COLUNA 4: CUSTO INSUMOS TOTAL ---
+    colX += cols[3].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.0);
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatarMoeda(it.totalCustoFornecedor), colX + cols[4].width - 1.2, rowY + 4.8, {
+      align: 'right',
+    });
+
+    // --- COLUNA 5: TRIBUTOS & FRETE ---
+    colX += cols[4].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.8);
+    doc.setTextColor(185, 28, 28);
+    doc.text(`-${formatarMoeda(it.totalImposto)}`, colX + cols[5].width - 1.2, rowY + 3.5, {
+      align: 'right',
+    });
+
+    if (temFrete) {
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(5.0);
+      doc.setTextColor(100, 116, 139);
+      doc.text(`Frete -${formatarMoeda(it.outros_custos)}`, colX + cols[5].width - 1.2, rowY + 7.2, {
+        align: 'right',
+      });
+    }
+
+    // --- COLUNA 6: PREÇO GANHO UNITÁRIO ---
+    colX += cols[5].width;
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(6.0);
+    doc.setTextColor(51, 65, 85);
+    doc.text(formatarMoeda(it.valor_ganho), colX + cols[6].width - 1.2, rowY + 4.8, {
+      align: 'right',
+    });
+
+    // --- COLUNA 7: FATURAMENTO TOTAL ---
+    colX += cols[6].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    doc.setTextColor(15, 23, 42);
+    doc.text(formatarMoeda(it.totalGanho), colX + cols[7].width - 1.2, rowY + 4.8, {
+      align: 'right',
+    });
+
+    // --- COLUNA 8: LUCRO LÍQUIDO TOTAL ---
+    colX += cols[7].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(6.2);
+    if (ehPositivo) {
+      doc.setTextColor(16, 120, 60);
+    } else {
+      doc.setTextColor(185, 28, 28);
+    }
+    doc.text(formatarMoeda(it.lucroLiquidoTotal), colX + cols[8].width - 1.2, rowY + 4.8, {
+      align: 'right',
+    });
+
+    // --- COLUNA 9: MARGEM & PARECER ---
+    colX += cols[8].width;
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(5.8);
+    if (ehPositivo) {
+      doc.setTextColor(16, 120, 60);
+    } else {
+      doc.setTextColor(185, 28, 28);
+    }
+    const textoMargem = `${it.margemLiquidaPct.toFixed(1).replace('.', ',')}%`;
+    doc.text(textoMargem, colX + cols[9].width / 2, rowY + 3.5, { align: 'center' });
+
+    // Badge Exeq. / Neg.
+    doc.setFillColor(ehPositivo ? 220 : 254, ehPositivo ? 252 : 226, ehPositivo ? 231 : 226);
+    doc.roundedRect(colX + 2, rowY + 4.5, cols[9].width - 4, 3.4, 0.6, 0.6, 'F');
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(4.8);
+    if (ehPositivo) {
+      doc.setTextColor(21, 128, 61);
+    } else {
+      doc.setTextColor(153, 27, 27);
+    }
+    doc.text(ehPositivo ? '✓ EXEQ.' : '⚠ NEG.', colX + cols[9].width / 2, rowY + 6.9, {
+      align: 'center',
+    });
+
+    currentY += rowH;
+  }
+
+  // =========================================================================
+  // LINHA DE TOTAIS CONSOLIDADOS DA PLANILHA (RODAPÉ DA TABELA)
+  // =========================================================================
+  const totRowH = 7.5;
+  if (currentY + totRowH + 30 > bottomLimit) {
+    doc.addPage();
+    currentY = desenharCabecalhoPagina();
+  }
+
+  doc.setFillColor(235, 241, 246);
+  doc.rect(marginLeft, currentY, contentWidth, totRowH, 'F');
+
   doc.setDrawColor(15, 44, 89);
   doc.setLineWidth(0.4);
-  doc.roundedRect(marginLeft, currentY, contentWidth, 18, 1.5, 1.5, 'FD');
+  doc.line(marginLeft, currentY, marginLeft + contentWidth, currentY);
+  doc.line(marginLeft, currentY + totRowH, marginLeft + contentWidth, currentY + totRowH);
 
+  // Linhas verticais nos totais
+  let totGridX = marginLeft;
+  for (let c = 0; c < cols.length; c++) {
+    totGridX += cols[c].width;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.2);
+    doc.line(totGridX, currentY, totGridX, currentY + totRowH);
+  }
+
+  // Rótulo Totais Consolidados (engloba cols 0, 1, 2, 3)
+  const span1W = cols[0].width + cols[1].width + cols[2].width + cols[3].width;
   doc.setFont('helvetica', 'bold');
-  doc.setFontSize(8);
+  doc.setFontSize(6.6);
   doc.setTextColor(15, 44, 89);
   doc.text(
-    `RESUMO CONSOLIDADO DE EXEQUIBILIDADE (${itens.length} ITENS GANHOS)`,
-    marginLeft + 4,
-    currentY + 5.5
+    `TOTAIS CONSOLIDADOS (${itens.length} ITENS)`,
+    marginLeft + 2,
+    currentY + 4.9
   );
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(7.5);
-  doc.setTextColor(51, 65, 85);
-
-  const l1Y = currentY + 10;
-  const l2Y = currentY + 14.5;
-
-  doc.text(`Faturamento Total Ganho:`, marginLeft + 4, l1Y);
+  // Coluna 4: Total Insumos
+  let totColX = marginLeft + span1W;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.2);
   doc.setTextColor(15, 23, 42);
-  doc.text(formatarMoeda(totGanhoGeral), marginLeft + 45, l1Y);
+  doc.text(formatarMoeda(totCustoFornecGeral), totColX + cols[4].width - 1.2, currentY + 4.9, {
+    align: 'right',
+  });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(51, 65, 85);
-  doc.text(`Custo Total Fornecedores:`, marginLeft + 65, l1Y);
+  // Coluna 5: Total Tributos + Frete
+  totColX += cols[4].width;
   doc.setFont('helvetica', 'bold');
-  doc.text(formatarMoeda(totCustoFornecGeral), marginLeft + 108, l1Y);
-
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Impostos Totais:`, marginLeft + 125, l1Y);
-  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.0);
   doc.setTextColor(185, 28, 28);
-  doc.text(`-${formatarMoeda(totImpostosGeral)}`, marginLeft + 155, l1Y);
+  doc.text(
+    `-${formatarMoeda(totImpostosGeral + totOutrosGeral)}`,
+    totColX + cols[5].width - 1.2,
+    currentY + 4.9,
+    { align: 'right' }
+  );
 
+  // Coluna 6: Preço Ganho traço
+  totColX += cols[5].width;
   doc.setFont('helvetica', 'normal');
-  doc.setTextColor(51, 65, 85);
-  doc.text(`Despesas Logísticas:`, marginLeft + 4, l2Y);
-  doc.setFont('helvetica', 'bold');
-  doc.text(formatarMoeda(totOutrosGeral), marginLeft + 45, l2Y);
+  doc.setTextColor(100, 116, 139);
+  doc.text('—', totColX + cols[6].width / 2, currentY + 4.9, { align: 'center' });
 
-  doc.setFont('helvetica', 'normal');
-  doc.text(`Lucro Líquido Total:`, marginLeft + 65, l2Y);
+  // Coluna 7: Faturamento Total
+  totColX += cols[6].width;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.4);
+  doc.setTextColor(15, 44, 89);
+  doc.text(formatarMoeda(totGanhoGeral), totColX + cols[7].width - 1.2, currentY + 4.9, {
+    align: 'right',
+  });
+
+  // Coluna 8: Lucro Líquido Consolidado
+  totColX += cols[7].width;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(6.4);
   if (totLucroGeral >= 0) {
     doc.setTextColor(16, 120, 60);
   } else {
     doc.setTextColor(185, 28, 28);
   }
-  doc.text(formatarMoeda(totLucroGeral), marginLeft + 108, l2Y);
+  doc.text(formatarMoeda(totLucroGeral), totColX + cols[8].width - 1.2, currentY + 4.9, {
+    align: 'right',
+  });
 
-  doc.setFont('helvetica', 'normal');
-  doc.setTextColor(51, 65, 85);
-  doc.text(`Margem Global:`, marginLeft + 125, l2Y);
+  // Coluna 9: Margem Média Global
+  totColX += cols[8].width;
   doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5.8);
   if (totLucroGeral >= 0) {
     doc.setTextColor(16, 120, 60);
   } else {
     doc.setTextColor(185, 28, 28);
   }
-  doc.text(`${margemMediaGeral.toFixed(2).replace('.', ',')}%`, marginLeft + 155, l2Y);
+  doc.text(
+    `${margemMediaGeral.toFixed(1).replace('.', ',')}%`,
+    totColX + cols[9].width / 2,
+    currentY + 4.9,
+    { align: 'center' }
+  );
 
-  currentY += 23;
+  currentY += totRowH + 4;
+
+  // =========================================================================
+  // 4. DEMONSTRATIVO DE RESULTADO DO EXERCÍCIO (DRE SINTÉTICO)
+  // =========================================================================
+  if (currentY + 48 > bottomLimit) {
+    doc.addPage();
+    currentY = desenharCabecalhoPagina();
+  }
+
+  const dreH = 22;
+  doc.setFillColor(248, 250, 252);
+  doc.setDrawColor(15, 44, 89);
+  doc.setLineWidth(0.35);
+  doc.roundedRect(marginLeft, currentY, contentWidth, dreH, 1.2, 1.2, 'FD');
+
+  // Tarja DRE
+  doc.setFillColor(15, 44, 89);
+  doc.rect(marginLeft, currentY, contentWidth, 5.2, 'F');
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.2);
+  doc.setTextColor(255, 255, 255);
+  doc.text(
+    'DEMONSTRATIVO SINTÉTICO DO RESULTADO DA PROPOSTA (DRE DA LICITAÇÃO)',
+    marginLeft + 3,
+    currentY + 3.8
+  );
+
+  // Grid com 4 colunas contábeis
+  const dreColW = (contentWidth - 6) / 4;
+  const dreY1 = currentY + 8.8;
+  const dreY2 = currentY + 13.5;
+  const dreY3 = currentY + 18.2;
+
+  // Coluna DRE 1: Receita Bruta
+  const c1X = marginLeft + 3;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.0);
+  doc.setTextColor(100, 116, 139);
+  doc.text('RECEITA BRUTA (FATURAMENTO)', c1X, dreY1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(15, 44, 89);
+  doc.text(formatarMoeda(totGanhoGeral), c1X, dreY2 + 0.5);
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text('100,00% da Proposta Ganha', c1X, dreY3);
+
+  // Divisória DRE 1
+  doc.setDrawColor(226, 232, 240);
+  doc.setLineWidth(0.25);
+  doc.line(c1X + dreColW, currentY + 6, c1X + dreColW, currentY + dreH - 1.5);
+
+  // Coluna DRE 2: Custos de Aquisição (CPV)
+  const c2X = c1X + dreColW + 2.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.0);
+  doc.setTextColor(100, 116, 139);
+  doc.text('(-) CUSTO PRODUTOS / FORNECEDOR', c2X, dreY1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(30, 41, 59);
+  doc.text(formatarMoeda(totCustoFornecGeral), c2X, dreY2 + 0.5);
+  const cpvPct = totGanhoGeral > 0 ? (totCustoFornecGeral / totGanhoGeral) * 100 : 0;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`${cpvPct.toFixed(1).replace('.', ',')}% do faturamento`, c2X, dreY3);
+
+  // Divisória DRE 2
+  doc.line(c2X + dreColW, currentY + 6, c2X + dreColW, currentY + dreH - 1.5);
+
+  // Coluna DRE 3: Tributos & Fretes
+  const c3X = c2X + dreColW + 2.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.0);
+  doc.setTextColor(100, 116, 139);
+  doc.text('(-) TRIBUTOS E FRETE OPERACIONAL', c3X, dreY1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(7.8);
+  doc.setTextColor(185, 28, 28);
+  doc.text(`-${formatarMoeda(totImpostosGeral + totOutrosGeral)}`, c3X, dreY2 + 0.5);
+  const tribPct =
+    totGanhoGeral > 0 ? ((totImpostosGeral + totOutrosGeral) / totGanhoGeral) * 100 : 0;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(5.5);
+  doc.setTextColor(71, 85, 105);
+  doc.text(`${tribPct.toFixed(1).replace('.', ',')}% (impostos + logística)`, c3X, dreY3);
+
+  // Divisória DRE 3
+  doc.line(c3X + dreColW, currentY + 6, c3X + dreColW, currentY + dreH - 1.5);
+
+  // Coluna DRE 4: Lucro Líquido Final & Parecer
+  const c4X = c3X + dreColW + 2.5;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(6.0);
+  doc.setTextColor(100, 116, 139);
+  doc.text('(=) RESULTADO LÍQUIDO (LUCRO)', c4X, dreY1);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(8.0);
+  if (totLucroGeral >= 0) {
+    doc.setTextColor(16, 120, 60);
+  } else {
+    doc.setTextColor(185, 28, 28);
+  }
+  doc.text(formatarMoeda(totLucroGeral), c4X, dreY2 + 0.5);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(5.6);
+  const statusDRE = totLucroGeral >= 0 ? '✓ PROPOSTA 100% EXEQUÍVEL' : '⚠ MARGEM DEFICITÁRIA';
+  doc.text(statusDRE, c4X, dreY3);
+
+  currentY += dreH + 4.5;
 
   // =========================================================================
   // 5. DECLARAÇÃO FORMAL DE COMPROMISSO & VERACIDADE

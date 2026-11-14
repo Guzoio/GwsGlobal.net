@@ -5,11 +5,15 @@ import {
   Sun,
   Moon,
   Menu,
+  Database,
+  Cloud,
+  Check,
+  AlertTriangle,
 } from 'lucide-react';
 import { LogoGwsGlobal } from './LogoGwsGlobal';
 import { SininhoNotificacoes } from './SininhoNotificacoes';
 import { LuzesNatalinas } from './LuzesNatalinas';
-import { AlertaCobranca } from '../types';
+import { AlertaCobranca, CloudSyncStatus } from '../types';
 
 interface HeaderProps {
   sidebarAberta?: boolean;
@@ -17,6 +21,7 @@ interface HeaderProps {
   onAbrirCalculadora?: () => void;
   onLogout?: () => void;
   statusNuvem?: 'conectando' | 'conectado' | 'desconectado';
+  cloudStatus?: CloudSyncStatus;
   tema?: 'light' | 'dark';
   onAlternarTema?: (novoTema?: 'light' | 'dark') => void;
   temaNatal?: boolean;
@@ -34,6 +39,7 @@ export const Header: React.FC<HeaderProps> = ({
   onAbrirCalculadora,
   onLogout,
   statusNuvem = 'conectado',
+  cloudStatus,
   tema = 'light',
   onAlternarTema,
   temaNatal = true,
@@ -85,8 +91,62 @@ export const Header: React.FC<HeaderProps> = ({
           </div>
         </div>
 
-        {/* Lado direito: Sininho de Cobranças, Botão Natal, Tema, CALCULAR e SAIR */}
+        {/* Lado direito: Badge de Sincronização, Sininho de Cobranças, Botão Natal, Tema, CALCULAR e SAIR */}
         <div className="flex items-center gap-2 sm:gap-2.5 shrink-0">
+          {/* Badge Visual do Estado de Sincronização (Node Server e Nuvem Firestore) */}
+          {cloudStatus && (
+            <div
+              className={`hidden sm:flex items-center gap-1.5 px-2.5 py-1 rounded-xl text-xs font-semibold border shadow-2xs select-none cursor-default transition-all ${
+                !cloudStatus.servidorOnline
+                  ? 'bg-rose-50 border-rose-300 text-rose-700 dark:bg-rose-950/40 dark:border-rose-900 dark:text-rose-300'
+                  : cloudStatus.nuvemStatus === 'cota_esgotada'
+                  ? 'bg-amber-50 border-amber-300 text-amber-800 dark:bg-amber-950/40 dark:border-amber-800 dark:text-amber-300'
+                  : cloudStatus.nuvemStatus === 'aguardando_nuvem'
+                  ? 'bg-sky-50 border-sky-300 text-sky-800 dark:bg-sky-950/40 dark:border-sky-800 dark:text-sky-300'
+                  : 'bg-emerald-50 border-emerald-300 text-emerald-800 dark:bg-emerald-950/40 dark:border-emerald-800 dark:text-emerald-300'
+              }`}
+              title={
+                !cloudStatus.servidorOnline
+                  ? 'Atenção: Servidor Node desconectado. As alterações não estão sendo salvas centralmente.'
+                  : cloudStatus.nuvemStatus === 'cota_esgotada'
+                  ? `Salvo no Servidor Local. Cota gratuita do Firebase atingida (${cloudStatus.filaPendente} na fila). Operações preservadas com segurança no disco do Node.`
+                  : cloudStatus.nuvemStatus === 'aguardando_nuvem'
+                  ? `Salvo no Servidor Local. ${cloudStatus.filaPendente} operação(ões) aguardando confirmação do Firestore.`
+                  : 'Sincronizado: Salvo no servidor Node e confirmado no Firestore.'
+              }
+            >
+              {!cloudStatus.servidorOnline ? (
+                <>
+                  <AlertTriangle className="w-3.5 h-3.5 text-rose-500 animate-pulse" />
+                  <span>Servidor Offline</span>
+                </>
+              ) : cloudStatus.nuvemStatus === 'cota_esgotada' ? (
+                <>
+                  <Database className="w-3.5 h-3.5 text-amber-600 dark:text-amber-400" />
+                  <span>Salvo no Servidor</span>
+                  {cloudStatus.filaPendente > 0 && (
+                    <span className="px-1.5 py-0.2 bg-amber-200/80 dark:bg-amber-900/60 text-[10px] font-bold rounded-full">
+                      Fila Nuvem: {cloudStatus.filaPendente}
+                    </span>
+                  )}
+                </>
+              ) : cloudStatus.nuvemStatus === 'aguardando_nuvem' ? (
+                <>
+                  <Cloud className="w-3.5 h-3.5 text-sky-600 dark:text-sky-400 animate-pulse" />
+                  <span>Salvo no Servidor</span>
+                  <span className="px-1.5 py-0.2 bg-sky-200/80 dark:bg-sky-900/60 text-[10px] font-bold rounded-full">
+                    Nuvem: {cloudStatus.filaPendente}
+                  </span>
+                </>
+              ) : (
+                <>
+                  <Check className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
+                  <span>Nuvem e Servidor OK</span>
+                </>
+              )}
+            </div>
+          )}
+
           {/* Botão de Alternar Tema de Natal (Neve e Pisca-Pisca) */}
           <button
             type="button"

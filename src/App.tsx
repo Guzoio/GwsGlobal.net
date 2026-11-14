@@ -44,22 +44,13 @@ import {
   salvarResponsaveis,
   obterAcessoConfig,
   salvarAcessoConfig,
-  obterLicitacoesExcluidas,
-  salvarLicitacaoExcluida,
-  removerLicitacaoExcluida,
   salvarTrocaIdHistorico,
   desfazerUltimaTrocaIdLocal,
-  obterHistoricoTrocasId,
-  obterItensExcluidos,
-  salvarItemExcluido,
   obterContatosLocal,
   salvarContatosLocal,
-  obterContatosExcluidos,
-  salvarContatoExcluido,
   obterCobrancasLocal,
   salvarCobrancasLocal,
-  obterCobrancasExcluidas,
-  salvarCobrancaExcluida,
+  limparChavesExcluidasLegadas,
   estaAutenticado,
   registrarLogin,
   deslogar,
@@ -90,7 +81,6 @@ import {
   salvarPapelTimbradoNuvem,
   salvarResponsaveisNuvem,
   salvarTodosItensNuvem,
-  sincronizarBancoInicialSeVazio,
   ouvirContatosNuvem,
   salvarContatoNuvem,
   removerContatoNuvem,
@@ -99,88 +89,6 @@ import {
   removerCobrancaNuvem,
   trocarIdLicitacaoNuvem,
 } from './firebase/firestoreService';
-import {
-  syncManager,
-  mesclarEstadoComServidor,
-  salvarLicitacaoServidor,
-  renumerarIdLicitacaoServidor,
-  desfazerRenumeracaoServidor,
-  removerLicitacaoServidor,
-  salvarItemServidor,
-  salvarItensLoteServidor,
-  removerItemServidor,
-  salvarConfigServidor,
-  obterContatosServidor,
-  salvarContatoServidor,
-  removerContatoServidor,
-  obterCobrancasServidor,
-  salvarCobrancaServidor,
-  removerCobrancaServidor,
-} from './utils/serverSync';
-
-/**
- * Mesclagem inteligente de licitações com resolução de concorrência por timestamp (updatedAt).
- * Garante que estados marcados pelo usuário (como o Olho de Acompanhamento ou Homologada)
- * NUNCA sejam sobrescritos ou apagados por dados desatualizados do servidor ou nuvem.
- */
-function mesclarLicitacoesSeguro(
-  prevLics: Licitacao[],
-  novasLics: Licitacao[],
-  setExcluidas: Set<number>
-): Licitacao[] {
-  const mapa = new Map<number, Licitacao>();
-  for (const p of prevLics) {
-    const id = Number(p.id);
-    if (!setExcluidas.has(id)) mapa.set(id, p);
-  }
-  for (const inc of novasLics) {
-    const id = Number(inc.id);
-    if (setExcluidas.has(id)) continue;
-    const prev = mapa.get(id);
-    if (!prev) {
-      mapa.set(id, inc);
-    } else {
-      const tPrev = prev.updatedAt ? new Date(prev.updatedAt).getTime() : 0;
-      const tInc = inc.updatedAt ? new Date(inc.updatedAt).getTime() : 0;
-
-      let acomp: boolean;
-      if (tInc > tPrev && inc.acompanhamento !== undefined) {
-        acomp = Boolean(inc.acompanhamento);
-      } else if (tPrev > tInc) {
-        acomp = Boolean(prev.acompanhamento);
-      } else {
-        // Se nenhum lado for mais recente, preserva o estado marcado (true)
-        acomp = Boolean(prev.acompanhamento) || Boolean(inc.acompanhamento);
-      }
-
-      let homol: boolean;
-      if (tInc > tPrev && inc.homologada !== undefined) {
-        homol = Boolean(inc.homologada);
-      } else if (tPrev > tInc) {
-        homol = Boolean(prev.homologada);
-      } else {
-        homol = Boolean(prev.homologada) || Boolean(inc.homologada);
-      }
-
-      const merged: Licitacao = {
-        ...prev,
-        ...inc,
-        plataforma: inc.plataforma || prev.plataforma || 'BLL',
-        acompanhamento: acomp,
-        homologada: homol,
-        avisoData: tInc > tPrev ? (inc.avisoData || prev.avisoData) : (prev.avisoData || inc.avisoData),
-        avisoHora: tInc > tPrev ? (inc.avisoHora || prev.avisoHora) : (prev.avisoHora || inc.avisoHora),
-        avisoMensagem: tInc > tPrev ? (inc.avisoMensagem || prev.avisoMensagem) : (prev.avisoMensagem || inc.avisoMensagem),
-        avisoConcluido: tInc > tPrev
-          ? (inc.avisoConcluido !== undefined ? Boolean(inc.avisoConcluido) : Boolean(prev.avisoConcluido))
-          : (prev.avisoConcluido !== undefined ? Boolean(prev.avisoConcluido) : Boolean(inc.avisoConcluido)),
-        updatedAt: tInc > tPrev ? (inc.updatedAt || new Date().toISOString()) : (prev.updatedAt || new Date().toISOString()),
-      };
-      mapa.set(id, merged);
-    }
-  }
-  return Array.from(mapa.values()).sort(compararLicitacoesPorDataCadastroDesc);
-}
 
 export default function App() {
   const [autenticado, setAutenticado] = useState<boolean>(() => estaAutenticado());
@@ -329,8 +237,9 @@ export default function App() {
     );
   };
 
-  // Carrega dados iniciais do banco local imediatamente
+  // Carrega cache local instantâneo para exibição imediata enquanto o Firestore conecta
   useEffect(() => {
+    limparChavesExcluidasLegadas();
     const lics = obterLicitacoes();
     const its = obterItens();
     const timb = obterPapelTimbradoConfig();
@@ -346,52 +255,6 @@ export default function App() {
     setContatos(cts);
     setCobrancas(cobs);
 
-    // Carrega contatos atualizados do servidor com mesclagem segura (nunca sobrescreve contatos locais)
-    obterContatosServidor().then(ctsServidor => {
-      if (ctsServidor && ctsServidor.length > 0) {
-        const setContatosExcluidos = new Set(obterContatosExcluidos());
-        setContatos(prev => {
-          const mapa = new Map<string, ContatoPrefeitura>();
-          for (const c of prev) {
-            const id = String(c.id);
-            if (!setContatosExcluidos.has(id)) mapa.set(id, c);
-          }
-          for (const inc of ctsServidor) {
-            const id = String(inc.id);
-            if (setContatosExcluidos.has(id)) continue;
-            const exist = mapa.get(id);
-            mapa.set(id, exist ? { ...exist, ...inc } : inc);
-          }
-          const lista = Array.from(mapa.values());
-          salvarContatosLocal(lista);
-          return lista;
-        });
-      }
-    });
-
-    // Carrega cobranças atualizadas do servidor com mesclagem segura (nunca sobrescreve cobranças locais)
-    obterCobrancasServidor().then(cobsServidor => {
-      if (cobsServidor && cobsServidor.length > 0) {
-        const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-        setCobrancas(prev => {
-          const mapa = new Map<string, Cobranca>();
-          for (const c of prev) {
-            const id = String(c.id);
-            if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
-          }
-          for (const inc of cobsServidor) {
-            const id = String(inc.id);
-            if (setCobrancasExcluidas.has(id)) continue;
-            const exist = mapa.get(id);
-            mapa.set(id, exist ? { ...exist, ...inc } : inc);
-          }
-          const lista = Array.from(mapa.values());
-          salvarCobrancasLocal(lista);
-          return lista;
-        });
-      }
-    });
-
     const idSalvo = (() => {
       try {
         const s = localStorage.getItem('gws_licitacao_selecionada_id');
@@ -406,7 +269,6 @@ export default function App() {
       setLicitacaoSelecionadaId(lics[0].id);
     }
 
-    // Restaura fotos com alta fidelidade que possam ter sido omitidas pelo limite de 5MB do navegador
     restaurarImagensIndexedDB(its).then((itsRestaurados) => {
       if (itsRestaurados && itsRestaurados.length > 0) {
         setItens(itsRestaurados);
@@ -414,392 +276,83 @@ export default function App() {
     });
   }, []);
 
-  // Sincronização em tempo real totalmente automática com Servidor Central e Firebase
+  // Sincronização em tempo real 100% direta com Firebase Firestore (Blaze - sem limites diários)
   useEffect(() => {
-    setStatusNuvem('conectado');
+    setStatusNuvem('conectando');
 
-    // 1. Inicia conexão SSE em tempo real com o servidor central multi-usuário
-    syncManager.start();
-
-    // 2. Inscreve ouvinte para receber eventos de qualquer computador em tempo real
-    const unsubServer = syncManager.subscribe((payload) => {
-      setStatusNuvem('conectado');
-      const setExcluidas = new Set(obterLicitacoesExcluidas());
-      const setItensExcluidos = new Set(obterItensExcluidos());
-
-      if (payload.tipo === 'full') {
-        if (payload.licitacoes && payload.licitacoes.length > 0) {
-          const licsLimpas = payload.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
-          setLicitacoes(prevLics => {
-            const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
-            salvarLicitacoes(res);
-            return res;
-          });
-          setLicitacaoSelecionadaId(prev => {
-            if (prev) return prev;
-            return licsLimpas.length > 0 ? licsLimpas[0].id : null;
-          });
-        }
-        if (payload.itens && payload.itens.length > 0) {
-          const itensLimpos = payload.itens.filter(i => !setItensExcluidos.has(Number(i.id)) && !setExcluidas.has(Number(i.licitacao_id)));
-          setItens(prevItens => {
-            const mapa = new Map<number, ItemLicitacao>();
-            for (const p of prevItens) {
-              const id = Number(p.id);
-              if (!setItensExcluidos.has(id) && !setExcluidas.has(Number(p.licitacao_id))) {
-                mapa.set(id, p);
-              }
-            }
-            for (const inc of itensLimpos) {
-              const id = Number(inc.id);
-              if (setItensExcluidos.has(id) || setExcluidas.has(Number(inc.licitacao_id))) continue;
-              const prev = mapa.get(id);
-              mapa.set(id, prev ? { ...prev, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarItens(lista);
-            return lista;
-          });
-        }
-        if (payload.timbrado) {
-          setTimbradoConfig(payload.timbrado);
-          salvarPapelTimbradoConfig(payload.timbrado);
-        }
-        if (payload.responsaveis && payload.responsaveis.length > 0) {
-          setResponsaveis(payload.responsaveis);
-          salvarResponsaveis(payload.responsaveis);
-        }
-        if (payload.contatos && payload.contatos.length > 0) {
-          const setContatosExcluidos = new Set(obterContatosExcluidos());
-          setContatos(prev => {
-            const mapa = new Map<string, ContatoPrefeitura>();
-            for (const c of prev) {
-              const id = String(c.id);
-              if (!setContatosExcluidos.has(id)) mapa.set(id, c);
-            }
-            for (const inc of payload.contatos!) {
-              const id = String(inc.id);
-              if (setContatosExcluidos.has(id)) continue;
-              const exist = mapa.get(id);
-              mapa.set(id, exist ? { ...exist, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarContatosLocal(lista);
-            return lista;
-          });
-        }
-        if (payload.cobrancas && payload.cobrancas.length > 0) {
-          const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-          setCobrancas(prev => {
-            const mapa = new Map<string, Cobranca>();
-            for (const c of prev) {
-              const id = String(c.id);
-              if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
-            }
-            for (const inc of payload.cobrancas!) {
-              const id = String(inc.id);
-              if (setCobrancasExcluidas.has(id)) continue;
-              const exist = mapa.get(id);
-              mapa.set(id, exist ? { ...exist, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarCobrancasLocal(lista);
-            return lista;
-          });
-        }
-      } else if (payload.tipo === 'licitacoes' && payload.licitacoes) {
-        const licsLimpas = payload.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
-        setLicitacoes(prevLics => {
-          const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
-          salvarLicitacoes(res);
-          return res;
-        });
-      } else if (payload.tipo === 'itens' && payload.itens) {
-        const itensLimpos = payload.itens.filter(i => !setItensExcluidos.has(Number(i.id)) && !setExcluidas.has(Number(i.licitacao_id)));
-        setItens(prevItens => {
-          const mapa = new Map<number, ItemLicitacao>();
-          for (const p of prevItens) {
-            const id = Number(p.id);
-            if (!setItensExcluidos.has(id) && !setExcluidas.has(Number(p.licitacao_id))) {
-              mapa.set(id, p);
-            }
-          }
-          for (const inc of itensLimpos) {
-            const id = Number(inc.id);
-            if (setItensExcluidos.has(id) || setExcluidas.has(Number(inc.licitacao_id))) continue;
-            const prev = mapa.get(id);
-            mapa.set(id, prev ? { ...prev, ...inc } : inc);
-          }
-          const lista = Array.from(mapa.values());
-          salvarItens(lista);
-          return lista;
-        });
-      } else if (payload.tipo === 'timbrado' && payload.timbrado) {
-        setTimbradoConfig(payload.timbrado);
-        salvarPapelTimbradoConfig(payload.timbrado);
-      } else if (payload.tipo === 'responsaveis' && payload.responsaveis) {
-        setResponsaveis(payload.responsaveis);
-        salvarResponsaveis(payload.responsaveis);
-      } else if (payload.tipo === 'contatos' && payload.contatos) {
-        const setContatosExcluidos = new Set(obterContatosExcluidos());
-        setContatos(prev => {
-          const mapa = new Map<string, ContatoPrefeitura>();
-          for (const c of prev) {
-            const id = String(c.id);
-            if (!setContatosExcluidos.has(id)) mapa.set(id, c);
-          }
-          for (const inc of payload.contatos!) {
-            const id = String(inc.id);
-            if (setContatosExcluidos.has(id)) continue;
-            const exist = mapa.get(id);
-            mapa.set(id, exist ? { ...exist, ...inc } : inc);
-          }
-          const lista = Array.from(mapa.values());
-          salvarContatosLocal(lista);
-          return lista;
-        });
-      } else if (payload.tipo === 'cobrancas' && payload.cobrancas) {
-        const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-        setCobrancas(prev => {
-          const mapa = new Map<string, Cobranca>();
-          for (const c of prev) {
-            const id = String(c.id);
-            if (!setCobrancasExcluidas.has(id)) mapa.set(id, c);
-          }
-          for (const inc of payload.cobrancas!) {
-            const id = String(inc.id);
-            if (setCobrancasExcluidas.has(id)) continue;
-            const exist = mapa.get(id);
-            mapa.set(id, exist ? { ...exist, ...inc } : inc);
-          }
-          const lista = Array.from(mapa.values());
-          salvarCobrancasLocal(lista);
-          return lista;
-        });
-      }
-    });
-
-    // 3. Mescla dados locais com o servidor central (garante que dados criados em outro computador ou offline subam para todos)
-    const licsLocais = obterLicitacoes();
-    const itsLocais = obterItens();
-    const timbLocal = obterPapelTimbradoConfig();
-    const respsLocais = obterResponsaveis();
-    const ctsLocais = obterContatosLocal();
-    const cobsLocais = obterCobrancasLocal();
-
-    mesclarEstadoComServidor({
-      licitacoes: licsLocais,
-      itens: itsLocais,
-      timbrado: timbLocal,
-      responsaveis: respsLocais,
-      contatos: ctsLocais,
-      cobrancas: cobsLocais,
-    }).then((estado) => {
-      if (estado) {
-        const setExcluidas = new Set(obterLicitacoesExcluidas());
-        const setItensExcluidos = new Set(obterItensExcluidos());
-
-        if (estado.licitacoes && estado.licitacoes.length > 0) {
-          const licsLimpas = estado.licitacoes.filter(l => !setExcluidas.has(Number(l.id)));
-          setLicitacoes(prevLics => {
-            const res = mesclarLicitacoesSeguro(prevLics, licsLimpas, setExcluidas);
-            salvarLicitacoes(res);
-            return res;
-          });
-          setLicitacaoSelecionadaId(prev => {
-            if (prev) return prev;
-            return licsLimpas.length > 0 ? licsLimpas[0].id : null;
-          });
-        }
-        if (estado.itens && estado.itens.length > 0) {
-          const itensLimpos = estado.itens.filter(i => !setItensExcluidos.has(Number(i.id)) && !setExcluidas.has(Number(i.licitacao_id)));
-          setItens(prevItens => {
-            const mapa = new Map<number, ItemLicitacao>();
-            for (const p of prevItens) {
-              const id = Number(p.id);
-              if (!setItensExcluidos.has(id) && !setExcluidas.has(Number(p.licitacao_id))) {
-                mapa.set(id, p);
-              }
-            }
-            for (const inc of itensLimpos) {
-              const id = Number(inc.id);
-              if (setItensExcluidos.has(id) || setExcluidas.has(Number(inc.licitacao_id))) continue;
-              const prev = mapa.get(id);
-              mapa.set(id, prev ? { ...prev, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarItens(lista);
-            return lista;
-          });
-        }
-        if (estado.contatos && estado.contatos.length > 0) {
-          const setContatosExcluidos = new Set(obterContatosExcluidos());
-          setContatos(prev => {
-            const mapa = new Map<string, ContatoPrefeitura>();
-            for (const p of prev) {
-              const id = String(p.id);
-              if (!setContatosExcluidos.has(id)) mapa.set(id, p);
-            }
-            for (const inc of estado.contatos!) {
-              const id = String(inc.id);
-              if (setContatosExcluidos.has(id)) continue;
-              const exist = mapa.get(id);
-              mapa.set(id, exist ? { ...exist, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarContatosLocal(lista);
-            return lista;
-          });
-        }
-        if (estado.cobrancas && estado.cobrancas.length > 0) {
-          const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-          setCobrancas(prev => {
-            const mapa = new Map<string, Cobranca>();
-            for (const p of prev) {
-              const id = String(p.id);
-              if (!setCobrancasExcluidas.has(id)) mapa.set(id, p);
-            }
-            for (const inc of estado.cobrancas!) {
-              const id = String(inc.id);
-              if (setCobrancasExcluidas.has(id)) continue;
-              const exist = mapa.get(id);
-              mapa.set(id, exist ? { ...exist, ...inc } : inc);
-            }
-            const lista = Array.from(mapa.values());
-            salvarCobrancasLocal(lista);
-            return lista;
-          });
-        }
-      }
-    }).catch(() => {});
-
-    // 4. Também sincroniza banco na nuvem Firebase caso haja cota disponível
-    sincronizarBancoInicialSeVazio(licsLocais, itsLocais, timbLocal, respsLocais).catch(() => {});
+    const onFirestoreError = () => {
+      setStatusNuvem('desconectado');
+    };
 
     const unsubLics = ouvirLicitacoesNuvem(
       (licsNuvem) => {
-        if (licsNuvem && licsNuvem.length > 0) {
-          setStatusNuvem('conectado');
-          const setExcluidas = new Set(obterLicitacoesExcluidas());
-          const licsValidas = licsNuvem.filter(l => !setExcluidas.has(Number(l.id)));
-
-          setLicitacoes(prevLics => {
-            const res = mesclarLicitacoesSeguro(prevLics, licsValidas, setExcluidas);
-            salvarLicitacoes(res);
-            return res;
-          });
-          setLicitacaoSelecionadaId(prev => {
-            if (prev) return prev;
-            return licsValidas.length > 0 ? licsValidas[0].id : null;
-          });
-        }
+        setStatusNuvem('conectado');
+        setLicitacoes(licsNuvem);
+        salvarLicitacoes(licsNuvem);
+        setLicitacaoSelecionadaId(prev => {
+          if (prev && licsNuvem.some(l => Number(l.id) === Number(prev))) return prev;
+          return licsNuvem.length > 0 ? licsNuvem[0].id : null;
+        });
       },
-      () => {}
+      onFirestoreError
     );
 
     const unsubItens = ouvirItensNuvem(
       (itensNuvem) => {
-        if (itensNuvem) {
-          const setExcluidas = new Set(obterLicitacoesExcluidas());
-          const setItensExcluidos = new Set(obterItensExcluidos());
-          const itensValidos = itensNuvem.filter(i => !setItensExcluidos.has(Number(i.id)) && !setExcluidas.has(Number(i.licitacao_id)));
-
-          setItens(prevItens => {
-            const mapa = new Map<number, ItemLicitacao>();
-            for (const p of prevItens) {
-              const id = Number(p.id);
-              if (!setItensExcluidos.has(id) && !setExcluidas.has(Number(p.licitacao_id))) {
-                mapa.set(id, p);
-              }
-            }
-            for (const nuv of itensValidos) {
-              const id = Number(nuv.id);
-              if (setItensExcluidos.has(id) || setExcluidas.has(Number(nuv.licitacao_id))) continue;
-              const prev = mapa.get(id);
-              mapa.set(id, {
-                ...nuv,
-                caminho_imagem: nuv.caminho_imagem !== undefined ? nuv.caminho_imagem : (prev?.caminho_imagem || ''),
-              });
-            }
-            const lista = Array.from(mapa.values());
-            salvarItens(lista);
-            return lista;
-          });
-        }
+        setStatusNuvem('conectado');
+        setItens(itensNuvem);
+        salvarItens(itensNuvem);
       },
-      () => {}
+      onFirestoreError
     );
 
-    const unsubTimbrado = ouvirPapelTimbradoNuvem((timbradoNuvem) => {
-      if (timbradoNuvem) {
-        setTimbradoConfig(timbradoNuvem);
-        salvarPapelTimbradoConfig(timbradoNuvem);
-      }
-    });
-
-    const unsubResponsaveis = ouvirResponsaveisNuvem((respsNuvem) => {
-      if (respsNuvem && respsNuvem.length > 0) {
-        setResponsaveis(respsNuvem);
-        salvarResponsaveis(respsNuvem);
-      }
-    });
-
-    const unsubSeguranca = ouvirAcessoConfigNuvem((acessoNuvem) => {
-      if (acessoNuvem && acessoNuvem.usuarioId && acessoNuvem.senhaHash) {
-        setAcessoConfig(acessoNuvem);
-        salvarAcessoConfig(acessoNuvem);
-      }
-    });
-
-    const unsubContatos = ouvirContatosNuvem((ctsNuvem) => {
-      const setContatosExcluidos = new Set(obterContatosExcluidos());
-      const ctsLimpos = (ctsNuvem || []).filter(c => !setContatosExcluidos.has(String(c.id)));
-      setContatos(prev => {
-        const mapa = new Map<string, ContatoPrefeitura>();
-        // 1. Preserva todos os contatos locais primeiro
-        for (const p of prev) {
-          const id = String(p.id);
-          if (!setContatosExcluidos.has(id)) mapa.set(id, p);
+    const unsubTimbrado = ouvirPapelTimbradoNuvem(
+      (timbradoNuvem) => {
+        if (timbradoNuvem) {
+          setTimbradoConfig(timbradoNuvem);
+          salvarPapelTimbradoConfig(timbradoNuvem);
         }
-        // 2. Mescla dados atualizados da nuvem
-        for (const inc of ctsLimpos) {
-          const id = String(inc.id);
-          if (setContatosExcluidos.has(id)) continue;
-          const exist = mapa.get(id);
-          mapa.set(id, exist ? { ...exist, ...inc } : inc);
-        }
-        const lista = Array.from(mapa.values());
-        salvarContatosLocal(lista);
-        return lista;
-      });
-    });
+      },
+      onFirestoreError
+    );
 
-    const unsubCobrancas = ouvirCobrancasNuvem((cobNuvem) => {
-      const setCobrancasExcluidas = new Set(obterCobrancasExcluidas());
-      const cobsLimpos = (cobNuvem || []).filter(c => !setCobrancasExcluidas.has(String(c.id)));
-      setCobrancas(prev => {
-        const mapa = new Map<string, Cobranca>();
-        // 1. Preserva todas as cobranças locais primeiro
-        for (const p of prev) {
-          const id = String(p.id);
-          if (!setCobrancasExcluidas.has(id)) mapa.set(id, p);
+    const unsubResponsaveis = ouvirResponsaveisNuvem(
+      (respsNuvem) => {
+        if (respsNuvem && respsNuvem.length > 0) {
+          setResponsaveis(respsNuvem);
+          salvarResponsaveis(respsNuvem);
         }
-        // 2. Mescla cobranças da nuvem
-        for (const inc of cobsLimpos) {
-          const id = String(inc.id);
-          if (setCobrancasExcluidas.has(id)) continue;
-          const exist = mapa.get(id);
-          mapa.set(id, exist ? { ...exist, ...inc } : inc);
+      },
+      onFirestoreError
+    );
+
+    const unsubSeguranca = ouvirAcessoConfigNuvem(
+      (acessoNuvem) => {
+        if (acessoNuvem && acessoNuvem.usuarioId && acessoNuvem.senhaHash) {
+          setAcessoConfig(acessoNuvem);
+          salvarAcessoConfig(acessoNuvem);
         }
-        const lista = Array.from(mapa.values());
-        salvarCobrancasLocal(lista);
-        return lista;
-      });
-    });
+      },
+      onFirestoreError
+    );
+
+    const unsubContatos = ouvirContatosNuvem(
+      (ctsNuvem) => {
+        setContatos(ctsNuvem);
+        salvarContatosLocal(ctsNuvem);
+      },
+      onFirestoreError
+    );
+
+    const unsubCobrancas = ouvirCobrancasNuvem(
+      (cobNuvem) => {
+        setCobrancas(cobNuvem);
+        salvarCobrancasLocal(cobNuvem);
+      },
+      onFirestoreError
+    );
 
     return () => {
-      unsubServer();
-      syncManager.stop();
       unsubLics();
       unsubItens();
       unsubTimbrado();
@@ -811,39 +364,35 @@ export default function App() {
   }, []);
 
   const handleSalvarContato = async (contato: ContatoPrefeitura) => {
-    let listaAtualizada: ContatoPrefeitura[] = [];
     setContatos(prev => {
       const idx = prev.findIndex(c => String(c.id) === String(contato.id));
       const lista = idx >= 0
         ? prev.map(c => (String(c.id) === String(contato.id) ? contato : c))
         : [contato, ...prev];
-      listaAtualizada = lista;
       salvarContatosLocal(lista);
       return lista;
     });
-    salvarContatoServidor(contato).catch(() => {});
-    salvarContatoNuvem(contato).catch(() => {});
-    if (listaAtualizada.length > 0) {
-      mesclarEstadoComServidor({
-        licitacoes: [],
-        itens: [],
-        contatos: listaAtualizada,
-      }).catch(() => {});
+    try {
+      await salvarContatoNuvem(contato);
+      mostrarToast(`Contato de "${contato.nomeContato}" (${contato.prefeitura}) salvo com sucesso!`);
+    } catch {
+      mostrarToast('Erro ao gravar contato no Firestore.', 'erro');
     }
-    mostrarToast(`Contato de "${contato.nomeContato}" (${contato.prefeitura}) salvo com sucesso!`);
   };
 
   const handleExcluirContato = async (contatoId: string) => {
     const strId = String(contatoId);
-    salvarContatoExcluido(strId);
     setContatos(prev => {
       const lista = prev.filter(c => String(c.id) !== strId);
       salvarContatosLocal(lista);
       return lista;
     });
-    removerContatoServidor(strId).catch(() => {});
-    removerContatoNuvem(strId).catch(() => {});
-    mostrarToast('Contato removido da agenda.');
+    try {
+      await removerContatoNuvem(strId);
+      mostrarToast('Contato removido da agenda.');
+    } catch {
+      mostrarToast('Erro ao remover contato no Firestore.', 'erro');
+    }
   };
 
   const handleSalvarCobranca = async (cobranca: Cobranca) => {
@@ -855,22 +404,27 @@ export default function App() {
       salvarCobrancasLocal(lista);
       return lista;
     });
-    salvarCobrancaServidor(cobranca).catch(() => {});
-    salvarCobrancaNuvem(cobranca).catch(() => {});
-    mostrarToast(`Cobrança de "${cobranca.prefeitura}" salva com sucesso!`);
+    try {
+      await salvarCobrancaNuvem(cobranca);
+      mostrarToast(`Cobrança de "${cobranca.prefeitura}" salva com sucesso!`);
+    } catch {
+      mostrarToast('Erro ao gravar cobrança no Firestore.', 'erro');
+    }
   };
 
   const handleExcluirCobranca = async (cobrancaId: string) => {
     const strId = String(cobrancaId);
-    salvarCobrancaExcluida(strId);
     setCobrancas(prev => {
       const lista = prev.filter(c => String(c.id) !== strId);
       salvarCobrancasLocal(lista);
       return lista;
     });
-    removerCobrancaServidor(strId).catch(() => {});
-    removerCobrancaNuvem(strId).catch(() => {});
-    mostrarToast('Cobrança removida com sucesso.');
+    try {
+      await removerCobrancaNuvem(strId);
+      mostrarToast('Cobrança removida com sucesso.');
+    } catch {
+      mostrarToast('Erro ao remover cobrança no Firestore.', 'erro');
+    }
   };
 
   const mostrarToast = (mensagem: string, tipo: 'sucesso' | 'erro' = 'sucesso') => {
@@ -894,13 +448,13 @@ export default function App() {
   const handleSalvarAcesso = async (novoAcesso: AcessoConfig) => {
     setAcessoConfig(novoAcesso);
     salvarAcessoConfig(novoAcesso);
-    salvarConfigServidor('seguranca', novoAcesso);
     try {
       await salvarAcessoConfigNuvem(novoAcesso);
+      mostrarToast('Credenciais de acesso atualizadas com sucesso!', 'sucesso');
     } catch (err) {
       console.warn('Erro ao salvar segurança na nuvem:', err);
+      mostrarToast('Erro ao salvar credenciais no Firestore.', 'erro');
     }
-    mostrarToast('Credenciais de acesso atualizadas com sucesso!', 'sucesso');
   };
 
   // Gerenciamento de Responsáveis (Adicionar e Excluir)
@@ -908,7 +462,6 @@ export default function App() {
     const nomeLimpo = novoNome.trim();
     if (!nomeLimpo) return false;
     
-    // Verifica se já existe (case-insensitive)
     const jaExiste = responsaveis.some(r => r.toLowerCase() === nomeLimpo.toLowerCase());
     if (jaExiste) {
       mostrarToast(`O responsável "${nomeLimpo}" já está na lista.`, 'erro');
@@ -918,14 +471,12 @@ export default function App() {
     const novaLista = [...responsaveis, nomeLimpo];
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
-    salvarConfigServidor('responsaveis', novaLista);
     salvarResponsaveisNuvem(novaLista).catch(() => {});
     mostrarToast(`Responsável "${nomeLimpo}" adicionado com sucesso!`);
     return true;
   };
 
   const handleExcluirResponsavel = (nomeParaExcluir: string, transferirPara?: string) => {
-    // Não permitir lista vazia
     if (responsaveis.length <= 1) {
       mostrarToast('Você deve manter pelo menos um responsável cadastrado no sistema.', 'erro');
       return;
@@ -934,17 +485,14 @@ export default function App() {
     const novaLista = responsaveis.filter(r => r !== nomeParaExcluir);
     setResponsaveis(novaLista);
     salvarResponsaveis(novaLista);
-    salvarConfigServidor('responsaveis', novaLista);
     salvarResponsaveisNuvem(novaLista).catch(() => {});
 
-    // Reatribuir licitações vinculadas a esse nome
     const destino = transferirPara || novaLista[0] || 'Gustavo';
     let alteradas = 0;
     const licsAtualizadas = licitacoes.map(lic => {
       if ((lic.responsavel || '').toLowerCase() === nomeParaExcluir.toLowerCase()) {
         alteradas++;
-        const licAtualizada = { ...lic, responsavel: destino };
-        salvarLicitacaoServidor(licAtualizada);
+        const licAtualizada = { ...lic, responsavel: destino, updatedAt: new Date().toISOString() };
         salvarLicitacaoNuvem(licAtualizada).catch(() => {});
         return licAtualizada;
       }
@@ -964,25 +512,22 @@ export default function App() {
   const handleSalvarTimbrado = (novaConfig: PapelTimbradoConfig) => {
     setTimbradoConfig(novaConfig);
     salvarPapelTimbradoConfig(novaConfig);
-    salvarConfigServidor('timbrado', novaConfig);
     salvarPapelTimbradoNuvem(novaConfig).catch(() => {});
     mostrarToast('Configurações de papel timbrado salvas com sucesso!');
   };
 
   // Gerenciamento de Licitações
   const handleAtualizarResponsavel = (id: number, novoResponsavel: string) => {
-    // Garante que o responsável também está na lista salva
     if (novoResponsavel && !responsaveis.includes(novoResponsavel)) {
       const novaLista = [...responsaveis, novoResponsavel];
       setResponsaveis(novaLista);
       salvarResponsaveis(novaLista);
-      salvarConfigServidor('responsaveis', novaLista);
       salvarResponsaveisNuvem(novaLista).catch(() => {});
     }
+    const nowIso = new Date().toISOString();
     const atualizadas = licitacoes.map(l => {
       if (Number(l.id) === Number(id)) {
-        const atual = { ...l, responsavel: novoResponsavel };
-        salvarLicitacaoServidor(atual);
+        const atual = { ...l, responsavel: novoResponsavel, updatedAt: nowIso };
         salvarLicitacaoNuvem(atual).catch(() => {});
         return atual;
       }
@@ -994,18 +539,12 @@ export default function App() {
   };
 
   const handleExcluirLicitacao = async (id: number) => {
-    salvarLicitacaoExcluida(id);
-    const itensDestaLic = itens.filter(i => Number(i.licitacao_id) === Number(id));
-    itensDestaLic.forEach(it => salvarItemExcluido(it.id));
-
     const licsAtualizadas = licitacoes.filter(l => Number(l.id) !== Number(id));
     const itensAtualizados = itens.filter(i => Number(i.licitacao_id) !== Number(id));
     setLicitacoes(licsAtualizadas);
     setItens(itensAtualizados);
     salvarLicitacoes(licsAtualizadas);
     salvarItens(itensAtualizados);
-
-    removerLicitacaoServidor(id);
 
     if (Number(licitacaoSelecionadaId) === Number(id)) {
       setLicitacaoSelecionadaId(licsAtualizadas.length > 0 ? licsAtualizadas[0].id : null);
@@ -1015,16 +554,16 @@ export default function App() {
       await removerLicitacaoNuvem(id);
       mostrarToast('Licitação excluída com sucesso.');
     } catch (err) {
-      console.warn('Licitação excluída localmente, sincronizando com a nuvem:', err);
-      mostrarToast('Licitação excluída com sucesso.');
+      console.warn('Erro ao excluir licitação no Firestore:', err);
+      mostrarToast('Erro ao excluir licitação no Firestore.', 'erro');
     }
   };
 
   const handleAtualizarDataProposta = (licId: number, novaData: string) => {
+    const nowIso = new Date().toISOString();
     const licsAtualizadas = licitacoes.map(l => {
       if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = { ...l, data_proposta: novaData };
-        salvarLicitacaoServidor(atualizada);
+        const atualizada: Licitacao = { ...l, data_proposta: novaData, updatedAt: nowIso };
         salvarLicitacaoNuvem(atualizada).catch(err => {
           console.warn('Aviso ao sincronizar data da proposta na nuvem:', err);
         });
@@ -1037,15 +576,16 @@ export default function App() {
     mostrarToast('Data da proposta salva para esta licitação.');
   };
 
-  // Altera a data de cadastro de uma licitação com sincronização imediata no servidor, nuvem e cache local
+  // Altera a data de cadastro de uma licitação diretamente no Firestore
   const handleAtualizarDataCadastro = (licId: number, novaData: string): boolean => {
     let licModificada: Licitacao | null = null;
+    const nowIso = new Date().toISOString();
     const licsAtualizadas = licitacoes.map(l => {
       if (Number(l.id) === Number(licId)) {
         const atualizada: Licitacao = {
           ...l,
           data_cadastro: novaData,
-          updatedAt: new Date().toISOString(),
+          updatedAt: nowIso,
         };
         licModificada = atualizada;
         return atualizada;
@@ -1056,7 +596,6 @@ export default function App() {
     if (licModificada) {
       setLicitacoes(licsAtualizadas);
       salvarLicitacoes(licsAtualizadas);
-      salvarLicitacaoServidor(licModificada);
       salvarLicitacaoNuvem(licModificada).catch(err => {
         console.warn('Aviso ao sincronizar data de cadastro na nuvem:', err);
       });
@@ -1087,7 +626,6 @@ export default function App() {
     }
 
     if (oldId === newId) {
-      // Se o ID é o mesmo mas foi passado um novo número de processo/pregão
       if (novoProcessoOpcional && novoProcessoOpcional.trim()) {
         const procLimpo = novoProcessoOpcional.trim();
         const licModificada: Licitacao = {
@@ -1098,7 +636,6 @@ export default function App() {
         const novasLics = licitacoes.map(l => (Number(l.id) === oldId ? licModificada : l));
         setLicitacoes(novasLics);
         salvarLicitacoes(novasLics);
-        salvarLicitacaoServidor(licModificada);
         salvarLicitacaoNuvem(licModificada).catch(() => {});
         mostrarToast(`✓ Processo/Pregão atualizado para "${procLimpo}"!`, 'sucesso');
         return {
@@ -1109,7 +646,6 @@ export default function App() {
       return { sucesso: false, mensagem: 'O novo ID deve ser diferente do ID atual.' };
     }
 
-    // Verifica se novo ID já está em uso por outra licitação
     const jaExiste = licitacoes.some(l => Number(l.id) === newId);
     if (jaExiste) {
       return { sucesso: false, mensagem: `Já existe uma licitação cadastrada com o ID #${newId}. Escolha outro ID disponível.` };
@@ -1122,14 +658,12 @@ export default function App() {
       updatedAt: new Date().toISOString(),
     };
 
-    // Atualiza a lista de licitações
     const novasLics = licitacoes
       .map(l => (Number(l.id) === oldId ? licAtualizada : l))
       .sort(compararLicitacoesPorDataCadastroDesc);
     setLicitacoes(novasLics);
     salvarLicitacoes(novasLics);
 
-    // Atualiza todos os itens vinculados à licitação
     const itensVinculados = itens.filter(i => Number(i.licitacao_id) === oldId);
     const novosItens = itens.map(it => {
       if (Number(it.licitacao_id) === oldId) {
@@ -1143,22 +677,14 @@ export default function App() {
     setItens(novosItens);
     salvarItens(novosItens);
 
-    // Se a licitação renumerada estava atualmente selecionada, atualiza a seleção
     if (Number(licitacaoSelecionadaId) === oldId) {
       setLicitacaoSelecionadaId(newId);
     }
 
-    // Sincroniza com servidor central e SSE
-    renumerarIdLicitacaoServidor(oldId, newId).catch(err => {
-      console.warn('Aviso ao renumerar ID no servidor:', err);
-    });
-
-    // Sincroniza atomicamente no Firestore Nuvem
     trocarIdLicitacaoNuvem(oldId, newId, licAtualizada, itensVinculados).catch(err => {
       console.warn('Aviso ao renumerar ID no Firestore:', err);
     });
 
-    // Registra no histórico para permitir desfazer instantaneamente
     salvarTrocaIdHistorico({
       idAntigo: oldId,
       idNovo: newId,
@@ -1179,33 +705,17 @@ export default function App() {
 
   // Desfazer a última alteração de ID realizada no sistema (Exclusivo via Console CMD)
   const handleDesfazerTrocaId = (): { sucesso: boolean; mensagem: string } => {
-    // 1. Tenta recuperar do histórico local
     const ultimaTroca = desfazerUltimaTrocaIdLocal();
-    let idParaRestaurar: number;
-    let idAtual: number;
-    let orgaoNome: string = '';
-
-    if (ultimaTroca) {
-      idParaRestaurar = Number(ultimaTroca.idAntigo);
-      idAtual = Number(ultimaTroca.idNovo);
-      orgaoNome = ultimaTroca.orgao || '';
-    } else {
-      // Se não há histórico no cliente, verifica se existe a licitação #44 (Timóteo / 15/2026) que foi renomeada recentemente de #999 ou #15
-      const lic44 = licitacoes.find(l => Number(l.id) === 44);
-      if (lic44) {
-        idAtual = 44;
-        idParaRestaurar = 999;
-        orgaoNome = lic44.orgao || '';
-      } else {
-        return {
-          sucesso: false,
-          mensagem: 'Nenhuma alteração recente de ID foi encontrada no histórico para desfazer. Se desejar, use "trocar-id <idAtual> <idDesejado>" para definir o ID que quiser.',
-        };
-      }
+    if (!ultimaTroca) {
+      return {
+        sucesso: false,
+        mensagem: 'Nenhuma alteração recente de ID foi encontrada no histórico para desfazer. Se desejar, use "trocar-id <idAtual> <idDesejado>" para definir o ID que quiser.',
+      };
     }
 
-    // Remove o ID a ser restaurado da lista de excluídas locais para que volte a ser visível
-    removerLicitacaoExcluida(idParaRestaurar);
+    const idParaRestaurar = Number(ultimaTroca.idAntigo);
+    const idAtual = Number(ultimaTroca.idNovo);
+    const orgaoNome = ultimaTroca.orgao || '';
 
     const lic = licitacoes.find(l => Number(l.id) === idAtual);
     if (!lic) {
@@ -1227,7 +737,6 @@ export default function App() {
     setLicitacoes(novasLics);
     salvarLicitacoes(novasLics);
 
-    // Restaura os itens vinculados
     const itensMigrados = itens.map(it => {
       if (Number(it.licitacao_id) === idAtual) {
         return {
@@ -1244,8 +753,6 @@ export default function App() {
       setLicitacaoSelecionadaId(idParaRestaurar);
     }
 
-    // Sincroniza no servidor e na nuvem
-    desfazerRenumeracaoServidor().catch(() => {});
     trocarIdLicitacaoNuvem(
       idAtual,
       idParaRestaurar,
@@ -1288,7 +795,6 @@ export default function App() {
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    salvarLicitacaoServidor(licModificada);
     salvarLicitacaoNuvem(licModificada).catch(err => {
       console.warn('Aviso ao sincronizar processo na nuvem:', err);
     });
@@ -1328,7 +834,6 @@ export default function App() {
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    salvarLicitacaoServidor(licModificada);
     salvarLicitacaoNuvem(licModificada).catch(err => {
       console.warn('Aviso ao sincronizar órgão na nuvem:', err);
     });
@@ -1342,188 +847,129 @@ export default function App() {
 
   const handleAtualizarUfLicitacao = (licId: number, novaUf: string) => {
     const ufFormatada = novaUf.trim().toUpperCase();
-    let licModificada: Licitacao | null = null;
-    const licsAtualizadas = licitacoes.map(l => {
-      if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = { ...l, uf: ufFormatada };
-        licModificada = atualizada;
-        return atualizada;
-      }
-      return l;
-    });
+    const nowIso = new Date().toISOString();
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (!licAtual) return;
+
+    const licModificada: Licitacao = { ...licAtual, uf: ufFormatada, updatedAt: nowIso };
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === Number(licId) ? licModificada : l));
 
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao sincronizar UF da licitação na nuvem:', err);
-      });
-    }
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar UF da licitação na nuvem:', err);
+    });
 
     mostrarToast(`Estado (UF) atualizado para ${ufFormatada}.`);
   };
 
   // Alternar Status de Acompanhamento (👁 Olho Amarelo)
   const handleToggleAcompanhamento = (id: number) => {
-    let licModificada: Licitacao | null = null;
-    const nowIso = new Date().toISOString();
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(id));
+    if (!licAtual) return;
 
-    setLicitacoes(prevLics => {
-      const listaAtualizada = prevLics.map(l => {
-        if (Number(l.id) === Number(id)) {
-          const novoStatus = !l.acompanhamento;
-          const atual: Licitacao = {
-            ...l,
-            acompanhamento: novoStatus,
-            updatedAt: nowIso,
-          };
-          licModificada = atual;
-          return atual;
-        }
-        return l;
-      });
-      salvarLicitacoes(listaAtualizada);
-      return listaAtualizada;
+    const licModificada: Licitacao = {
+      ...licAtual,
+      acompanhamento: !licAtual.acompanhamento,
+      updatedAt: new Date().toISOString(),
+    };
+    const listaAtualizada = licitacoes.map(l => (Number(l.id) === Number(id) ? licModificada : l));
+    setLicitacoes(listaAtualizada);
+    salvarLicitacoes(listaAtualizada);
+
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar acompanhamento na nuvem:', err);
     });
-
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao sincronizar acompanhamento na nuvem:', err);
-      });
-    }
   };
 
   // Alternar Status de Concluída / Homologada (✓ Check Verde)
   const handleToggleHomologada = (id: number) => {
-    let licModificada: Licitacao | null = null;
-    const nowIso = new Date().toISOString();
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(id));
+    if (!licAtual) return;
 
-    setLicitacoes(prevLics => {
-      const listaAtualizada = prevLics.map(l => {
-        if (Number(l.id) === Number(id)) {
-          const novoStatus = !l.homologada;
-          const atual: Licitacao = {
-            ...l,
-            homologada: novoStatus,
-            updatedAt: nowIso,
-          };
-          licModificada = atual;
-          return atual;
-        }
-        return l;
-      });
-      salvarLicitacoes(listaAtualizada);
-      return listaAtualizada;
+    const licModificada: Licitacao = {
+      ...licAtual,
+      homologada: !licAtual.homologada,
+      updatedAt: new Date().toISOString(),
+    };
+    const listaAtualizada = licitacoes.map(l => (Number(l.id) === Number(id) ? licModificada : l));
+    setLicitacoes(listaAtualizada);
+    salvarLicitacoes(listaAtualizada);
+
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar homologada na nuvem:', err);
     });
-
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao sincronizar homologada na nuvem:', err);
-      });
-    }
   };
 
   // Handlers para Alertas de Retorno do Pregoeiro
   const handleSalvarAvisoPregoeiro = (licId: number, dataAviso: string, horaAviso: string, msg: string) => {
-    let licModificada: Licitacao | null = null;
-    const nowIso = new Date().toISOString();
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (!licAtual) return;
 
-    setLicitacoes(prevLics => {
-      const licsAtualizadas = prevLics.map(l => {
-        if (Number(l.id) === Number(licId)) {
-          const atualizada: Licitacao = {
-            ...l,
-            acompanhamento: true, // Garante que a licitação permaneça em acompanhamento
-            avisoData: dataAviso,
-            avisoHora: horaAviso,
-            avisoMensagem: msg,
-            avisoConcluido: false,
-            updatedAt: nowIso,
-          };
-          licModificada = atualizada;
-          return atualizada;
-        }
-        return l;
-      });
-      salvarLicitacoes(licsAtualizadas);
-      return licsAtualizadas;
+    const licModificada: Licitacao = {
+      ...licAtual,
+      acompanhamento: true,
+      avisoData: dataAviso,
+      avisoHora: horaAviso,
+      avisoMensagem: msg,
+      avisoConcluido: false,
+      updatedAt: new Date().toISOString(),
+    };
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === Number(licId) ? licModificada : l));
+    setLicitacoes(licsAtualizadas);
+    salvarLicitacoes(licsAtualizadas);
+
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao sincronizar aviso do pregoeiro na nuvem:', err);
     });
-
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao sincronizar aviso do pregoeiro na nuvem:', err);
-      });
-    }
-    // Garante que o som do sininho não apite imediatamente na hora de salvar
     qtdAlertasAnteriorRef.current = qtdAlertasAnteriorRef.current + 1;
     mostrarToast('Lembrete de retorno do pregoeiro salvo com sucesso!');
   };
 
   const handleRemoverAvisoPregoeiro = (licId: number) => {
-    let licModificada: Licitacao | null = null;
-    const licsAtualizadas = licitacoes.map(l => {
-      if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = {
-          ...l,
-          avisoData: '',
-          avisoHora: '',
-          avisoMensagem: '',
-          avisoConcluido: false,
-        };
-        licModificada = atualizada;
-        return atualizada;
-      }
-      return l;
-    });
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (!licAtual) return;
 
+    const licModificada: Licitacao = {
+      ...licAtual,
+      avisoData: '',
+      avisoHora: '',
+      avisoMensagem: '',
+      avisoConcluido: false,
+      updatedAt: new Date().toISOString(),
+    };
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === Number(licId) ? licModificada : l));
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao remover aviso do pregoeiro na nuvem:', err);
-      });
-    }
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao remover aviso do pregoeiro na nuvem:', err);
+    });
     mostrarToast('Lembrete de retorno removido.');
   };
 
   const handleConcluirAvisoPregoeiro = (licId: number) => {
-    let licModificada: Licitacao | null = null;
-    const licsAtualizadas = licitacoes.map(l => {
-      if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = {
-          ...l,
-          avisoConcluido: true,
-        };
-        licModificada = atualizada;
-        return atualizada;
-      }
-      return l;
-    });
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (!licAtual) return;
 
+    const licModificada: Licitacao = {
+      ...licAtual,
+      avisoConcluido: true,
+      updatedAt: new Date().toISOString(),
+    };
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === Number(licId) ? licModificada : l));
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao concluir aviso do pregoeiro na nuvem:', err);
-      });
-    }
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao concluir aviso do pregoeiro na nuvem:', err);
+    });
     mostrarToast('Aviso do pregoeiro marcado como atendido!');
   };
 
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
-    // Garante ID estritamente único que nunca colide com nenhuma licitação existente (nem Catanduvas nem outras)
-    const licsLocais = obterLicitacoes();
-    const todasLics = [...licitacoes, ...licsLocais];
-    const maiorId = todasLics.reduce((max, l) => {
+    const maiorId = licitacoes.reduce((max, l) => {
       const num = Number(l.id);
       return !isNaN(num) && num > max ? num : max;
     }, 0);
@@ -1539,17 +985,17 @@ export default function App() {
       acompanhamento: false,
       homologada: false,
       avisoConcluido: false,
+      updatedAt: new Date().toISOString(),
     };
 
     const listaAtualizada = [itemCriado, ...licitacoes.filter(l => Number(l.id) !== novoId)];
     setLicitacoes(listaAtualizada);
     salvarLicitacoes(listaAtualizada);
 
-    // Salva no servidor backend central e na nuvem
-    salvarLicitacaoServidor(itemCriado);
-    salvarLicitacaoNuvem(itemCriado).catch(() => {});
+    salvarLicitacaoNuvem(itemCriado).catch(err => {
+      console.warn('Erro ao salvar nova licitação no Firestore:', err);
+    });
 
-    // Define a nova licitação como selecionada e abre a aba montar
     setLicitacaoSelecionadaId(novoId);
     setAbaAtiva('montar');
     mostrarToast(`Licitação "${novaLic.orgao}" criada com sucesso! Proposta limpa pronta para inserção de itens.`);
@@ -1557,29 +1003,22 @@ export default function App() {
   };
 
   const handleAtualizarPlataformaLicitacao = (licId: number, novaPlat: 'BLL' | 'BNC') => {
-    let licModificada: Licitacao | null = null;
-    const licsAtualizadas = licitacoes.map(l => {
-      if (Number(l.id) === Number(licId)) {
-        const atualizada: Licitacao = {
-          ...l,
-          plataforma: novaPlat,
-          updatedAt: new Date().toISOString(),
-        };
-        licModificada = atualizada;
-        return atualizada;
-      }
-      return l;
-    });
+    const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
+    if (!licAtual) return;
+
+    const licModificada: Licitacao = {
+      ...licAtual,
+      plataforma: novaPlat,
+      updatedAt: new Date().toISOString(),
+    };
+    const licsAtualizadas = licitacoes.map(l => (Number(l.id) === Number(licId) ? licModificada : l));
 
     setLicitacoes(licsAtualizadas);
     salvarLicitacoes(licsAtualizadas);
 
-    if (licModificada) {
-      salvarLicitacaoServidor(licModificada);
-      salvarLicitacaoNuvem(licModificada).catch(err => {
-        console.warn('Aviso ao atualizar plataforma na nuvem:', err);
-      });
-    }
+    salvarLicitacaoNuvem(licModificada).catch(err => {
+      console.warn('Aviso ao atualizar plataforma na nuvem:', err);
+    });
     mostrarToast(`Plataforma alterada para ${novaPlat}!`, 'sucesso');
   };
 
@@ -1587,7 +1026,6 @@ export default function App() {
   const handleAdicionarItem = (novoItem: Omit<ItemLicitacao, 'id'>) => {
     const maiorIdExistente = itens.length > 0 ? Math.max(...itens.map(i => Number(i.id) || 0)) : 0;
     const novoId = Math.max(Date.now(), maiorIdExistente + 1);
-    // Quantidade estritamente inteira
     const qtdInteira = Math.max(1, Math.round(novoItem.quantidade));
     const itemCriado: ItemLicitacao = {
       ...novoItem,
@@ -1600,9 +1038,8 @@ export default function App() {
     const listaAtualizada = [...itens, itemCriado];
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
-    salvarItemServidor(itemCriado);
     salvarItemNuvem(itemCriado).catch(err => {
-      console.warn('Item salvo localmente, aviso ao enviar para a nuvem:', err);
+      console.warn('Aviso ao enviar item para o Firestore:', err);
     });
 
     mostrarToast(`Item #${novoItem.num_item} adicionado à proposta.`);
@@ -1612,7 +1049,6 @@ export default function App() {
     const listaAtualizada = itens.map(i => {
       if (Number(i.id) === Number(itemId)) {
         const itemModificado = { ...i, selecionado: i.selecionado === false ? true : false };
-        salvarItemServidor(itemModificado);
         salvarItemNuvem(itemModificado).catch(() => {});
         return itemModificado;
       }
@@ -1625,17 +1061,14 @@ export default function App() {
   const handleAlternarTodosItens = (licId: number, selecionarTodos: boolean) => {
     const listaAtualizada = itens.map(i => {
       if (Number(i.licitacao_id) === Number(licId)) {
-        const itemModificado = { ...i, selecionado: selecionarTodos };
-        salvarItemServidor(itemModificado);
-        salvarItemNuvem(itemModificado).catch(() => {});
-        return itemModificado;
+        return { ...i, selecionado: selecionarTodos };
       }
       return i;
     });
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
     const itensDestaLic = listaAtualizada.filter(i => Number(i.licitacao_id) === Number(licId));
-    salvarItensLoteServidor(itensDestaLic);
+    salvarTodosItensNuvem(itensDestaLic).catch(() => {});
     mostrarToast(
       selecionarTodos
         ? 'Todos os itens foram marcados para o PDF.'
@@ -1663,60 +1096,45 @@ export default function App() {
       salvarItens(listaAtualizada);
       return listaAtualizada;
     });
-    salvarItemServidor(itemNormalizado);
     salvarItemNuvem(itemNormalizado).catch(err => {
-      console.warn('Item atualizado localmente, aviso ao enviar para a nuvem:', err);
+      console.warn('Aviso ao enviar item atualizado para o Firestore:', err);
     });
 
     mostrarToast(`Item #${itemNormalizado.num_item} atualizado.`);
   };
 
-  // Forçar salvamento completo de garantia da proposta e catálogo (Sincroniza Servidor Central SSE + Firestore)
+  // Forçar salvamento completo da proposta e catálogo direto no Firestore
   const handleForcarSalvarProposta = async (licId: number): Promise<boolean> => {
     const itensDestaLic = itens.filter(i => Number(i.licitacao_id) === Number(licId));
     const licAtual = licitacoes.find(l => Number(l.id) === Number(licId));
 
-    // 1. Sincronização prioritária com o Servidor Central (Atualiza todos os outros computadores instantaneamente)
-    if (itensDestaLic.length > 0) {
-      await salvarItensLoteServidor(itensDestaLic);
-    }
-    if (licAtual) {
-      await salvarLicitacaoServidor(licAtual);
-    }
-
-    // 2. Gravação em lote na NUVEM (Firestore)
     try {
       if (itensDestaLic.length > 0) {
-        salvarTodosItensNuvem(itensDestaLic).catch(() => {});
+        await salvarTodosItensNuvem(itensDestaLic);
       }
       if (licAtual) {
-        salvarLicitacaoNuvem(licAtual).catch(() => {});
+        await salvarLicitacaoNuvem(licAtual);
       }
-    } catch {}
-
-    // 3. Cache local seguro
-    try {
       salvarItens(itens);
-    } catch (errCache) {
-      console.warn('Aviso ao atualizar cache local:', errCache);
+      mostrarToast(`✓ Proposta e Catálogo salvos direto no Firebase! ${itensDestaLic.length} itens sincronizados em tempo real.`);
+      return true;
+    } catch (err) {
+      console.warn('Erro ao salvar proposta no Firestore:', err);
+      mostrarToast('Erro ao salvar proposta no Firebase.', 'erro');
+      return false;
     }
-
-    mostrarToast(`✓ Proposta e Catálogo salvos com sucesso! Todos os ${itensDestaLic.length} itens sincronizados para todos.`);
-    return true;
   };
 
   const handleExcluirItem = async (itemId: number) => {
-    salvarItemExcluido(itemId);
     const listaAtualizada = itens.filter(i => Number(i.id) !== Number(itemId));
     setItens(listaAtualizada);
     salvarItens(listaAtualizada);
-    removerItemServidor(itemId);
     try {
       await removerItemNuvem(itemId);
       mostrarToast('Item excluído da proposta.');
     } catch (err) {
-      console.warn('Item excluído localmente, sincronizando com a nuvem:', err);
-      mostrarToast('Item excluído da proposta.');
+      console.warn('Erro ao excluir item no Firestore:', err);
+      mostrarToast('Erro ao excluir item no Firestore.', 'erro');
     }
   };
 
