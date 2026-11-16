@@ -65,8 +65,7 @@ import {
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
 import { converterParaFormatoInputDate, compararLicitacoesPorDataCadastroDesc } from './utils/numberToWordsPtBr';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
-import { obterTema, aplicarTema, alternarTema, ThemeMode, obterTemaNatal, alternarTemaNatal } from './utils/theme';
-import { EfeitoNeve } from './components/EfeitoNeve';
+import { obterTema, aplicarTema, alternarTema, ThemeMode } from './utils/theme';
 import {
   ouvirLicitacoesNuvem,
   ouvirItensNuvem,
@@ -197,7 +196,15 @@ export default function App() {
   );
   const [calculadoraAberta, setCalculadoraAberta] = useState<boolean>(false);
   const [calculadoraMinimizada, setCalculadoraMinimizada] = useState<boolean>(false);
-  const [sidebarAberta, setSidebarAberta] = useState<boolean>(false);
+  const [sidebarMobileAberta, setSidebarMobileAberta] = useState<boolean>(false);
+  const [sidebarDesktopAberta, setSidebarDesktopAberta] = useState<boolean>(() => {
+    try {
+      const salvo = localStorage.getItem('gws_sidebar_desktop_aberta');
+      return salvo !== 'false';
+    } catch {
+      return true;
+    }
+  });
   const [modalDeclaracaoAberto, setModalDeclaracaoAberto] = useState<boolean>(false);
   const [licitacaoParaDeclaracao, setLicitacaoParaDeclaracao] = useState<Licitacao | null>(null);
   const [modalExequibilidadeAberto, setModalExequibilidadeAberto] = useState<boolean>(false);
@@ -209,7 +216,6 @@ export default function App() {
   const [toast, setToast] = useState<{ tipo: 'sucesso' | 'erro'; mensagem: string } | null>(null);
   const [statusNuvem, setStatusNuvem] = useState<'conectando' | 'conectado' | 'desconectado'>('conectando');
   const [tema, setTema] = useState<ThemeMode>(() => obterTema());
-  const [temaNatal, setTemaNatal] = useState<boolean>(() => obterTemaNatal());
 
   // Aplica o tema na árvore DOM sempre que o estado mudar
   useEffect(() => {
@@ -226,15 +232,25 @@ export default function App() {
     }
   };
 
-  const handleAlternarTemaNatal = () => {
-    const novo = alternarTemaNatal();
-    setTemaNatal(novo);
-    mostrarToast(
-      novo
-        ? 'Tema de Natal ativado! 🎄 Neve e pisca-pisca festivo ligados.'
-        : 'Tema de Natal pausado. ❄️',
-      'sucesso'
-    );
+  const handleToggleSidebar = () => {
+    if (typeof window !== 'undefined' && window.innerWidth >= 768) {
+      setSidebarDesktopAberta(prev => {
+        const next = !prev;
+        try {
+          localStorage.setItem('gws_sidebar_desktop_aberta', String(next));
+        } catch {}
+        return next;
+      });
+    } else {
+      setSidebarMobileAberta(prev => !prev);
+    }
+  };
+
+  const handleFecharDesktopSidebar = () => {
+    setSidebarDesktopAberta(false);
+    try {
+      localStorage.setItem('gws_sidebar_desktop_aberta', 'false');
+    } catch {}
   };
 
   // Carrega cache local instantâneo para exibição imediata enquanto o Firestore conecta
@@ -1176,22 +1192,21 @@ export default function App() {
         <LoginScreen
           acessoConfig={acessoConfig}
           onLoginSucesso={handleLoginSucesso}
-          temaNatal={temaNatal}
         />
         {toast && (
           <div
-            className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all ${
+            className={`fixed bottom-4 left-3 right-3 sm:left-auto sm:right-5 sm:max-w-md z-50 px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all ${
               toast.tipo === 'sucesso'
                 ? 'bg-slate-900 text-white border-slate-700'
                 : 'bg-rose-900 text-white border-rose-700'
             }`}
           >
             {toast.tipo === 'sucesso' ? (
-              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
             ) : (
-              <AlertCircle className="w-4 h-4 text-rose-400" />
+              <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
             )}
-            {toast.mensagem}
+            <span className="min-w-0">{toast.mensagem}</span>
           </div>
         )}
       </>
@@ -1199,14 +1214,12 @@ export default function App() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50 dark:bg-slate-950 text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-200 relative">
-      {/* Efeito sutil de neve suave natalina (cobre toda a tela sem interferir em cliques) */}
-      <EfeitoNeve ativo={temaNatal} densidade="baixa" modoEscuro={tema === 'dark'} />
-
-      {/* Barra de navegação do topo (Logo, Nuvem, Tema, Natal, Calcular e Sair) */}
+    <div className="min-h-screen bg-[#F4F6F9] dark:bg-[#0B1120] text-slate-900 dark:text-slate-100 flex flex-col font-sans transition-colors duration-150 relative overflow-x-hidden">
+      {/* Barra de navegação do topo (Menu, Logo, Nuvem, Tema, Calcular e Sair) */}
       <Header
-        sidebarAberta={sidebarAberta}
-        onToggleSidebar={() => setSidebarAberta(prev => !prev)}
+        sidebarAberta={sidebarMobileAberta}
+        sidebarDesktopAberta={sidebarDesktopAberta}
+        onToggleSidebar={handleToggleSidebar}
         onAbrirCalculadora={() => {
           if (abaAtiva === 'montar') {
             setCalculadoraMinimizada(false);
@@ -1218,8 +1231,6 @@ export default function App() {
         statusNuvem={statusNuvem}
         tema={tema}
         onAlternarTema={handleAlternarTema}
-        temaNatal={temaNatal}
-        onAlternarTemaNatal={handleAlternarTemaNatal}
         alertasCobrancas={todosAlertasSininho}
         onNavegarParaAlerta={(alerta) => {
           if (alerta.tipo === 'pregoeiro_retorno') {
@@ -1327,18 +1338,18 @@ export default function App() {
       {/* Toast flutuante */}
       {toast && (
         <div
-          className={`fixed bottom-5 right-5 z-50 px-4 py-3 rounded-lg shadow-lg border text-xs font-semibold flex items-center gap-2 transition-all ${
+          className={`fixed bottom-4 left-3 right-3 sm:left-auto sm:right-5 sm:max-w-md z-50 px-4 py-2.5 rounded-md border text-xs font-semibold flex items-center gap-2 transition-all ${
             toast.tipo === 'sucesso'
               ? 'bg-slate-900 text-white border-slate-700'
               : 'bg-rose-900 text-white border-rose-700'
           }`}
         >
           {toast.tipo === 'sucesso' ? (
-            <CheckCircle2 className="w-4 h-4 text-emerald-400" />
+            <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0" />
           ) : (
-            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <AlertCircle className="w-4 h-4 text-rose-400 shrink-0" />
           )}
-          {toast.mensagem}
+          <span className="min-w-0">{toast.mensagem}</span>
         </div>
       )}
 
@@ -1349,7 +1360,7 @@ export default function App() {
           abaAtiva={abaAtiva}
           setAbaAtiva={(aba) => {
             setAbaAtiva(aba);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           totalLicitacoes={licitacoes.length}
           totalContatos={contatos.length}
@@ -1360,12 +1371,12 @@ export default function App() {
             const lic = licitacoes.find(l => Number(l.id) === Number(licitacaoSelecionadaId)) || licitacoes[0] || null;
             setLicitacaoParaDeclaracao(lic);
             setModalDeclaracaoAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           onAbrirNovaDeclaracao={(tipo) => {
             setTipoNovaDeclaracaoAtiva(tipo);
             setModalNovasDeclaracoesAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           onAbrirExequibilidade={() => {
             const lic =
@@ -1376,30 +1387,31 @@ export default function App() {
               null;
             setLicitacaoParaExequibilidade(lic);
             setModalExequibilidadeAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           onAbrirAssinador={() => {
             setModalAssinadorAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           onAbrirSeguranca={() => {
             setSegurancaModalAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
           onAbrirConsoleCmd={() => {
             setConsoleCmdAberto(true);
-            setSidebarAberta(false);
+            setSidebarMobileAberta(false);
           }}
-          abertaMobile={sidebarAberta}
-          onFecharMobile={() => setSidebarAberta(false)}
+          abertaMobile={sidebarMobileAberta}
+          onFecharMobile={() => setSidebarMobileAberta(false)}
+          abertaDesktop={sidebarDesktopAberta}
+          onFecharDesktop={handleFecharDesktopSidebar}
           statusNuvem={statusNuvem}
-          temaNatal={temaNatal}
         />
 
         {/* Área Central / Conteúdo Principal e Rodapé */}
         <div className="flex-1 min-w-0 flex flex-col">
           {/* Conteúdo Principal mantido com largura padrão consistente */}
-          <main className="flex-1 max-w-[1600px] w-full mx-auto px-4 sm:px-6 lg:px-8 py-6">
+          <main className="flex-1 max-w-[1600px] w-full mx-auto px-3 sm:px-6 lg:px-8 py-4 sm:py-6">
         {abaAtiva === 'historico' && (
           <HistoricoTab
             licitacoes={licitacoes}
@@ -1519,14 +1531,13 @@ export default function App() {
             onSalvarConfig={handleSalvarTimbrado}
             onAtualizarDataProposta={handleAtualizarDataProposta}
             onNovaLicitacao={() => setAbaAtiva('cadastrar')}
-            temaNatal={temaNatal}
           />
         )}
       </main>
 
       {/* Rodapé com mensagem inspiradora e informações do sistema */}
-      <footer className="bg-white dark:bg-[#0A162B] border-t border-slate-200/80 dark:border-slate-800 py-6 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-200">
-        <div className="max-w-[1600px] mx-auto px-4 space-y-3">
+      <footer className="bg-white dark:bg-[#0F172A] border-t border-slate-200 dark:border-slate-800 py-5 text-center text-xs text-slate-500 dark:text-slate-400 transition-colors duration-150">
+        <div className="max-w-[1600px] mx-auto px-4 space-y-2.5">
           {/* Mensagem Bíblica de Provérbios 16:3 */}
           <div className="flex flex-col items-center justify-center gap-1">
             <p className="text-xs sm:text-sm font-medium italic text-slate-700 dark:text-slate-300 max-w-2xl leading-relaxed">
@@ -1537,17 +1548,7 @@ export default function App() {
             </span>
           </div>
 
-          {/* Mensagem especial de Boas Festas & Natal GWS GLOBAL */}
-          {temaNatal && (
-            <div className="pt-2 flex items-center justify-center">
-              <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900/50 text-red-700 dark:text-red-300 font-semibold text-xs shadow-2xs">
-                <span>🎄</span>
-                <span>A GWS GLOBAL deseja a você e à sua família um Feliz Natal e um Próspero Ano Novo! 🎅✨</span>
-              </div>
-            </div>
-          )}
-
-          <div className="pt-2 border-t border-slate-100 dark:border-slate-800/80 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
+          <div className="pt-2 border-t border-slate-200/80 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-400 dark:text-slate-500">
             <span>
               GWS GLOBAL.net • Gestão de Licitações & Gerador de Propostas Comerciais
             </span>

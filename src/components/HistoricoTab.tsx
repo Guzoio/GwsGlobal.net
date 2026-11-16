@@ -41,7 +41,6 @@ import { Licitacao, ItemLicitacao, PapelTimbradoConfig, PlataformaLicitacao } fr
 import { formatarMoeda, compararLicitacoesPorDataCadastroDesc } from '../utils/numberToWordsPtBr';
 import { obterPapelTimbradoConfig } from '../utils/storage';
 import { ModalDeclaracaoUnificada } from './ModalDeclaracaoUnificada';
-import { obterTemaNatal } from '../utils/theme';
 
 // Funções utilitárias para conversão e comparação de datas
 function normalizarData(dataStr: string): string {
@@ -357,17 +356,15 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
     setResponsavelParaExcluir(null);
   };
 
-  const natalAtivo = obterTemaNatal();
-
   return (
-    <div className="space-y-5">
+    <div className="space-y-4 sm:space-y-5">
       {/* Cards de Métricas: Total de Licitações, Valores em Disputa e Valores Vencidos */}
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 sm:gap-4">
         {/* Card 1: Total de Licitações */}
-        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3 relative overflow-visible">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 transition-colors flex items-center justify-between gap-3 relative overflow-visible">
           <div className="flex items-center gap-3.5 min-w-0">
             <div className="relative shrink-0">
-              <div className="p-3 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shadow-2xs">
+              <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">
                 <Landmark className="w-6 h-6" />
               </div>
             </div>
@@ -378,7 +375,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <div className="text-2xl sm:text-3xl font-black font-mono text-slate-900 dark:text-white mt-0.5 tabular-nums">
                 {totalLicitacoesFiltradas}
               </div>
-              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {filtroData
                   ? `Cadastradas em ${normalizarData(filtroData)}`
                   : filtroResponsavel === 'Todos'
@@ -391,9 +388,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         </div>
 
         {/* Card 2: Valores em Disputa */}
-        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-5 transition-colors flex items-center justify-between gap-3">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="p-3 rounded-xl bg-indigo-50 dark:bg-indigo-950/40 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-900/50 shrink-0 shadow-2xs">
+            <div className="p-3 rounded-md bg-indigo-50 dark:bg-indigo-950/50 text-indigo-600 dark:text-indigo-400 border border-indigo-200 dark:border-indigo-800/60 shrink-0">
               <Coins className="w-6 h-6" />
             </div>
             <div className="min-w-0">
@@ -403,7 +400,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <div className="text-xl sm:text-2xl font-black font-mono text-slate-900 dark:text-white mt-0.5 tabular-nums">
                 {formatarMoeda(valorTotalDisputa)}
               </div>
-              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {itensDoFiltro.length} itens cotados no total
               </div>
             </div>
@@ -414,9 +411,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         </div>
 
         {/* Card 3: Valores Vencidos (Ganhos) */}
-        <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs hover:shadow-sm transition-all flex items-center justify-between gap-3">
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-5 transition-colors flex items-center justify-between gap-3">
           <div className="flex items-center gap-3.5 min-w-0">
-            <div className="p-3 rounded-xl bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-900/50 shrink-0 shadow-2xs">
+            <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/50 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-800/60 shrink-0">
               <TrendingUp className="w-6 h-6" />
             </div>
             <div className="min-w-0">
@@ -426,14 +423,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <div className="text-xl sm:text-2xl font-black font-mono text-emerald-600 dark:text-emerald-400 mt-0.5 tabular-nums">
                 {formatarMoeda(valorTotalVencidos)}
               </div>
-              <div className="text-[11px] text-slate-400 truncate mt-0.5">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 truncate mt-0.5">
                 {itensVencidosDoFiltro.length} de {itensDoFiltro.length} itens ganhos
               </div>
             </div>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {valorTotalDisputa > 0 && (
-              <span className="hidden sm:inline-block bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold px-2 py-0.5 rounded-full">
+              <span className="hidden sm:inline-block bg-emerald-50 dark:bg-emerald-950/60 border border-emerald-200 dark:border-emerald-800 text-emerald-700 dark:text-emerald-300 text-[10px] font-bold font-mono px-2 py-0.5 rounded">
                 {((valorTotalVencidos / valorTotalDisputa) * 100).toFixed(0)}%
               </span>
             )}
@@ -445,12 +442,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       {/* ==================================================================== */}
       {/* QUADRO TÉCNICO: ANÁLISE DE LUCRO LÍQUIDO & IMPOSTOS                 */}
       {/* ==================================================================== */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs transition-colors">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-5 transition-colors">
         <div className="space-y-4">
           {/* Cabeçalho do Quadro Técnico limpo e direto */}
-          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-100 dark:border-slate-800">
+          <div className="flex items-center justify-between gap-3 pb-3 border-b border-slate-200 dark:border-slate-800">
             <div className="flex items-center gap-2.5">
-              <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50 shrink-0">
+              <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60 shrink-0">
                 <Percent className="w-4 h-4" />
               </div>
               <h3 className="text-xs sm:text-sm font-bold tracking-wider text-slate-900 dark:text-white uppercase">
@@ -459,7 +456,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
 
             <div className="shrink-0">
-              <span className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-800/80 px-3 py-1 rounded-full border border-slate-200 dark:border-slate-700 font-mono font-medium">
+              <span className="text-[11px] text-slate-600 dark:text-slate-300 bg-slate-50 dark:bg-slate-900 px-2.5 py-1 rounded border border-slate-200 dark:border-slate-700 font-mono font-medium">
                 {metricasTecnicasLucro.quantidadeItensAnalisados} itens com custo
               </span>
             </div>
@@ -468,8 +465,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           {/* Cards de Métricas Técnicas */}
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3.5">
             {/* 1. Lucro Líquido Total */}
-            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-              <div className="p-2 rounded-lg bg-emerald-500 text-white shrink-0 shadow-2xs mt-0.5">
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3.5 flex items-start gap-3 transition-colors">
+              <div className="p-2 rounded-md bg-emerald-600 text-white shrink-0 mt-0.5">
                 <TrendingUp className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -481,7 +478,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     Líquido
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400">
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-emerald-600 dark:text-emerald-400 tabular-nums">
                   {formatarMoeda(metricasTecnicasLucro.totalLucroLiquido)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -491,8 +488,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
 
             {/* 2. Total de Impostos Deduzidos */}
-            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-              <div className="p-2 rounded-lg bg-amber-500 text-white shrink-0 shadow-2xs mt-0.5">
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3.5 flex items-start gap-3 transition-colors">
+              <div className="p-2 rounded-md bg-amber-600 text-white shrink-0 mt-0.5">
                 <Receipt className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -504,7 +501,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     Tributos
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400">
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-amber-600 dark:text-amber-400 tabular-nums">
                   {formatarMoeda(metricasTecnicasLucro.totalImpostos)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -514,8 +511,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
 
             {/* 3. Custo com Fornecedores */}
-            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-              <div className="p-2 rounded-lg bg-blue-600 text-white shrink-0 shadow-2xs mt-0.5">
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3.5 flex items-start gap-3 transition-colors">
+              <div className="p-2 rounded-md bg-blue-600 text-white shrink-0 mt-0.5">
                 <Building2 className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -527,7 +524,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     Compras
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-blue-600 dark:text-blue-400">
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-blue-600 dark:text-blue-400 tabular-nums">
                   {formatarMoeda(metricasTecnicasLucro.totalCustoFornecedores)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -537,8 +534,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             </div>
 
             {/* 4. Faturamento Ganho Analisado */}
-            <div className="bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/70 dark:border-slate-700/70 rounded-xl p-3.5 flex items-start gap-3 hover:border-slate-300 dark:hover:border-slate-600 transition-colors">
-              <div className="p-2 rounded-lg bg-indigo-600 text-white shrink-0 shadow-2xs mt-0.5">
+            <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3.5 flex items-start gap-3 transition-colors">
+              <div className="p-2 rounded-md bg-indigo-600 text-white shrink-0 mt-0.5">
                 <CheckSquare className="w-4 h-4" />
               </div>
               <div className="min-w-0 flex-1">
@@ -550,7 +547,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     Arrematados
                   </span>
                 </div>
-                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-indigo-600 dark:text-indigo-400">
+                <div className="text-xl sm:text-2xl font-black font-mono tracking-tight text-indigo-600 dark:text-indigo-400 tabular-nums">
                   {formatarMoeda(metricasTecnicasLucro.totalFaturamentoGanho)}
                 </div>
                 <div className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 font-medium">
@@ -563,7 +560,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       </div>
 
       {/* Barra de Filtros e Busca (Organizada e Limpa SaaS) */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-4 shadow-xs flex flex-col xl:flex-row gap-3.5 items-stretch xl:items-center justify-between">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 flex flex-col xl:flex-row gap-3.5 items-stretch xl:items-center justify-between">
         <div className="flex flex-col sm:flex-row flex-wrap items-center gap-3 flex-1">
           {/* Caixa de Busca por Órgão ou Processo */}
           <div className="relative w-full sm:w-64 md:w-72">
@@ -573,7 +570,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               placeholder="Buscar por Órgão ou Processo..."
               value={busca}
               onChange={e => setBusca(e.target.value)}
-              className="w-full pl-9.5 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+              className="w-full pl-9.5 pr-8 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
             />
             {busca && (
               <button
@@ -595,7 +592,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 type="date"
                 value={filtroData}
                 onChange={e => setFiltroData(e.target.value)}
-                className="w-full pl-9 pr-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                className="w-full pl-9 pr-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                 title="Filtrar por data de cadastro da licitação"
               />
             </div>
@@ -603,7 +600,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setFiltroData('')}
-                className="p-2 text-slate-500 hover:text-red-600 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-xl transition-colors cursor-pointer shrink-0"
+                className="p-2 text-slate-500 hover:text-red-600 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 border border-slate-200 dark:border-slate-700 rounded-md transition-colors cursor-pointer shrink-0"
                 title="Limpar filtro de data (mostrar todas as datas)"
               >
                 <X className="w-3.5 h-3.5" />
@@ -624,7 +621,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   setFiltroResponsavel(val);
                 }
               }}
-              className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl text-slate-800 dark:text-slate-100 focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer appearance-none"
+              className="w-full pl-9 pr-8 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-800 dark:text-slate-100 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer appearance-none"
               title="Filtrar por quem fez a licitação"
             >
               <option value="Todos">👤 Quem fez: Todos</option>
@@ -639,13 +636,13 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           </div>
 
           {/* Filtro Rápido por Status: Todas / Acompanhar / Homologadas */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs w-full sm:w-auto">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-md border border-slate-200 dark:border-slate-800 text-xs w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('todos')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                 filtroAcompanhamento === 'todos'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="Mostrar todas as licitações"
@@ -655,9 +652,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('acompanhar')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 filtroAcompanhamento === 'acompanhar'
-                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 shadow-xs font-bold'
+                  ? 'bg-amber-100 dark:bg-amber-950/60 text-amber-900 dark:text-amber-300 border border-amber-300 dark:border-amber-700 font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-amber-800 dark:hover:text-amber-300'
               }`}
               title="Filtrar licitações marcadas para acompanhamento"
@@ -668,9 +665,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroAcompanhamento('homologadas')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 filtroAcompanhamento === 'homologadas'
-                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 shadow-xs font-bold'
+                  ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-900 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700 font-bold'
                   : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300'
               }`}
               title="Filtrar licitações concluídas ou homologadas"
@@ -681,13 +678,13 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           </div>
 
           {/* Filtro Rápido por Plataforma: Todas / BLL (Verde) / BNC (Azul) */}
-          <div className="flex items-center gap-1 bg-slate-100 dark:bg-slate-800/80 p-1 rounded-xl border border-slate-200/80 dark:border-slate-700/80 text-xs w-full sm:w-auto">
+          <div className="flex flex-wrap sm:flex-nowrap items-center gap-1 bg-slate-100 dark:bg-slate-900 p-1 rounded-md border border-slate-200 dark:border-slate-800 text-xs w-full sm:w-auto">
             <button
               type="button"
               onClick={() => setFiltroPlataforma('todas')}
-              className={`px-3 py-1.5 rounded-lg font-semibold transition-all cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-3 py-1.5 rounded font-semibold transition-colors cursor-pointer whitespace-nowrap ${
                 filtroPlataforma === 'todas'
-                  ? 'bg-white dark:bg-slate-700 text-slate-900 dark:text-white shadow-xs'
+                  ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white border border-slate-200 dark:border-slate-700'
                   : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'
               }`}
               title="Mostrar todas as plataformas"
@@ -697,9 +694,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroPlataforma('BLL')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-2.5 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 filtroPlataforma === 'BLL'
-                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60 shadow-xs'
+                  ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-emerald-800 dark:hover:text-emerald-300'
               }`}
               title="Filtrar licitações BLL"
@@ -710,9 +707,9 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             <button
               type="button"
               onClick={() => setFiltroPlataforma('BNC')}
-              className={`px-2.5 py-1.5 rounded-lg font-semibold transition-all flex items-center gap-1.5 cursor-pointer ${
+              className={`flex-1 sm:flex-initial justify-center px-2.5 py-1.5 rounded font-semibold transition-colors flex items-center gap-1.5 cursor-pointer whitespace-nowrap ${
                 filtroPlataforma === 'BNC'
-                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60 shadow-xs'
+                  ? 'bg-blue-50 dark:bg-blue-950/60 text-blue-800 dark:text-blue-300 border border-blue-200 dark:border-blue-800/60'
                   : 'text-slate-600 dark:text-slate-400 hover:text-blue-800 dark:hover:text-blue-300'
               }`}
               title="Filtrar licitações BNC"
@@ -727,7 +724,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
         <div className="flex items-center shrink-0">
           <button
             onClick={onNovaLicitacao}
-            className="w-full sm:w-auto px-4 py-2 bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap active:scale-98"
+            className="w-full sm:w-auto px-4 py-2 bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer whitespace-nowrap"
           >
             <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
             Nova Licitação
@@ -736,12 +733,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       </div>
 
       {/* Tabela de Licitações */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl shadow-xs overflow-hidden">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden">
         {licitacoesFiltradas.length === 0 ? (
           <div className="p-12 text-center">
-            <Building2 className="w-10 h-10 text-slate-300 mx-auto mb-3" />
-            <h4 className="text-sm font-semibold text-slate-800">Nenhuma licitação encontrada</h4>
-            <p className="text-xs text-slate-500 mt-1 max-w-md mx-auto">
+            <Building2 className="w-10 h-10 text-slate-300 dark:text-slate-600 mx-auto mb-3" />
+            <h4 className="text-sm font-semibold text-slate-800 dark:text-slate-100">Nenhuma licitação encontrada</h4>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-md mx-auto">
               {busca || filtroResponsavel !== 'Todos' || filtroData || filtroPlataforma !== 'todas' ? (
                 <>
                   Nenhuma licitação corresponde aos filtros aplicados{' '}
@@ -788,7 +785,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-800/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-[11px] font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
                   <th className="py-3 px-4">ID</th>
                   <th className="py-3 px-2 text-center text-[10px] font-medium text-slate-400 dark:text-slate-500 uppercase tracking-wider w-16">
                     Plat.
@@ -816,8 +813,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   const plat = (lic.plataforma || 'BLL').toUpperCase();
 
                   return (
-                    <tr key={lic.id} className="hover:bg-slate-50/80 dark:hover:bg-[#162238] transition-colors">
-                      <td className="py-3.5 px-4 font-mono text-slate-400 font-medium tabular-nums">
+                    <tr key={lic.id} className="hover:bg-slate-50 dark:hover:bg-slate-900/50 transition-colors">
+                      <td className="py-3.5 px-4 font-mono text-slate-400 dark:text-slate-500 font-medium tabular-nums">
                         #{lic.id}
                       </td>
                       <td className="py-3.5 px-2 text-center whitespace-nowrap">
@@ -832,8 +829,8 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                           }}
                           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[9px] font-semibold border cursor-pointer transition-colors ${
                             plat === 'BNC'
-                              ? 'bg-blue-50/80 hover:bg-blue-100 text-blue-700 border-blue-200/70 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800/50'
-                              : 'bg-emerald-50/80 hover:bg-emerald-100 text-emerald-700 border-emerald-200/70 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/50'
+                              ? 'bg-blue-50 hover:bg-blue-100 text-blue-700 border-blue-200 dark:bg-blue-950/40 dark:hover:bg-blue-900/50 dark:text-blue-300 dark:border-blue-800/60'
+                              : 'bg-emerald-50 hover:bg-emerald-100 text-emerald-700 border-emerald-200 dark:bg-emerald-950/40 dark:hover:bg-emerald-900/50 dark:text-emerald-300 dark:border-emerald-800/60'
                           }`}
                           title={`Plataforma ${plat} (Clique para alterar para ${plat === 'BNC' ? 'BLL' : 'BNC'})`}
                         >
@@ -847,16 +844,16 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                           <span>{plat}</span>
                         </button>
                       </td>
-                      <td className="py-3.5 px-4 font-semibold text-slate-900 max-w-xs truncate">
+                      <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white max-w-xs truncate">
                         {lic.orgao}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-700 font-medium">
+                      <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300 font-medium">
                         {lic.processo_pregao}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-600">
+                      <td className="py-3.5 px-4 text-slate-600 dark:text-slate-400">
                         {lic.modalidade}
                       </td>
-                      <td className="py-3.5 px-4 text-slate-500 font-mono tabular-nums">
+                      <td className="py-3.5 px-4 text-slate-500 dark:text-slate-400 font-mono tabular-nums">
                         <button
                           type="button"
                           onClick={() => {
@@ -871,10 +868,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                         </button>
                       </td>
                       <td className="py-3.5 px-4">
-                        <div className="font-semibold text-slate-800 font-mono tabular-nums">
+                        <div className="font-semibold text-slate-800 dark:text-slate-100 font-mono tabular-nums">
                           {formatarMoeda(totalLic)}
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {itensDaLic.length} {itensDaLic.length === 1 ? 'item' : 'itens'}
                         </div>
                       </td>
@@ -885,10 +882,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                             onChange={e => onAtualizarResponsavel(lic.id, e.target.value)}
                             className={`text-xs font-semibold py-1 pl-2.5 pr-6 rounded-md border cursor-pointer focus:outline-hidden transition-colors ${
                               responsavelAtual.toLowerCase().includes('gustavo')
-                                ? 'bg-blue-50 text-blue-800 border-blue-200'
+                                ? 'bg-blue-50 dark:bg-blue-950/50 text-blue-800 dark:text-blue-300 border-blue-200 dark:border-blue-800/70'
                                 : responsavelAtual.toLowerCase().includes('victor')
-                                ? 'bg-emerald-50 text-emerald-800 border-emerald-200'
-                                : 'bg-purple-50 text-purple-800 border-purple-200'
+                                ? 'bg-emerald-50 dark:bg-emerald-950/50 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-800/70'
+                                : 'bg-purple-50 dark:bg-purple-950/50 text-purple-800 dark:text-purple-300 border-purple-200 dark:border-purple-800/70'
                             }`}
                             title="Alterar responsável pela licitação"
                           >
@@ -908,10 +905,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                             <button
                               type="button"
                               onClick={() => onToggleAcompanhamento?.(lic.id)}
-                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                              className={`p-1.5 rounded-md border transition-colors cursor-pointer flex items-center justify-center ${
                                 lic.acompanhamento
-                                  ? 'bg-amber-100 border-amber-300 text-amber-700 hover:bg-amber-200 shadow-xs ring-1 ring-amber-300'
-                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200'
+                                  ? 'bg-amber-100 dark:bg-amber-950/60 border-amber-300 dark:border-amber-700 text-amber-700 dark:text-amber-300 hover:bg-amber-200'
+                                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-600 hover:bg-amber-50 hover:border-amber-200'
                               }`}
                               title={
                                 lic.acompanhamento
@@ -926,12 +923,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                             <button
                               type="button"
                               onClick={() => handleAbrirModalAviso(lic)}
-                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                              className={`p-1.5 rounded-md border transition-colors cursor-pointer flex items-center justify-center ${
                                 lic.avisoData && !lic.avisoConcluido
-                                  ? 'bg-amber-500 border-amber-600 text-white shadow-xs animate-pulse ring-1 ring-amber-400'
+                                  ? 'bg-amber-600 border-amber-700 text-white'
                                   : lic.acompanhamento
-                                  ? 'bg-amber-50 border-amber-200 text-amber-600 hover:bg-amber-100'
-                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-amber-600 hover:bg-amber-50'
+                                  ? 'bg-amber-50 dark:bg-amber-950/40 border-amber-200 dark:border-amber-800 text-amber-600 dark:text-amber-400 hover:bg-amber-100'
+                                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-amber-600 hover:bg-amber-50'
                               }`}
                               title={
                                 lic.avisoData && !lic.avisoConcluido
@@ -946,10 +943,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                             <button
                               type="button"
                               onClick={() => onToggleHomologada?.(lic.id)}
-                              className={`p-1.5 rounded-lg border transition-all cursor-pointer flex items-center justify-center ${
+                              className={`p-1.5 rounded-md border transition-colors cursor-pointer flex items-center justify-center ${
                                 lic.homologada
-                                  ? 'bg-emerald-100 border-emerald-300 text-emerald-700 hover:bg-emerald-200 shadow-xs ring-1 ring-emerald-300'
-                                  : 'bg-slate-50 border-slate-200 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
+                                  ? 'bg-emerald-100 dark:bg-emerald-950/60 border-emerald-300 dark:border-emerald-700 text-emerald-700 dark:text-emerald-300 hover:bg-emerald-200'
+                                  : 'bg-slate-50 dark:bg-slate-900 border-slate-200 dark:border-slate-700 text-slate-400 hover:text-emerald-600 hover:bg-emerald-50 hover:border-emerald-200'
                               }`}
                               title={
                                 lic.homologada
@@ -966,7 +963,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                             <button
                               type="button"
                               onClick={() => handleAbrirModalAviso(lic)}
-                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-200 transition-colors cursor-pointer"
+                              className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-bold bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-200 border border-amber-300 dark:border-amber-700 hover:bg-amber-200 transition-colors cursor-pointer font-mono"
                               title={lic.avisoMensagem || 'Clique para ver ou alterar o aviso do pregoeiro'}
                             >
                               <Clock className="w-3 h-3 text-amber-600 dark:text-amber-400" />
@@ -984,7 +981,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                         <div className="flex items-center justify-end gap-1.5">
                           <button
                             onClick={() => onSelecionarLicitacao(lic.id)}
-                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0F2C59] dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs rounded-lg transition-all flex items-center gap-1.5 cursor-pointer shadow-xs border border-blue-200 dark:border-blue-400/40"
+                            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-[#0F2C59] dark:bg-blue-600 dark:hover:bg-blue-500 dark:text-white font-bold text-xs rounded-md transition-colors flex items-center gap-1.5 cursor-pointer border border-blue-200 dark:border-blue-500"
                             title="Editar Licitação / Montar Proposta"
                           >
                             <FileEdit className="w-3.5 h-3.5 text-blue-700 dark:text-amber-300" />
@@ -992,7 +989,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                           </button>
                           <button
                             onClick={() => setLicitacaoParaExcluir(lic)}
-                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-md transition-colors cursor-pointer"
+                            className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40 rounded-md transition-colors cursor-pointer"
                             title="Excluir Licitação"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -1013,14 +1010,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       {/* ========================================================================= */}
       {modalGerenciarAberto && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
           onClick={() => {
             setModalGerenciarAberto(false);
             setResponsavelParaExcluir(null);
           }}
         >
           <div
-            className="bg-white rounded-xl max-w-lg w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-[#0F172A] rounded-lg max-w-lg w-full p-6 border border-slate-200 dark:border-slate-800 relative"
             onClick={e => e.stopPropagation()}
           >
             <button
@@ -1028,16 +1025,16 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 setModalGerenciarAberto(false);
                 setResponsavelParaExcluir(null);
               }}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
-            <h3 className="text-base font-bold text-slate-900 flex items-center gap-2">
-              <Users className="w-5 h-5 text-[#0F2C59]" />
+            <h3 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2">
+              <Users className="w-5 h-5 text-[#0F2C59] dark:text-blue-400" />
               Gerenciar Responsáveis (Quem Fez)
             </h3>
-            <p className="text-xs text-slate-500 mt-1">
+            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1">
               Adicione novos membros da equipe ou exclua nomes existentes do sistema.
             </p>
 
@@ -1051,12 +1048,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   value={novoNomeModal}
                   onChange={e => setNovoNomeModal(e.target.value)}
                   placeholder="Nome do novo responsável (ex: Rafael, Mariana)..."
-                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+                  className="w-full pl-9 pr-3 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                 />
               </div>
               <button
                 type="submit"
-                className="px-4 py-2 bg-[#0F2C59] hover:bg-[#163c78] text-white text-xs font-semibold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
+                className="px-4 py-2 bg-[#0F2C59] hover:bg-[#163c78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-semibold rounded-md transition-colors flex items-center gap-1.5 cursor-pointer shrink-0"
               >
                 <PlusCircle className="w-3.5 h-3.5 text-amber-400" />
                 Adicionar
@@ -1065,19 +1062,19 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
 
             {/* Sub-painel de Confirmação de Exclusão (caso clicou na lixeira de algum nome) */}
             {responsavelParaExcluir && (
-              <div className="mt-4 p-3.5 bg-rose-50 border border-rose-200 rounded-xl space-y-3 animate-in fade-in duration-150">
+              <div className="mt-4 p-3.5 bg-rose-50 dark:bg-rose-950/30 border border-rose-200 dark:border-rose-900 rounded-md space-y-3">
                 <div className="flex items-start gap-2.5">
-                  <AlertTriangle className="w-5 h-5 text-rose-600 shrink-0 mt-0.5" />
-                  <div className="text-xs text-rose-900 flex-1">
+                  <AlertTriangle className="w-5 h-5 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+                  <div className="text-xs text-rose-900 dark:text-rose-200 flex-1">
                     <p className="font-bold">
                       Confirmar exclusão de "{responsavelParaExcluir}"?
                     </p>
                     {contagemPorResponsavel[responsavelParaExcluir] > 0 ? (
-                      <p className="mt-1 text-slate-700 leading-relaxed">
+                      <p className="mt-1 text-slate-700 dark:text-slate-300 leading-relaxed">
                         Existem <strong>{contagemPorResponsavel[responsavelParaExcluir]}</strong> licitação(ões) vinculada(s) a este nome. Escolha para quem transferi-las antes de excluir:
                       </p>
                     ) : (
-                      <p className="mt-1 text-slate-700">
+                      <p className="mt-1 text-slate-700 dark:text-slate-300">
                         Nenhuma licitação vinculada no momento. O nome será removido da lista do sistema.
                       </p>
                     )}
@@ -1087,11 +1084,11 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 {contagemPorResponsavel[responsavelParaExcluir] > 0 && (
                   <div className="flex items-center gap-2 pt-1">
                     <ArrowRightLeft className="w-4 h-4 text-slate-500 shrink-0" />
-                    <span className="text-xs font-semibold text-slate-700 shrink-0">Transferir para:</span>
+                    <span className="text-xs font-semibold text-slate-700 dark:text-slate-300 shrink-0">Transferir para:</span>
                     <select
                       value={destinoTransferencia}
                       onChange={e => setDestinoTransferencia(e.target.value)}
-                      className="flex-1 px-2.5 py-1.5 text-xs bg-white border border-slate-300 rounded-lg text-slate-900 font-semibold cursor-pointer focus:outline-hidden"
+                      className="flex-1 px-2.5 py-1.5 text-xs bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white font-semibold cursor-pointer focus:outline-hidden"
                     >
                       {responsaveis
                         .filter(r => r !== responsavelParaExcluir)
@@ -1108,14 +1105,14 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <button
                     type="button"
                     onClick={() => setResponsavelParaExcluir(null)}
-                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg transition-colors cursor-pointer"
+                    className="px-3 py-1.5 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-white dark:bg-slate-800 hover:bg-slate-100 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-md transition-colors cursor-pointer"
                   >
                     Cancelar
                   </button>
                   <button
                     type="button"
                     onClick={confirmarExclusaoResponsavel}
-                    className="px-3.5 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer"
+                    className="px-3.5 py-1.5 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Trash2 className="w-3.5 h-3.5" />
                     Excluir Nome
@@ -1125,7 +1122,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
             )}
 
             {/* Lista dos Nomes Cadastrados com Botão de Excluir */}
-            <div className="mt-4 border border-slate-200 rounded-xl divide-y divide-slate-100 max-h-64 overflow-y-auto">
+            <div className="mt-4 border border-slate-200 dark:border-slate-800 rounded-md divide-y divide-slate-100 dark:divide-slate-800 max-h-64 overflow-y-auto">
               {responsaveis.map(resp => {
                 const totalDeste = contagemPorResponsavel[resp] || 0;
                 const estaSendoExcluido = responsavelParaExcluir === resp;
@@ -1134,23 +1131,23 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <div
                     key={resp}
                     className={`p-3 flex items-center justify-between gap-3 transition-colors ${
-                      estaSendoExcluido ? 'bg-rose-50/50' : 'hover:bg-slate-50'
+                      estaSendoExcluido ? 'bg-rose-50/50 dark:bg-rose-950/30' : 'hover:bg-slate-50 dark:hover:bg-slate-900/50'
                     }`}
                   >
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 rounded-full bg-[#0F2C59]/10 text-[#0F2C59] flex items-center justify-center font-bold text-xs">
+                      <div className="w-8 h-8 rounded-md bg-[#0F2C59]/10 dark:bg-blue-950/60 text-[#0F2C59] dark:text-blue-400 flex items-center justify-center font-bold text-xs">
                         {resp.charAt(0).toUpperCase()}
                       </div>
                       <div>
-                        <div className="font-bold text-xs text-slate-900 flex items-center gap-2">
+                        <div className="font-bold text-xs text-slate-900 dark:text-white flex items-center gap-2">
                           {resp}
                           {resp === 'Gustavo' || resp === 'Victor' ? (
-                            <span className="text-[10px] font-semibold text-slate-400 bg-slate-100 px-1.5 py-0.5 rounded">
+                            <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded border border-slate-200 dark:border-slate-700">
                               Padrão
                             </span>
                           ) : null}
                         </div>
-                        <div className="text-[11px] text-slate-500">
+                        <div className="text-[11px] text-slate-500 dark:text-slate-400">
                           {totalDeste} {totalDeste === 1 ? 'licitação vinculada' : 'licitações vinculadas'}
                         </div>
                       </div>
@@ -1160,10 +1157,10 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                       type="button"
                       disabled={responsaveis.length <= 1}
                       onClick={() => iniciarExclusaoResponsavel(resp)}
-                      className={`p-1.5 rounded-lg transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold ${
+                      className={`p-1.5 rounded-md transition-colors cursor-pointer flex items-center gap-1 text-xs font-semibold ${
                         responsaveis.length <= 1
-                          ? 'text-slate-300 cursor-not-allowed'
-                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50'
+                          ? 'text-slate-300 dark:text-slate-600 cursor-not-allowed'
+                          : 'text-slate-400 hover:text-rose-600 hover:bg-rose-50 dark:hover:bg-rose-950/40'
                       }`}
                       title={
                         responsaveis.length <= 1
@@ -1186,7 +1183,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   setModalGerenciarAberto(false);
                   setResponsavelParaExcluir(null);
                 }}
-                className="px-4 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
               >
                 Fechar
               </button>
@@ -1200,31 +1197,31 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       {/* ========================================================================= */}
       {licitacaoParaExcluir && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
           onClick={() => setLicitacaoParaExcluir(null)}
         >
           <div
-            className="bg-white rounded-xl max-w-md w-full p-6 shadow-2xl border border-slate-200 relative animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-[#0F172A] rounded-lg max-w-md w-full p-6 border border-slate-200 dark:border-slate-800 relative"
             onClick={e => e.stopPropagation()}
           >
             <button
               onClick={() => setLicitacaoParaExcluir(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 p-1 rounded-md cursor-pointer transition-colors"
+              className="absolute top-4 right-4 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 p-1 rounded-md cursor-pointer transition-colors"
             >
               <X className="w-4 h-4" />
             </button>
 
             <div className="flex items-start gap-4">
-              <div className="w-10 h-10 rounded-full bg-rose-100 text-rose-600 flex items-center justify-center shrink-0">
+              <div className="w-10 h-10 rounded-md bg-rose-100 dark:bg-rose-950/60 text-rose-600 dark:text-rose-400 flex items-center justify-center shrink-0">
                 <AlertTriangle className="w-5 h-5" />
               </div>
               <div className="flex-1">
-                <h3 className="text-sm font-bold text-slate-900">Excluir Licitação?</h3>
-                <p className="text-xs text-slate-600 mt-1 leading-relaxed">
+                <h3 className="text-sm font-bold text-slate-900 dark:text-white">Excluir Licitação?</h3>
+                <p className="text-xs text-slate-600 dark:text-slate-300 mt-1 leading-relaxed">
                   Tem certeza que deseja excluir permanentemente o processo{' '}
-                  <strong className="text-slate-900 font-semibold">{licitacaoParaExcluir.processo_pregao}</strong> ({licitacaoParaExcluir.orgao})?
+                  <strong className="text-slate-900 dark:text-white font-semibold">{licitacaoParaExcluir.processo_pregao}</strong> ({licitacaoParaExcluir.orgao})?
                 </p>
-                <div className="mt-2 p-2.5 bg-rose-50 border border-rose-200 rounded-lg text-[11px] text-rose-800">
+                <div className="mt-2 p-2.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-md text-[11px] text-rose-800 dark:text-rose-200">
                   ⚠️ <strong>Atenção:</strong> Todos os itens, descrições técnicas e cotações vinculadas a esta licitação serão removidos.
                 </div>
               </div>
@@ -1234,7 +1231,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setLicitacaoParaExcluir(null)}
-                className="px-3.5 py-2 text-xs font-semibold text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-lg transition-colors cursor-pointer"
+                className="px-3.5 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1245,7 +1242,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   setLicitacaoParaExcluir(null);
                   onExcluirLicitacao(idParaDeletar);
                 }}
-                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-lg shadow-xs transition-colors cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 text-xs font-bold text-white bg-rose-600 hover:bg-rose-700 rounded-md transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 Sim, Excluir Definitivamente
@@ -1260,15 +1257,15 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       {/* ========================================================================= */}
       {confirmarMudancaPlataforma && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
           onClick={() => setConfirmarMudancaPlataforma(null)}
         >
           <div
-            className="bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4"
+            className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg max-w-md w-full p-6 space-y-4"
             onClick={e => e.stopPropagation()}
           >
             <div className="flex items-start gap-3">
-              <div className="p-2.5 rounded-xl bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shrink-0">
+              <div className="p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 shrink-0">
                 <ArrowRightLeft className="w-5 h-5" />
               </div>
               <div className="flex-1">
@@ -1284,11 +1281,11 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 </p>
 
                 {/* Comparativo Visual De -> Para */}
-                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/60 rounded-xl flex items-center justify-center gap-3 text-xs">
+                <div className="mt-3 p-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-md flex items-center justify-center gap-3 text-xs">
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">Atual:</span>
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black text-[10px] ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded font-black text-[10px] ${
                         (confirmarMudancaPlataforma.licitacao.plataforma || 'BLL').toUpperCase() === 'BNC'
                           ? 'bg-blue-100 text-blue-900 dark:bg-blue-950 dark:text-blue-300'
                           : 'bg-emerald-100 text-emerald-900 dark:bg-emerald-950 dark:text-emerald-300'
@@ -1303,7 +1300,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <div className="flex items-center gap-1.5">
                     <span className="text-[11px] text-slate-500 dark:text-slate-400">Novo:</span>
                     <span
-                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded-md font-black text-[10px] shadow-xs text-white ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-0.5 rounded font-black text-[10px] text-white ${
                         confirmarMudancaPlataforma.novaPlataforma === 'BNC'
                           ? 'bg-blue-600'
                           : 'bg-emerald-600'
@@ -1320,7 +1317,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setConfirmarMudancaPlataforma(null)}
-                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
               >
                 Cancelar
               </button>
@@ -1332,7 +1329,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   setConfirmarMudancaPlataforma(null);
                   onAtualizarPlataforma?.(licId, novaPlat);
                 }}
-                className={`px-4 py-2 text-xs font-bold text-white rounded-xl shadow-xs transition-colors cursor-pointer flex items-center gap-1.5 active:scale-98 ${
+                className={`px-4 py-2 text-xs font-bold text-white rounded-md transition-colors cursor-pointer flex items-center gap-1.5 ${
                   confirmarMudancaPlataforma.novaPlataforma === 'BNC'
                     ? 'bg-blue-600 hover:bg-blue-500'
                     : 'bg-emerald-600 hover:bg-emerald-500'
@@ -1365,16 +1362,16 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
       {/* ========================================================================= */}
       {modalAvisoLic && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60"
           onClick={() => setModalAvisoLic(null)}
         >
           <div
-            className="bg-white dark:bg-[#0A162B] rounded-2xl max-w-md w-full p-5 sm:p-6 shadow-2xl border border-slate-200 dark:border-slate-800 relative animate-in fade-in zoom-in-95 duration-150"
+            className="bg-white dark:bg-[#0F172A] rounded-lg max-w-md w-full p-5 sm:p-6 border border-slate-200 dark:border-slate-800 relative"
             onClick={e => e.stopPropagation()}
           >
-            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/10">
+            <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-slate-800">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
+                <div className="p-2 rounded-md bg-amber-500/15 text-amber-600 dark:text-amber-400 border border-amber-500/20">
                   <Clock className="w-5 h-5" />
                 </div>
                 <div>
@@ -1389,7 +1386,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setModalAvisoLic(null)}
-                className="p-1 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
+                className="p-1 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-white cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1406,7 +1403,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     required
                     value={formAvisoData}
                     onChange={e => setFormAvisoData(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:border-amber-500"
                   />
                 </div>
 
@@ -1419,7 +1416,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     required
                     value={formAvisoHora}
                     onChange={e => setFormAvisoHora(e.target.value)}
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-semibold focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-semibold focus:outline-hidden focus:border-amber-500"
                   />
                 </div>
               </div>
@@ -1433,11 +1430,11 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   value={formAvisoMsg}
                   onChange={e => setFormAvisoMsg(e.target.value)}
                   placeholder="Ex: Pregoeiro informou no chat que a sessão reabre às 14h para disputa de lances..."
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-amber-500/30"
+                  className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-amber-500"
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
+              <div className="p-3 rounded-md bg-amber-50/70 dark:bg-amber-950/30 border border-amber-200/80 dark:border-amber-900/40 text-[11px] text-amber-900 dark:text-amber-200 flex items-start gap-2.5">
                 <Bell className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
                 <span className="leading-relaxed">
                   Este aviso emitirá um <strong>alerta sonoro</strong> e ficará disponível no <strong>Sininho no canto superior direito</strong> para que você não perca a reabertura!
@@ -1464,13 +1461,13 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   <button
                     type="button"
                     onClick={() => setModalAvisoLic(null)}
-                    className="px-3 py-2 rounded-xl border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-semibold"
+                    className="px-3 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-xs text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer font-semibold"
                   >
                     Cancelar
                   </button>
                   <button
                     type="submit"
-                    className="px-4 py-2 rounded-xl bg-amber-500 hover:bg-amber-600 active:scale-98 text-white text-xs font-bold shadow-md transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-2 rounded-md bg-amber-600 hover:bg-amber-500 text-white text-xs font-bold transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Check className="w-3.5 h-3.5 stroke-[2.5]" />
                     <span>Salvar Alerta</span>
@@ -1484,11 +1481,11 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
 
       {/* Modal de Edição Rápida da Data de Cadastro (Sem Poluição Visual) */}
       {modalEditarDataLic && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-xl space-y-4">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg max-w-md w-full p-6 space-y-4">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-3">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
+                <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400">
                   <Calendar className="w-4 h-4" />
                 </div>
                 <div>
@@ -1503,7 +1500,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
               <button
                 type="button"
                 onClick={() => setModalEditarDataLic(null)}
-                className="p-1 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
+                className="p-1 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-400 hover:text-slate-600 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -1518,12 +1515,12 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                   type="date"
                   value={novaDataCadastroForm}
                   onChange={e => setNovaDataCadastroForm(e.target.value)}
-                  className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-800/80 border border-slate-200 dark:border-slate-700 rounded-xl text-slate-900 dark:text-white focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer"
+                  className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-blue-600 cursor-pointer"
                   autoFocus
                 />
               </div>
 
-              <div className="p-3 rounded-xl bg-slate-50 dark:bg-slate-800/50 border border-slate-200/60 dark:border-slate-700/60 text-[11px] text-slate-600 dark:text-slate-300">
+              <div className="p-3 rounded-md bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-800 text-[11px] text-slate-600 dark:text-slate-300">
                 Data atualmente salva: <strong className="font-mono text-slate-900 dark:text-white">{modalEditarDataLic.data_cadastro}</strong>
               </div>
             </div>
@@ -1545,7 +1542,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setModalEditarDataLic(null)}
-                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+                  className="px-3.5 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer"
                 >
                   Cancelar
                 </button>
@@ -1557,7 +1554,7 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
                     onAtualizarDataCadastro?.(modalEditarDataLic.id, dataFormatada);
                     setModalEditarDataLic(null);
                   }}
-                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-xl transition-colors cursor-pointer shadow-xs active:scale-98"
+                  className="px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors cursor-pointer"
                 >
                   Salvar Data
                 </button>

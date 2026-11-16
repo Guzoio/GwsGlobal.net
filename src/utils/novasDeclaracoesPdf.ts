@@ -8,7 +8,8 @@ export type TipoNovaDeclaracao =
   | 'fatos_impeditivos'
   | 'trabalho_infantil'
   | 'responsabilidade'
-  | 'inexistencia_parentes';
+  | 'inexistencia_parentes'
+  | 'cadastro_responsavel';
 
 export interface DadosNovaDeclaracao {
   tipo: TipoNovaDeclaracao;
@@ -25,6 +26,16 @@ export interface DadosNovaDeclaracao {
   profissao?: string; // Ex: "empresário"
   orgaoExpedidorRg?: string; // Ex: "PC MG"
   textoPersonalizado?: string; // Permite edição livre pelo usuário se desejar
+  // Campos do Termo de Cadastro de Responsável Legal e Preposto
+  cargoResponsavel?: string;
+  emailResponsavel?: string;
+  prepostoNome?: string;
+  prepostoCpf?: string;
+  prepostoRg?: string;
+  prepostoCargo?: string;
+  prepostoTelefone?: string;
+  prepostoEmail?: string;
+  prepostoOrigemAssinatura?: 'socio1' | 'socio2' | 'nenhuma';
 }
 
 /**
@@ -204,7 +215,20 @@ export function obterConfigDeclaracao(tipo: TipoNovaDeclaracao) {
         subtitulo: 'Ausência de servidores públicos da ativa e parentesco até 3º grau',
         badge: 'Sem Parentesco',
       };
+    case 'cadastro_responsavel':
+      return {
+        id: 'cadastro_responsavel' as TipoNovaDeclaracao,
+        nomeMenu: 'Cadastro do Responsável',
+        tituloDoc: 'TERMO DE CADASTRO DE RESPONSÁVEL LEGAL E PREPOSTO',
+        subtitulo: 'Cadastro da Empresa, Responsável Legal e Preposto Designado',
+        badge: 'Preposto',
+      };
   }
+}
+
+export interface SecaoCadastroResponsavel {
+  titulo: string;
+  linhas: { label: string; valor: string }[];
 }
 
 /**
@@ -223,6 +247,13 @@ export function construirTextoDeclaracao(
     comissao?: string;
     processo?: string;
   };
+  secoesCadastro?: SecaoCadastroResponsavel[];
+  declaracaoDesignacao?: string;
+  responsavelAssinaturaNome?: string;
+  responsavelAssinaturaCargo?: string;
+  responsavelAssinaturaCpf?: string;
+  prepostoAssinaturaNome?: string;
+  prepostoAssinaturaCpf?: string;
 } {
   const razaoSocial = (timbrado.razaoSocial || 'GWS GLOBAL LIMITADA').toUpperCase();
   const cnpj = timbrado.cnpj || '53.080.207/0001-80';
@@ -328,6 +359,90 @@ export function construirTextoDeclaracao(
 
       return {
         paragrafos: [p1, p2, p3],
+      };
+    }
+
+    case 'cadastro_responsavel': {
+      const endBase = (timbrado.endereco || 'Rua Alpercata, Nº 261, Ana Malaquias').trim();
+      const cidUf = (timbrado.cidadeEmissao || 'Timóteo - MG').trim();
+      const jaContemCidade =
+        cidUf && endBase.toLowerCase().includes(cidUf.split('-')[0].trim().toLowerCase());
+      const enderecoCompleto = jaContemCidade || !cidUf ? endBase : `${endBase}, ${cidUf}`;
+
+      const telefoneEmpresa = timbrado.telefone || '(31) 98694-9588';
+      const emailEmpresa = timbrado.email || 'gwsgloballimitada@gmail.com';
+
+      const rgRepFormatado = /pc|expedido|ssp|mg/i.test(rgRep) ? rgRep : `${rgRep} / ${orgaoRg}`;
+      const cargoResp =
+        dados.cargoResponsavel?.trim() || timbrado.cargoRepresentante?.trim() || 'Sócio-Administrador';
+      const emailResp = dados.emailResponsavel?.trim() || emailEmpresa;
+
+      const temSocio2 = Boolean(timbrado.nomeRepresentante2?.trim());
+      const prepostoNome =
+        dados.prepostoNome?.trim() ||
+        (temSocio2 ? timbrado.nomeRepresentante2!.trim() : nomeRep);
+      const prepostoCpf =
+        dados.prepostoCpf?.trim() ||
+        (temSocio2 ? timbrado.cpfRepresentante2?.trim() || cpfRep : cpfRep);
+      const rawRgPrep =
+        dados.prepostoRg?.trim() ||
+        (temSocio2 ? timbrado.rgRepresentante2?.trim() || rgRep : rgRep);
+      const prepostoRg = rawRgPrep
+        ? /pc|expedido|ssp|mg/i.test(rawRgPrep)
+          ? rawRgPrep
+          : `${rawRgPrep} / ${orgaoRg}`
+        : '-';
+      const prepostoCargo =
+        dados.prepostoCargo?.trim() ||
+        (temSocio2 ? timbrado.cargoRepresentante2?.trim() || 'Sócio-Administrador / Preposto' : 'Sócio-Administrador / Preposto');
+      const prepostoTel = dados.prepostoTelefone?.trim() || telefoneEmpresa;
+      const prepostoEmail = dados.prepostoEmail?.trim() || emailEmpresa;
+
+      const orgaoDesignacao = promotor || '[Nome do Órgão / Empresa Contratante]';
+      const processoDesignacao = identificacaoProcesso || '[Processo / Contrato / Edital]';
+
+      const declaracaoDesignacao = `Pelo presente instrumento, a empresa acima qualificada, por meio de seu Responsável Legal, nomeia e cadastra o(a) Sr.(a) ${prepostoNome} como seu PREPOSTO(A) para representá-la perante ${orgaoDesignacao}, no âmbito do ${processoDesignacao}, conferindo-lhe poderes para acompanhar rotinas administrativas, receber notificações, prestar esclarecimentos e praticar os atos necessários ao fiel cumprimento desta representação.`;
+
+      const secoesCadastro: SecaoCadastroResponsavel[] = [
+        {
+          titulo: '1. DADOS DA EMPRESA',
+          linhas: [
+            { label: 'Razão Social:', valor: razaoSocial },
+            { label: 'CNPJ:', valor: cnpj },
+            { label: 'Endereço:', valor: enderecoCompleto },
+            { label: 'Telefone / E-mail:', valor: `${telefoneEmpresa}  |  ${emailEmpresa}` },
+          ],
+        },
+        {
+          titulo: '2. DADOS DO RESPONSÁVEL LEGAL',
+          linhas: [
+            { label: 'Nome Completo:', valor: nomeRep },
+            { label: 'CPF / RG:', valor: `CPF: ${cpfRep}  |  RG: ${rgRepFormatado}` },
+            { label: 'Cargo:', valor: cargoResp },
+            { label: 'E-mail:', valor: emailResp },
+          ],
+        },
+        {
+          titulo: '3. DADOS DO PREPOSTO',
+          linhas: [
+            { label: 'Nome Completo:', valor: prepostoNome },
+            { label: 'CPF / RG:', valor: `CPF: ${prepostoCpf}  |  RG: ${prepostoRg}` },
+            { label: 'Cargo/Função:', valor: prepostoCargo },
+            { label: 'Telefone / WhatsApp:', valor: prepostoTel },
+            { label: 'E-mail:', valor: prepostoEmail },
+          ],
+        },
+      ];
+
+      return {
+        paragrafos: [declaracaoDesignacao],
+        secoesCadastro,
+        declaracaoDesignacao,
+        responsavelAssinaturaNome: nomeRep,
+        responsavelAssinaturaCargo: cargoResp,
+        responsavelAssinaturaCpf: cpfRep,
+        prepostoAssinaturaNome: prepostoNome,
+        prepostoAssinaturaCpf: prepostoCpf,
       };
     }
   }
@@ -495,22 +610,74 @@ export async function gerarNovaDeclaracaoPdf(
   }
 
   // 6. CORPO DO TEXTO
-  const fontSizeCorpo = dados.tipo === 'responsabilidade' ? 8.5 : 10;
-  const lineSpacingCorpo = dados.tipo === 'responsabilidade' ? 3.9 : 5.2;
-  const gapParagrafo = dados.tipo === 'responsabilidade' ? 3.2 : 5;
+  if (dados.tipo === 'cadastro_responsavel' && textoCompilado.secoesCadastro) {
+    for (const secao of textoCompilado.secoesCadastro) {
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(9.5);
+      doc.setTextColor(15, 44, 89);
+      doc.text(secao.titulo, marginLeft, currentY);
+      currentY += 1.5;
+      doc.setDrawColor(203, 213, 225);
+      doc.setLineWidth(0.25);
+      doc.line(marginLeft, currentY, pageWidth - marginRight, currentY);
+      currentY += 4.5;
 
-  doc.setFont('helvetica', 'normal');
-  doc.setFontSize(fontSizeCorpo);
-  doc.setTextColor(15, 23, 42);
+      for (const item of secao.linhas) {
+        doc.setFont('helvetica', 'bold');
+        doc.setFontSize(8.8);
+        doc.setTextColor(30, 41, 59);
+        const labelTxt = `${item.label} `;
+        const labelW = doc.getTextWidth(labelTxt);
+        doc.text(labelTxt, marginLeft, currentY);
 
-  const paragrafos = dados.textoPersonalizado?.trim()
-    ? dados.textoPersonalizado.split('\n\n')
-    : textoCompilado.paragrafos;
+        doc.setFont('helvetica', 'normal');
+        doc.setTextColor(15, 23, 42);
+        const valLines = doc.splitTextToSize(item.valor || '-', Math.max(40, contentWidth - labelW));
+        doc.text(valLines, marginLeft + labelW, currentY);
+        currentY += Math.max(1, valLines.length) * 4.3;
+      }
+      currentY += 3.5;
+    }
 
-  for (const p of paragrafos) {
-    const linhas = doc.splitTextToSize(p, contentWidth);
-    doc.text(linhas, marginLeft, currentY, { maxWidth: contentWidth, align: 'justify' });
-    currentY += linhas.length * lineSpacingCorpo + gapParagrafo;
+    // 4. DECLARAÇÃO DE DESIGNAÇÃO
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9.5);
+    doc.setTextColor(15, 44, 89);
+    doc.text('4. DECLARAÇÃO DE DESIGNAÇÃO', marginLeft, currentY);
+    currentY += 1.5;
+    doc.setDrawColor(203, 213, 225);
+    doc.setLineWidth(0.25);
+    doc.line(marginLeft, currentY, pageWidth - marginRight, currentY);
+    currentY += 4.8;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9.2);
+    doc.setTextColor(15, 23, 42);
+    const textoDesig =
+      dados.textoPersonalizado?.trim() ||
+      textoCompilado.declaracaoDesignacao ||
+      '';
+    const linhasDesig = doc.splitTextToSize(textoDesig, contentWidth);
+    doc.text(linhasDesig, marginLeft, currentY, { maxWidth: contentWidth, align: 'justify' });
+    currentY += linhasDesig.length * 4.5 + 4;
+  } else {
+    const fontSizeCorpo = dados.tipo === 'responsabilidade' ? 8.5 : 10;
+    const lineSpacingCorpo = dados.tipo === 'responsabilidade' ? 3.9 : 5.2;
+    const gapParagrafo = dados.tipo === 'responsabilidade' ? 3.2 : 5;
+
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(fontSizeCorpo);
+    doc.setTextColor(15, 23, 42);
+
+    const paragrafos = dados.textoPersonalizado?.trim()
+      ? dados.textoPersonalizado.split('\n\n')
+      : textoCompilado.paragrafos;
+
+    for (const p of paragrafos) {
+      const linhas = doc.splitTextToSize(p, contentWidth);
+      doc.text(linhas, marginLeft, currentY, { maxWidth: contentWidth, align: 'justify' });
+      currentY += linhas.length * lineSpacingCorpo + gapParagrafo;
+    }
   }
 
   // 7. RESSALVA ESPECÍFICA (Ex: Menor Aprendiz)
@@ -534,7 +701,7 @@ export async function gerarNovaDeclaracaoPdf(
   }
 
   // 8. LOCAL E DATAÇÃO (Conforme modelo: "(Local e data) TIMOTEO-MG, 23/04/2026")
-  currentY = Math.max(currentY + 6, 175);
+  currentY = dados.tipo === 'cadastro_responsavel' ? Math.max(currentY + 4, 182) : Math.max(currentY + 6, 175);
   doc.setFont('helvetica', 'normal');
   doc.setFontSize(10);
   doc.setTextColor(0, 0, 0);
@@ -547,22 +714,19 @@ export async function gerarNovaDeclaracaoPdf(
   const prefixoData = dados.tipo === 'trabalho_infantil' ? '(Local e data) ' : '';
   doc.text(`${prefixoData}${dataFinal}`, marginLeft, currentY);
 
-  currentY += 16;
+  currentY += dados.tipo === 'cadastro_responsavel' ? 8 : 16;
 
   // 9. ASSINATURAS DO PAPEL TIMBRADO (com imagem e dados cadastrados)
   const nomeRep1 = timbrado.nomeRepresentante || 'Gustavo Henrique Severino Pinto';
   const cpfRep1 = timbrado.cpfRepresentante || '020.313.066-93';
-  const cargoRep1 = timbrado.cargoRepresentante || 'Representante Legal';
+  const cargoRep1 =
+    dados.cargoResponsavel?.trim() || timbrado.cargoRepresentante || 'Responsável Legal';
 
   const nomeRep2 = timbrado.nomeRepresentante2?.trim() || '';
   const cpfRep2 = timbrado.cpfRepresentante2?.trim() || '';
   const cargoRep2 = timbrado.cargoRepresentante2 || 'Representante Legal';
 
-  const temDoisRepresentantes = Boolean(
-    nomeRep2 && (timbrado.assinaturaImagem2 || timbrado.nomeRepresentante2)
-  );
-
-  if (temDoisRepresentantes) {
+  if (dados.tipo === 'cadastro_responsavel') {
     const gap = 14;
     const colWidth = (contentWidth - gap) / 2;
     const col1Center = marginLeft + colWidth / 2;
@@ -583,11 +747,23 @@ export async function gerarNovaDeclaracaoPdf(
       } catch {}
     }
 
-    if (timbrado.assinaturaImagem2 && timbrado.assinaturaImagem2.startsWith('data:image')) {
+    const prepostoAssinaturaImg =
+      dados.prepostoOrigemAssinatura === 'socio1'
+        ? timbrado.assinaturaImagem
+        : dados.prepostoOrigemAssinatura === 'socio2'
+        ? timbrado.assinaturaImagem2
+        : nomeRep2 &&
+          textoCompilado.prepostoAssinaturaNome?.toLowerCase() === nomeRep2.toLowerCase()
+        ? timbrado.assinaturaImagem2
+        : textoCompilado.prepostoAssinaturaNome?.toLowerCase() === nomeRep1.toLowerCase()
+        ? timbrado.assinaturaImagem
+        : '';
+
+    if (prepostoAssinaturaImg && prepostoAssinaturaImg.startsWith('data:image')) {
       try {
         renderizarImagemProporcional(
           doc,
-          timbrado.assinaturaImagem2,
+          prepostoAssinaturaImg,
           col2Center - sigW / 2,
           currentY,
           sigW,
@@ -599,8 +775,8 @@ export async function gerarNovaDeclaracaoPdf(
     const linhaY = currentY + sigH + 1;
     doc.setDrawColor(0, 0, 0);
     doc.setLineWidth(0.25);
-    doc.line(col1Center - 32, linhaY, col1Center + 32, linhaY);
-    doc.line(col2Center - 32, linhaY, col2Center + 32, linhaY);
+    doc.line(col1Center - 35, linhaY, col1Center + 35, linhaY);
+    doc.line(col2Center - 35, linhaY, col2Center + 35, linhaY);
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
@@ -610,60 +786,130 @@ export async function gerarNovaDeclaracaoPdf(
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(51, 65, 85);
-    doc.text(`CPF: ${cpfRep1}`, col1Center, linhaY + 7.5, { align: 'center' });
-    doc.text(cargoRep1.toUpperCase(), col1Center, linhaY + 11, { align: 'center' });
+    doc.text(`Responsável Legal / ${cargoRep1}`, col1Center, linhaY + 7.5, { align: 'center' });
+    doc.text(`CPF: ${cpfRep1}`, col1Center, linhaY + 11, { align: 'center' });
+
+    const prepNome = textoCompilado.prepostoAssinaturaNome || nomeRep2 || nomeRep1;
+    const prepCpf = textoCompilado.prepostoAssinaturaCpf || cpfRep2 || cpfRep1;
 
     doc.setFont('helvetica', 'bold');
     doc.setFontSize(8);
     doc.setTextColor(0, 0, 0);
-    doc.text(nomeRep2.toUpperCase(), col2Center, linhaY + 4, { align: 'center' });
+    doc.text(prepNome.toUpperCase(), col2Center, linhaY + 4, { align: 'center' });
 
     doc.setFont('helvetica', 'normal');
     doc.setFontSize(7.5);
     doc.setTextColor(51, 65, 85);
-    doc.text(`CPF: ${cpfRep2}`, col2Center, linhaY + 7.5, { align: 'center' });
-    doc.text(cargoRep2.toUpperCase(), col2Center, linhaY + 11, { align: 'center' });
+    doc.text('Preposto Designado (Ciente)', col2Center, linhaY + 7.5, { align: 'center' });
+    doc.text(`CPF: ${prepCpf}`, col2Center, linhaY + 11, { align: 'center' });
   } else {
-    // 1 representante centralizado
-    const centerX = pageWidth / 2;
-    const sigW = 60;
-    const sigH = 22;
-
-    if (timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image')) {
-      try {
-        renderizarImagemProporcional(
-          doc,
-          timbrado.assinaturaImagem,
-          centerX - sigW / 2,
-          currentY,
-          sigW,
-          sigH
-        );
-      } catch {}
-    }
-
-    const linhaY = currentY + sigH + 1;
-    doc.setDrawColor(0, 0, 0);
-    doc.setLineWidth(0.25);
-    doc.line(centerX - 45, linhaY, centerX + 45, linhaY);
-
-    doc.setFont('helvetica', 'bold');
-    doc.setFontSize(8.5);
-    doc.setTextColor(0, 0, 0);
-    doc.text(nomeRep1.toUpperCase(), centerX, linhaY + 4.5, { align: 'center' });
-
-    doc.setFont('helvetica', 'normal');
-    doc.setFontSize(7.5);
-    doc.setTextColor(51, 65, 85);
-    doc.text(`CPF: ${cpfRep1}   •   ${cargoRep1.toUpperCase()}`, centerX, linhaY + 8.5, {
-      align: 'center',
-    });
-    doc.text(
-      (timbrado.razaoSocial || 'GWS GLOBAL LIMITADA').toUpperCase(),
-      centerX,
-      linhaY + 12,
-      { align: 'center' }
+    const temDoisRepresentantes = Boolean(
+      nomeRep2 && (timbrado.assinaturaImagem2 || timbrado.nomeRepresentante2)
     );
+
+    if (temDoisRepresentantes) {
+      const gap = 14;
+      const colWidth = (contentWidth - gap) / 2;
+      const col1Center = marginLeft + colWidth / 2;
+      const col2Center = marginLeft + colWidth + gap + colWidth / 2;
+      const sigW = 50;
+      const sigH = 18;
+
+      if (timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image')) {
+        try {
+          renderizarImagemProporcional(
+            doc,
+            timbrado.assinaturaImagem,
+            col1Center - sigW / 2,
+            currentY,
+            sigW,
+            sigH
+          );
+        } catch {}
+      }
+
+      if (timbrado.assinaturaImagem2 && timbrado.assinaturaImagem2.startsWith('data:image')) {
+        try {
+          renderizarImagemProporcional(
+            doc,
+            timbrado.assinaturaImagem2,
+            col2Center - sigW / 2,
+            currentY,
+            sigW,
+            sigH
+          );
+        } catch {}
+      }
+
+      const linhaY = currentY + sigH + 1;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.25);
+      doc.line(col1Center - 32, linhaY, col1Center + 32, linhaY);
+      doc.line(col2Center - 32, linhaY, col2Center + 32, linhaY);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text(nomeRep1.toUpperCase(), col1Center, linhaY + 4, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`CPF: ${cpfRep1}`, col1Center, linhaY + 7.5, { align: 'center' });
+      doc.text(cargoRep1.toUpperCase(), col1Center, linhaY + 11, { align: 'center' });
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8);
+      doc.setTextColor(0, 0, 0);
+      doc.text(nomeRep2.toUpperCase(), col2Center, linhaY + 4, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`CPF: ${cpfRep2}`, col2Center, linhaY + 7.5, { align: 'center' });
+      doc.text(cargoRep2.toUpperCase(), col2Center, linhaY + 11, { align: 'center' });
+    } else {
+      // 1 representante centralizado
+      const centerX = pageWidth / 2;
+      const sigW = 60;
+      const sigH = 22;
+
+      if (timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image')) {
+        try {
+          renderizarImagemProporcional(
+            doc,
+            timbrado.assinaturaImagem,
+            centerX - sigW / 2,
+            currentY,
+            sigW,
+            sigH
+          );
+        } catch {}
+      }
+
+      const linhaY = currentY + sigH + 1;
+      doc.setDrawColor(0, 0, 0);
+      doc.setLineWidth(0.25);
+      doc.line(centerX - 45, linhaY, centerX + 45, linhaY);
+
+      doc.setFont('helvetica', 'bold');
+      doc.setFontSize(8.5);
+      doc.setTextColor(0, 0, 0);
+      doc.text(nomeRep1.toUpperCase(), centerX, linhaY + 4.5, { align: 'center' });
+
+      doc.setFont('helvetica', 'normal');
+      doc.setFontSize(7.5);
+      doc.setTextColor(51, 65, 85);
+      doc.text(`CPF: ${cpfRep1}   •   ${cargoRep1.toUpperCase()}`, centerX, linhaY + 8.5, {
+        align: 'center',
+      });
+      doc.text(
+        (timbrado.razaoSocial || 'GWS GLOBAL LIMITADA').toUpperCase(),
+        centerX,
+        linhaY + 12,
+        { align: 'center' }
+      );
+    }
   }
 
   // 10. RODAPÉ DO PAPEL TIMBRADO

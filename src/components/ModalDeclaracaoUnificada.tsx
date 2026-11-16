@@ -247,17 +247,17 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-150 overflow-y-auto"
+      className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60 overflow-y-auto"
       onClick={onFechar}
     >
       <div
-        className="bg-white rounded-2xl shadow-2xl border border-slate-200 w-full max-w-5xl overflow-hidden my-auto flex flex-col max-h-[92vh]"
+        className="bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 w-full max-w-5xl overflow-hidden my-auto flex flex-col max-h-[92vh]"
         onClick={e => e.stopPropagation()}
       >
         {/* Cabeçalho do Modal */}
-        <div className="bg-[#0A1D37] border-b border-[#152B4D] px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0">
+        <div className="bg-[#0F2C59] border-b border-slate-800 px-5 sm:px-6 py-4 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-xl bg-white/10 flex items-center justify-center text-amber-300 shadow-inner">
+            <div className="w-9 h-9 rounded-md bg-white/10 flex items-center justify-center text-amber-300">
               <FileText className="w-5 h-5" />
             </div>
             <div>
@@ -265,7 +265,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
                 <h3 className="text-base font-bold tracking-tight text-white">
                   Declaração Unificada Oficial
                 </h3>
-                <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 border border-amber-400/30 px-2 py-0.5 rounded-full uppercase tracking-wider">
+                <span className="text-[10px] font-bold text-amber-300 bg-amber-400/20 border border-amber-400/30 px-2 py-0.5 rounded uppercase tracking-wider">
                   Lei 14.133/21
                 </span>
               </div>
@@ -278,7 +278,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
           <button
             type="button"
             onClick={onFechar}
-            className="text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-lg transition-colors cursor-pointer"
+            className="text-white/70 hover:text-white hover:bg-white/10 p-1.5 rounded-md transition-colors cursor-pointer"
             title="Fechar"
           >
             <X className="w-5 h-5" />
@@ -287,25 +287,25 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
 
         {/* Feedback flutuante de sucesso */}
         {feedback && (
-          <div className="bg-emerald-50 border-b border-emerald-200 px-6 py-2.5 text-xs text-emerald-800 font-semibold flex items-center gap-2 animate-in fade-in">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+          <div className="bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200 dark:border-emerald-800 px-6 py-2.5 text-xs text-emerald-800 dark:text-emerald-200 font-semibold flex items-center gap-2">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
             <span>{feedback}</span>
           </div>
         )}
 
         {/* Corpo do Modal com Rolagem */}
-        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 bg-slate-50/50">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto flex-1 bg-slate-50 dark:bg-slate-950/40">
           {/* BARRA DE CONTROLE: VINCULAR LICITAÇÃO E DATA */}
-          <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-2xs space-y-3">
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 p-4 rounded-lg space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
               {/* Seletor de Licitação */}
               <div className="md:col-span-7">
-                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center justify-between">
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center justify-between">
                   <span className="flex items-center gap-1.5">
                     <Sparkles className="w-3.5 h-3.5 text-amber-500" />
                     Licitação Vinculada:
                   </span>
-                  <span className="text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-200 px-1.5 py-0.2 rounded-full">
+                  <span className="text-[10px] font-semibold text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-1.5 py-0.5 rounded">
                     Puxa dados automático
                   </span>
                 </label>
@@ -313,7 +313,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
                   <select
                     value={licitacaoVinculadaId}
                     onChange={e => handleSelecionarLicitacao(e.target.value)}
-                    className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                    className="w-full px-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                   >
                     {licitacoes.map(lic => (
                       <option key={lic.id} value={lic.id}>
@@ -322,7 +322,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
                     ))}
                   </select>
                 ) : (
-                  <div className="text-xs text-slate-500 italic p-2 bg-slate-50 rounded-lg border border-slate-200">
+                  <div className="text-xs text-slate-500 dark:text-slate-400 italic p-2 bg-slate-50 dark:bg-slate-900/60 rounded-md border border-slate-200 dark:border-slate-800">
                     Nenhuma licitação cadastrada ainda.
                   </div>
                 )}
@@ -330,8 +330,8 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
 
               {/* Data de Emissão */}
               <div className="md:col-span-3">
-                <label className="block text-xs font-bold text-slate-800 mb-1 flex items-center gap-1">
-                  <Calendar className="w-3.5 h-3.5 text-blue-600" />
+                <label className="block text-xs font-bold text-slate-800 dark:text-slate-200 mb-1 flex items-center gap-1">
+                  <Calendar className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
                   Data de Emissão:
                 </label>
                 <div className="flex items-center gap-1.5">
@@ -339,12 +339,12 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
                     type="date"
                     value={dataEmissao}
                     onChange={e => setDataEmissao(e.target.value)}
-                    className="w-full px-2.5 py-2 text-xs font-semibold bg-slate-50 border border-slate-300 rounded-lg text-slate-900 focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59] cursor-pointer"
+                    className="w-full px-2.5 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                   />
                   <button
                     type="button"
                     onClick={() => setDataEmissao(new Date().toISOString().split('T')[0])}
-                    className="px-2 py-2 text-[11px] font-semibold text-[#0F2C59] bg-slate-100 hover:bg-slate-200 border border-slate-200 rounded-lg transition-colors cursor-pointer shrink-0"
+                    className="px-2 py-2 text-[11px] font-semibold text-[#0F2C59] dark:text-blue-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 border border-slate-200 dark:border-slate-700 rounded-md transition-colors cursor-pointer shrink-0"
                     title="Definir para hoje"
                   >
                     Hoje
@@ -358,7 +358,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
                   type="button"
                   onClick={handleBaixarPdf}
                   disabled={gerando}
-                  className="w-full px-3 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163c78] active:bg-[#021B3A] rounded-lg shadow-xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-75"
+                  className="w-full px-3 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer disabled:opacity-75"
                 >
                   {gerando ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -371,11 +371,11 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
             </div>
 
             {/* Painel opcional recolhível de ajustes finos */}
-            <div className="pt-2 border-t border-slate-100">
+            <div className="pt-2 border-t border-slate-200 dark:border-slate-800">
               <button
                 type="button"
                 onClick={() => setMostrarAjusteManual(prev => !prev)}
-                className="text-xs font-semibold text-slate-600 hover:text-slate-900 flex items-center gap-1.5 cursor-pointer"
+                className="text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white flex items-center gap-1.5 cursor-pointer"
               >
                 <SlidersHorizontal className="w-3.5 h-3.5 text-slate-400" />
                 <span>Editar dados manuais do cabeçalho</span>
@@ -387,38 +387,38 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
               </button>
 
               {mostrarAjusteManual && (
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 animate-in fade-in duration-150 text-xs">
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5 pt-3 text-xs">
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-0.5">
                       Processo / Edital:
                     </label>
                     <input
                       type="text"
                       value={processoEdital}
                       onChange={e => setProcessoEdital(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-semibold bg-white border border-slate-300 rounded-md"
+                      className="w-full px-2.5 py-1.5 text-xs font-semibold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-md focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-0.5">
                       Modalidade:
                     </label>
                     <input
                       type="text"
                       value={modalidade}
                       onChange={e => setModalidade(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-semibold uppercase bg-white border border-slate-300 rounded-md"
+                      className="w-full px-2.5 py-1.5 text-xs font-semibold uppercase bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-md focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                   <div>
-                    <label className="block text-[11px] font-semibold text-slate-600 mb-0.5">
+                    <label className="block text-[11px] font-semibold text-slate-600 dark:text-slate-300 mb-0.5">
                       Órgão Promotor:
                     </label>
                     <input
                       type="text"
                       value={orgaoPublico}
                       onChange={e => setOrgaoPublico(e.target.value)}
-                      className="w-full px-2.5 py-1.5 text-xs font-semibold uppercase bg-white border border-slate-300 rounded-md"
+                      className="w-full px-2.5 py-1.5 text-xs font-semibold uppercase bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 dark:text-white rounded-md focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -429,18 +429,18 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
           {/* BARRA DE STATUS DA PRÉVIA */}
           <div className="flex items-center justify-between px-1 text-xs">
             <div className="flex items-center gap-2">
-              <span className="font-bold text-slate-800 flex items-center gap-1.5">
-                <Eye className="w-4 h-4 text-[#0F2C59]" />
+              <span className="font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
+                <Eye className="w-4 h-4 text-[#0F2C59] dark:text-blue-400" />
                 Prévia Oficial do Documento (Folha A4):
               </span>
-              <span className="text-[11px] text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full font-semibold">
+              <span className="text-[11px] text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/50 border border-emerald-200 dark:border-emerald-800 px-2 py-0.5 rounded font-semibold">
                 Visualização 100% Segura
               </span>
             </div>
             <button
               type="button"
               onClick={() => setMostrarPrevia(prev => !prev)}
-              className="text-xs text-slate-600 hover:text-[#0F2C59] underline font-medium cursor-pointer"
+              className="text-xs text-slate-600 dark:text-slate-400 hover:text-[#0F2C59] dark:hover:text-blue-400 underline font-medium cursor-pointer"
             >
               {mostrarPrevia ? 'Ocultar Prévia' : 'Exibir Prévia'}
             </button>
@@ -448,9 +448,9 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
 
           {/* SIMULAÇÃO DE FOLHA A4 DA DECLARAÇÃO UNIFICADA (NÃO USA IFRAME, NUNCA BLOQUEIA) */}
           {mostrarPrevia && (
-            <div className="bg-slate-200/80 p-3 sm:p-6 rounded-xl border border-slate-300 shadow-inner flex justify-center overflow-x-auto">
+            <div className="bg-slate-200/80 dark:bg-slate-900 p-3 sm:p-6 rounded-lg border border-slate-300 dark:border-slate-800 flex justify-center overflow-x-auto">
               <div
-                className="bg-white border-2 border-slate-300 rounded-sm shadow-xl p-8 sm:p-14 w-full max-w-[820px] text-slate-900 relative space-y-6 manter-branco"
+                className="bg-white border border-slate-300 rounded-sm p-8 sm:p-14 w-full max-w-[820px] text-slate-900 relative space-y-6 manter-branco"
                 style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
               >
                 {/* Marca d'água central translúcida */}
@@ -613,11 +613,11 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
         </div>
 
         {/* Rodapé com Ações */}
-        <div className="px-5 sm:px-6 py-3.5 bg-slate-100 border-t border-slate-200 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div className="px-5 sm:px-6 py-3.5 bg-slate-100 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <button
             type="button"
             onClick={onFechar}
-            className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-slate-600 hover:text-slate-800 bg-white hover:bg-slate-50 border border-slate-300 rounded-lg transition-colors cursor-pointer"
+            className="w-full sm:w-auto px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:text-slate-800 dark:hover:text-white bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border border-slate-300 dark:border-slate-700 rounded-md transition-colors cursor-pointer"
           >
             Fechar
           </button>
@@ -627,7 +627,7 @@ export const ModalDeclaracaoUnificada: React.FC<ModalDeclaracaoUnificadaProps> =
               type="button"
               onClick={handleBaixarPdf}
               disabled={gerando}
-              className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163c78] active:bg-[#021B3A] rounded-lg shadow-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
+              className="w-full sm:w-auto px-5 py-2 text-xs font-bold text-white bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-75"
             >
               {gerando ? (
                 <>

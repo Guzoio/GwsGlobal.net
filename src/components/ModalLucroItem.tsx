@@ -114,18 +114,18 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-xl w-full overflow-hidden flex flex-col max-h-[92vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 bg-slate-950/60">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg max-w-xl w-full overflow-hidden flex flex-col max-h-[92vh]">
         {/* Cabeçalho do Modal */}
-        <div className="px-5 py-4 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D]">
+        <div className="px-5 py-4 bg-[#0F2C59] dark:bg-[#0B1426] text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-xl bg-white/10 text-emerald-400">
+            <div className="p-2 rounded-md bg-white/10 text-emerald-400">
               <Percent className="w-5 h-5" />
             </div>
             <div>
               <h2 className="text-sm font-bold text-white flex items-center gap-2">
                 Análise de Lucro Líquido & Margem
-                <span className="text-[10px] font-mono font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded-full">
+                <span className="text-[10px] font-mono font-bold bg-amber-400 text-slate-950 px-2 py-0.5 rounded">
                   Item #{item.num_item}
                 </span>
               </h2>
@@ -137,7 +137,7 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
           <button
             type="button"
             onClick={onFechar}
-            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
             aria-label="Fechar"
           >
             <X className="w-5 h-5" />
@@ -147,7 +147,7 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
         {/* Corpo com scroll */}
         <form onSubmit={handleSalvar} className="flex-1 overflow-y-auto p-5 space-y-4 text-xs">
           {/* Card dos Inputs de Entrada */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl p-4 space-y-3.5">
+          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-4 space-y-3.5">
             <div className="text-[11px] font-bold text-slate-700 dark:text-slate-300 uppercase tracking-wider flex items-center gap-1.5">
               <Calculator className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
               Parâmetros da Negociação
@@ -281,10 +281,10 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
 
           {/* Card Principal de Resultado: Lucro Líquido e Porcentagem */}
           <div
-            className={`p-4 rounded-xl border transition-all ${
+            className={`p-4 rounded-md border transition-colors ${
               ehLucro
-                ? 'bg-emerald-50/80 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
-                : 'bg-rose-50/80 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-100'
+                ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800 text-emerald-950 dark:text-emerald-100'
+                : 'bg-rose-50 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800 text-rose-950 dark:text-rose-100'
             }`}
           >
             <div className="flex items-center justify-between mb-3 pb-2 border-b border-black/10 dark:border-white/10">
@@ -293,7 +293,7 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
                 Resultado da Operação
               </span>
               <span
-                className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+                className={`text-[10px] font-bold px-2 py-0.5 rounded ${
                   ehLucro
                     ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100'
                     : 'bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100'
@@ -424,7 +424,7 @@ export const ModalLucroItem: React.FC<ModalLucroItemProps> = ({
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-1.5 cursor-pointer active:scale-95"
+                className="px-5 py-2 text-xs font-bold text-white bg-emerald-600 hover:bg-emerald-700 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
               >
                 <CheckCircle2 className="w-4 h-4" />
                 Salvar Análise de Lucro

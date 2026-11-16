@@ -19,6 +19,7 @@ import {
   Users,
   AlertTriangle,
   FileCheck,
+  UserCheck,
 } from 'lucide-react';
 import { Licitacao, PapelTimbradoConfig } from '../types';
 import {
@@ -83,6 +84,12 @@ const ABAS_DECLARACOES: {
     badge: 'Quadro & Servidor Público',
     icone: Users,
   },
+  {
+    tipo: 'cadastro_responsavel',
+    label: 'Cadastro do Responsável',
+    badge: 'Legal & Preposto',
+    icone: UserCheck,
+  },
 ];
 
 export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
@@ -117,6 +124,19 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
   const [estadoCivil, setEstadoCivil] = useState<string>('solteiro');
   const [profissao, setProfissao] = useState<string>('empresário');
   const [orgaoExpedidorRg, setOrgaoExpedidorRg] = useState<string>('PC MG');
+
+  // Campos específicos: Termo de Cadastro de Responsável Legal e Preposto
+  const [cargoResponsavel, setCargoResponsavel] = useState<string>(
+    timbrado.cargoRepresentante || 'Sócio-Administrador'
+  );
+  const [emailResponsavel, setEmailResponsavel] = useState<string>(timbrado.email || '');
+  const [prepostoNome, setPrepostoNome] = useState<string>('');
+  const [prepostoCpf, setPrepostoCpf] = useState<string>('');
+  const [prepostoRg, setPrepostoRg] = useState<string>('');
+  const [prepostoCargo, setPrepostoCargo] = useState<string>('Sócio-Administrador / Preposto');
+  const [prepostoTelefone, setPrepostoTelefone] = useState<string>(timbrado.telefone || '');
+  const [prepostoEmail, setPrepostoEmail] = useState<string>(timbrado.email || '');
+  const [prepostoOrigemAssinatura, setPrepostoOrigemAssinatura] = useState<'socio1' | 'socio2' | 'nenhuma'>('socio1');
 
   // Ajustes avançados e estados de UI
   const [mostrarAjusteManual, setMostrarAjusteManual] = useState<boolean>(false);
@@ -158,7 +178,27 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
       setOrgaoPublico('');
       setObjetoLicitacao('');
     }
-  }, [aberto, licitacaoInicial, licitacoes]);
+
+    // Sincroniza Responsável Legal e Preposto com os sócios configurados no Papel Timbrado
+    setCargoResponsavel(timbrado.cargoRepresentante || 'Sócio-Administrador');
+    setEmailResponsavel(timbrado.email || '');
+    const temSocio2 = Boolean(timbrado.nomeRepresentante2?.trim());
+    if (temSocio2) {
+      setPrepostoNome(timbrado.nomeRepresentante2 || '');
+      setPrepostoCpf(timbrado.cpfRepresentante2 || '');
+      setPrepostoRg(timbrado.rgRepresentante2 || '');
+      setPrepostoCargo(timbrado.cargoRepresentante2 || 'Sócio-Administrador / Preposto');
+      setPrepostoOrigemAssinatura('socio2');
+    } else {
+      setPrepostoNome(timbrado.nomeRepresentante || '');
+      setPrepostoCpf(timbrado.cpfRepresentante || '');
+      setPrepostoRg(timbrado.rgRepresentante || '');
+      setPrepostoCargo('Sócio-Administrador / Preposto');
+      setPrepostoOrigemAssinatura('socio1');
+    }
+    setPrepostoTelefone(timbrado.telefone || '');
+    setPrepostoEmail(timbrado.email || '');
+  }, [aberto, licitacaoInicial, licitacoes, timbrado]);
 
   // Função para sincronizar campos com uma licitação selecionada
   const preencherComLicitacao = (lic: Licitacao) => {
@@ -216,6 +256,15 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
       estadoCivil,
       profissao,
       orgaoExpedidorRg,
+      cargoResponsavel,
+      emailResponsavel,
+      prepostoNome,
+      prepostoCpf,
+      prepostoRg,
+      prepostoCargo,
+      prepostoTelefone,
+      prepostoEmail,
+      prepostoOrigemAssinatura,
       textoPersonalizado: modoEdicaoLivre && textoEditado.trim() ? textoEditado : undefined,
     };
   }, [
@@ -232,6 +281,15 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
     estadoCivil,
     profissao,
     orgaoExpedidorRg,
+    cargoResponsavel,
+    emailResponsavel,
+    prepostoNome,
+    prepostoCpf,
+    prepostoRg,
+    prepostoCargo,
+    prepostoTelefone,
+    prepostoEmail,
+    prepostoOrigemAssinatura,
     modoEdicaoLivre,
     textoEditado,
   ]);
@@ -279,14 +337,27 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
   // Handler para copiar o texto
   const handleCopiarTexto = () => {
     const titulo = configAtiva.tituloDoc;
-    const corpo = modoEdicaoLivre && textoEditado.trim() ? textoEditado : textoCompilado.paragrafos.join('\n\n');
-    const ressalva = textoCompilado.ressalvaTexto ? `\n\n${textoCompilado.ressalvaTexto}` : '';
     const dataExtenso = formatarDataPorExtensoPt(dataEmissao, cidadeEmissao);
     const rep = timbrado.nomeRepresentante || 'Gustavo Henrique Severino Pinto';
 
-    const textoCompleto = `${titulo}\n\n${orgaoPublico ? `Órgão: ${orgaoPublico}\n` : ''}${
-      processoEdital ? `Processo/Edital: ${modalidade} ${processoEdital}\n` : ''
-    }\n${corpo}${ressalva}\n\n${dataExtenso}\n\n${rep}\n${timbrado.razaoSocial || 'GWS GLOBAL LIMITADA'}`;
+    let textoCompleto = '';
+    if (tipoAtivo === 'cadastro_responsavel' && textoCompilado.secoesCadastro) {
+      const blocos = textoCompilado.secoesCadastro
+        .map(s => `${s.titulo}\n${s.linhas.map(l => `${l.label} ${l.valor}`).join('\n')}`)
+        .join('\n\n');
+      const desig =
+        modoEdicaoLivre && textoEditado.trim()
+          ? textoEditado
+          : textoCompilado.declaracaoDesignacao || '';
+      const prepAss = textoCompilado.prepostoAssinaturaNome || prepostoNome || rep;
+      textoCompleto = `${titulo}\n\n${blocos}\n\n4. DECLARAÇÃO DE DESIGNAÇÃO\n${desig}\n\n${dataExtenso}\n\n${rep}\nResponsável Legal / ${cargoResponsavel || 'Sócio-Administrador'}\n\n${prepAss}\nPreposto Designado (Ciente)`;
+    } else {
+      const corpo = modoEdicaoLivre && textoEditado.trim() ? textoEditado : textoCompilado.paragrafos.join('\n\n');
+      const ressalva = textoCompilado.ressalvaTexto ? `\n\n${textoCompilado.ressalvaTexto}` : '';
+      textoCompleto = `${titulo}\n\n${orgaoPublico ? `Órgão: ${orgaoPublico}\n` : ''}${
+        processoEdital ? `Processo/Edital: ${modalidade} ${processoEdital}\n` : ''
+      }\n${corpo}${ressalva}\n\n${dataExtenso}\n\n${rep}\n${timbrado.razaoSocial || 'GWS GLOBAL LIMITADA'}`;
+    }
 
     navigator.clipboard.writeText(textoCompleto).then(() => {
       setCopiado(true);
@@ -297,12 +368,12 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
   const dataPorExtenso = formatarDataPorExtensoPt(dataEmissao, cidadeEmissao);
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#071326]/75 backdrop-blur-xs flex items-center justify-center p-2 sm:p-4 overflow-y-auto animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-[#0B172E] text-slate-800 dark:text-slate-100 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-800 w-full max-w-6xl max-h-[96vh] flex flex-col overflow-hidden">
+    <div className="fixed inset-0 z-50 bg-slate-950/60 flex items-center justify-center p-2 sm:p-4 overflow-y-auto">
+      <div className="bg-white dark:bg-[#0F172A] text-slate-800 dark:text-slate-100 rounded-lg border border-slate-200 dark:border-slate-800 w-full max-w-6xl max-h-[96vh] flex flex-col overflow-hidden">
         {/* Cabeçalho do Modal */}
-        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-linear-to-r from-slate-50 via-white to-blue-50/30 dark:from-[#0E1F3D] dark:via-[#0B172E] dark:to-[#0A162B] flex items-center justify-between shrink-0">
+        <div className="p-4 sm:p-5 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-3 min-w-0">
-            <div className="p-2.5 rounded-xl bg-blue-600 text-white shadow-md shadow-blue-500/20 shrink-0">
+            <div className="p-2.5 rounded-md bg-[#0F2C59] dark:bg-blue-600 text-white shrink-0">
               <FileText className="w-5 h-5" />
             </div>
             <div className="min-w-0">
@@ -310,7 +381,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white truncate">
                   Declarações Oficiais da Empresa
                 </h2>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-700 dark:text-blue-300 shrink-0">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-[#0F2C59] dark:text-blue-300 shrink-0">
                   Papel Timbrado Oficial
                 </span>
               </div>
@@ -324,7 +395,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
             <button
               type="button"
               onClick={onFechar}
-              className="p-2 rounded-xl text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors cursor-pointer"
+              className="p-2 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               aria-label="Fechar"
             >
               <X className="w-5 h-5" />
@@ -332,9 +403,9 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
           </div>
         </div>
 
-        {/* Abas das 6 Declarações Solicitadas */}
-        <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-[#091326] shrink-0">
-          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-6 gap-2">
+        {/* Abas das 7 Declarações Oficiais */}
+        <div className="px-4 sm:px-6 pt-3 pb-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50/70 dark:bg-slate-900/40 shrink-0">
+          <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-2">
             {ABAS_DECLARACOES.map(item => {
               const Icone = item.icone;
               const ativa = tipoAtivo === item.tipo;
@@ -343,15 +414,15 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                   key={item.tipo}
                   type="button"
                   onClick={() => handleTrocarAba(item.tipo)}
-                  className={`flex items-center gap-2 p-2 rounded-xl border text-left transition-all duration-150 cursor-pointer ${
+                  className={`flex items-center gap-2 p-2 rounded-md border text-left transition-colors cursor-pointer ${
                     ativa
-                      ? 'bg-blue-600 text-white border-blue-500 shadow-sm shadow-blue-600/30 font-semibold'
-                      : 'bg-white dark:bg-[#0E1F3D]/80 hover:bg-slate-100 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
+                      ? 'bg-[#0F2C59] dark:bg-blue-600 text-white border-[#0F2C59] dark:border-blue-600 font-semibold'
+                      : 'bg-white dark:bg-slate-900/80 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-800'
                   }`}
                 >
                   <Icone
                     className={`w-3.5 h-3.5 shrink-0 ${
-                      ativa ? 'text-white' : 'text-blue-600 dark:text-blue-400'
+                      ativa ? 'text-white' : 'text-[#0F2C59] dark:text-blue-400'
                     }`}
                   />
                   <div className="min-w-0 flex-1">
@@ -379,7 +450,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
             </div>
             <button
               onClick={() => setFeedback(null)}
-              className="text-xs text-slate-400 hover:text-slate-600 cursor-pointer"
+              className="text-xs text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200 cursor-pointer"
             >
               Fechar
             </button>
@@ -391,10 +462,10 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
           {/* Coluna Esquerda: Parâmetros do Processo & Edição (4 colunas) */}
           <div className="lg:col-span-5 space-y-4">
             {/* Bloco 1: Vinculação com Licitação / Edital */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-slate-50/60 dark:bg-[#0D1C38] space-y-3">
+            <div className="p-4 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2 text-xs font-bold text-slate-700 dark:text-slate-200">
-                  <Building2 className="w-4 h-4 text-blue-600 dark:text-blue-400" />
+                  <Building2 className="w-4 h-4 text-[#0F2C59] dark:text-blue-400" />
                   <span>Vincular com Licitação Salva</span>
                 </div>
                 <span className="text-[10px] text-slate-400">Preenchimento automático</span>
@@ -403,7 +474,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
               <select
                 value={licitacaoVinculadaId}
                 onChange={e => handleSelecionarLicitacao(e.target.value)}
-                className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
               >
                 <option value="">-- Preenchimento Manual Livre --</option>
                 {licitacoes.map(l => (
@@ -415,10 +486,10 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
             </div>
 
             {/* Bloco 2: Dados do Promotor e Processo (solicitados pelo usuário) */}
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0E1F3D]/60 space-y-3">
+            <div className="p-4 rounded-md border border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/60 space-y-3">
               <div className="text-xs font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400 flex items-center justify-between">
                 <span>Dados do Edital & Promotor</span>
-                <span className="text-[10px] font-normal lowercase text-blue-600 dark:text-blue-400">
+                <span className="text-[10px] font-normal lowercase text-[#0F2C59] dark:text-blue-400">
                   aparece no cabeçalho e texto
                 </span>
               </div>
@@ -433,7 +504,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                     value={orgaoPublico}
                     onChange={e => setOrgaoPublico(e.target.value)}
                     placeholder="Ex: PREFEITURA MUNICIPAL DE MOREIRA SALES - PR"
-                    className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                   />
                 </div>
 
@@ -447,7 +518,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       value={modalidade}
                       onChange={e => setModalidade(e.target.value)}
                       placeholder="PREGÃO ELETRÔNICO"
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                   <div>
@@ -459,7 +530,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       value={processoEdital}
                       onChange={e => setProcessoEdital(e.target.value)}
                       placeholder="Nº 26/2026"
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -473,7 +544,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       type="date"
                       value={dataEmissao}
                       onChange={e => setDataEmissao(e.target.value)}
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500 cursor-pointer"
+                      className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                     />
                   </div>
                   <div>
@@ -485,7 +556,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       value={cidadeEmissao}
                       onChange={e => setCidadeEmissao(e.target.value)}
                       placeholder="TIMOTEO - MG"
-                      className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                      className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
                 </div>
@@ -494,9 +565,9 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
 
             {/* Bloco 3: Opções específicas de Não Emprego de Menor */}
             {tipoAtivo === 'trabalho_infantil' && (
-              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-300">
-                  <Users className="w-4 h-4 text-blue-600" />
+              <div className="p-4 rounded-md border border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/20 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#0F2C59] dark:text-blue-300">
+                  <Users className="w-4 h-4 text-[#0F2C59] dark:text-blue-400" />
                   <span>Opções de Menor Aprendiz & Anexo</span>
                 </div>
 
@@ -510,7 +581,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       value={numeroAnexo}
                       onChange={e => setNumeroAnexo(e.target.value)}
                       placeholder="Ex: ANEXO VIII"
-                      className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                     />
                   </div>
 
@@ -519,7 +590,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       type="checkbox"
                       checked={ressalvaAprendiz}
                       onChange={e => setRessalvaAprendiz(e.target.checked)}
-                      className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:ring-blue-500 border-slate-300"
+                      className="w-4 h-4 mt-0.5 rounded text-blue-600 focus:outline-hidden border-slate-300"
                     />
                     <div className="text-xs">
                       <span className="font-bold text-slate-800 dark:text-slate-200 block">
@@ -536,9 +607,9 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
 
             {/* Bloco 3.1: Opções específicas de Declaração de Responsabilidade (Anexo V) */}
             {tipoAtivo === 'responsabilidade' && (
-              <div className="p-4 rounded-xl border border-blue-200 dark:border-blue-900/60 bg-blue-50/50 dark:bg-blue-950/20 space-y-3">
-                <div className="flex items-center gap-2 text-xs font-bold text-blue-900 dark:text-blue-300">
-                  <FileCheck className="w-4 h-4 text-blue-600" />
+              <div className="p-4 rounded-md border border-blue-200 dark:border-blue-800/60 bg-blue-50 dark:bg-blue-950/20 space-y-3">
+                <div className="flex items-center gap-2 text-xs font-bold text-[#0F2C59] dark:text-blue-300">
+                  <FileCheck className="w-4 h-4 text-[#0F2C59] dark:text-blue-400" />
                   <span>Configurações do Anexo V (Responsabilidade)</span>
                 </div>
 
@@ -553,7 +624,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         value={numeroAnexo}
                         onChange={e => setNumeroAnexo(e.target.value)}
                         placeholder="Ex: ANEXO V"
-                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -565,7 +636,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         value={comissaoLicitacao}
                         onChange={e => setComissaoLicitacao(e.target.value)}
                         placeholder="Ex: Comissão Municipal de Licitações"
-                        className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -579,7 +650,183 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       value={objetoLicitacao}
                       onChange={e => setObjetoLicitacao(e.target.value)}
                       placeholder="Ex: AQUISIÇÃO DE MATERIAIS ESPORTIVOS, UNIFORMES E EQUIPAMENTOS..."
-                      className="w-full text-xs p-2 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
+                    />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Bloco 3.2: Opções específicas do Cadastro do Responsável Legal e Preposto */}
+            {tipoAtivo === 'cadastro_responsavel' && (
+              <div className="p-4 rounded-md border border-teal-200 dark:border-teal-800/60 bg-teal-50 dark:bg-teal-950/20 space-y-3">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2 text-xs font-bold text-teal-900 dark:text-teal-300">
+                    <UserCheck className="w-4 h-4 text-teal-600 dark:text-teal-400" />
+                    <span>Responsável Legal & Preposto</span>
+                  </div>
+                  <div className="flex items-center gap-1 flex-wrap justify-end">
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrepostoNome(timbrado.nomeRepresentante || '');
+                        setPrepostoCpf(timbrado.cpfRepresentante || '');
+                        setPrepostoRg(timbrado.rgRepresentante || '');
+                        setPrepostoCargo(timbrado.cargoRepresentante || 'Sócio-Administrador / Preposto');
+                        setPrepostoTelefone(timbrado.telefone || '');
+                        setPrepostoEmail(timbrado.email || '');
+                        setPrepostoOrigemAssinatura('socio1');
+                      }}
+                      className={`text-[10px] px-2 py-0.5 rounded font-semibold cursor-pointer transition-colors ${
+                        prepostoOrigemAssinatura === 'socio1'
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      1º Sócio
+                    </button>
+                    {timbrado.nomeRepresentante2?.trim() && (
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setPrepostoNome(timbrado.nomeRepresentante2 || '');
+                          setPrepostoCpf(timbrado.cpfRepresentante2 || '');
+                          setPrepostoRg(timbrado.rgRepresentante2 || '');
+                          setPrepostoCargo(timbrado.cargoRepresentante2 || 'Sócio-Administrador / Preposto');
+                          setPrepostoTelefone(timbrado.telefone || '');
+                          setPrepostoEmail(timbrado.email || '');
+                          setPrepostoOrigemAssinatura('socio2');
+                        }}
+                        className={`text-[10px] px-2 py-0.5 rounded font-semibold cursor-pointer transition-colors ${
+                          prepostoOrigemAssinatura === 'socio2'
+                            ? 'bg-teal-600 text-white'
+                            : 'bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                        }`}
+                      >
+                        2º Sócio
+                      </button>
+                    )}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setPrepostoOrigemAssinatura('nenhuma');
+                      }}
+                      className={`text-[10px] px-2 py-0.5 rounded font-semibold cursor-pointer transition-colors ${
+                        prepostoOrigemAssinatura === 'nenhuma'
+                          ? 'bg-teal-600 text-white'
+                          : 'bg-white dark:bg-slate-950 text-slate-600 dark:text-slate-300 border border-slate-200 dark:border-slate-700'
+                      }`}
+                    >
+                      Outro Preposto
+                    </button>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                      Cargo do Responsável Legal
+                    </label>
+                    <input
+                      type="text"
+                      value={cargoResponsavel}
+                      onChange={e => setCargoResponsavel(e.target.value)}
+                      placeholder="Sócio-Administrador"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                    />
+                  </div>
+                  <div>
+                    <label className="text-[11px] font-semibold text-slate-600 dark:text-slate-300 block mb-1">
+                      E-mail do Responsável Legal
+                    </label>
+                    <input
+                      type="email"
+                      value={emailResponsavel}
+                      onChange={e => setEmailResponsavel(e.target.value)}
+                      placeholder="email@empresa.com"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                    />
+                  </div>
+                </div>
+
+                <div className="border-t border-teal-200 dark:border-teal-800/50 pt-2.5 space-y-2">
+                  <div className="text-[11px] font-bold text-teal-800 dark:text-teal-300">
+                    Dados do Preposto Designado
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                      Nome Completo do Preposto
+                    </label>
+                    <input
+                      type="text"
+                      value={prepostoNome}
+                      onChange={e => setPrepostoNome(e.target.value)}
+                      placeholder="Nome completo"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                    />
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        CPF do Preposto
+                      </label>
+                      <input
+                        type="text"
+                        value={prepostoCpf}
+                        onChange={e => setPrepostoCpf(e.target.value)}
+                        placeholder="000.000.000-00"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-mono focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        RG / Órgão Emissor
+                      </label>
+                      <input
+                        type="text"
+                        value={prepostoRg}
+                        onChange={e => setPrepostoRg(e.target.value)}
+                        placeholder="00.000.000 / PC MG"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-mono focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                      />
+                    </div>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2">
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        Cargo / Função
+                      </label>
+                      <input
+                        type="text"
+                        value={prepostoCargo}
+                        onChange={e => setPrepostoCargo(e.target.value)}
+                        placeholder="Preposto"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                      />
+                    </div>
+                    <div>
+                      <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                        Telefone / WhatsApp
+                      </label>
+                      <input
+                        type="text"
+                        value={prepostoTelefone}
+                        onChange={e => setPrepostoTelefone(e.target.value)}
+                        placeholder="(31) 99999-9999"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 font-mono focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-semibold text-slate-600 dark:text-slate-300 block mb-0.5">
+                      E-mail do Preposto
+                    </label>
+                    <input
+                      type="email"
+                      value={prepostoEmail}
+                      onChange={e => setPrepostoEmail(e.target.value)}
+                      placeholder="preposto@empresa.com"
+                      className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 focus:outline-hidden focus:border-teal-600 dark:focus:border-teal-500"
                     />
                   </div>
                 </div>
@@ -587,14 +834,14 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
             )}
 
             {/* Bloco 4: Sanfona de Ajuste Manual de Qualificação */}
-            <div className="border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden">
+            <div className="border border-slate-200 dark:border-slate-800 rounded-md overflow-hidden">
               <button
                 type="button"
                 onClick={() => setMostrarAjusteManual(prev => !prev)}
-                className="w-full flex items-center justify-between p-3.5 bg-slate-50/80 dark:bg-[#0E1F3D]/80 hover:bg-slate-100 dark:hover:bg-[#132A52] text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                className="w-full flex items-center justify-between p-3.5 bg-slate-50 dark:bg-slate-900/60 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-bold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
               >
                 <div className="flex items-center gap-2">
-                  <SlidersHorizontal className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <SlidersHorizontal className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                   <span>Personalizar Qualificação & Texto Livre</span>
                 </div>
                 <ChevronDown
@@ -605,7 +852,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
               </button>
 
               {mostrarAjusteManual && (
-                <div className="p-4 space-y-3 bg-white dark:bg-[#091326] border-t border-slate-200 dark:border-slate-800 text-xs">
+                <div className="p-4 space-y-3 bg-white dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800 text-xs">
                   <div className="grid grid-cols-3 gap-2">
                     <div>
                       <label className="text-[10px] font-semibold text-slate-500 block mb-0.5">
@@ -615,7 +862,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         type="text"
                         value={estadoCivil}
                         onChange={e => setEstadoCivil(e.target.value)}
-                        className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224]"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -626,7 +873,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         type="text"
                         value={profissao}
                         onChange={e => setProfissao(e.target.value)}
-                        className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224]"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     </div>
                     <div>
@@ -637,7 +884,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         type="text"
                         value={orgaoExpedidorRg}
                         onChange={e => setOrgaoExpedidorRg(e.target.value)}
-                        className="w-full text-xs p-2 rounded border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224]"
+                        className="w-full text-xs p-2 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     </div>
                   </div>
@@ -647,12 +894,12 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                       <label className="text-[11px] font-semibold text-slate-700 dark:text-slate-300">
                         Edição Direta do Texto Legal:
                       </label>
-                      <label className="flex items-center gap-1.5 text-[10px] text-blue-600 dark:text-blue-400 cursor-pointer">
+                      <label className="flex items-center gap-1.5 text-[10px] text-[#0F2C59] dark:text-blue-400 cursor-pointer">
                         <input
                           type="checkbox"
                           checked={modoEdicaoLivre}
                           onChange={e => setModoEdicaoLivre(e.target.checked)}
-                          className="w-3.5 h-3.5 rounded text-blue-600"
+                          className="w-3.5 h-3.5 rounded text-blue-600 focus:outline-hidden"
                         />
                         <span>Habilitar edição livre</span>
                       </label>
@@ -663,7 +910,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                         rows={6}
                         value={textoEditado}
                         onChange={e => setTextoEditado(e.target.value)}
-                        className="w-full text-xs p-2.5 rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#081224] text-slate-800 dark:text-slate-200 leading-relaxed font-mono"
+                        className="w-full text-xs p-2.5 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 text-slate-800 dark:text-slate-200 leading-relaxed font-mono focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                       />
                     ) : (
                       <p className="text-[11px] text-slate-400 italic">
@@ -681,7 +928,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 type="button"
                 onClick={handleBaixarPdf}
                 disabled={gerandoPdf}
-                className="w-full py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 active:scale-[0.99] text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-lg shadow-blue-600/30 transition-all cursor-pointer disabled:opacity-50"
+                className="w-full py-2.5 px-4 rounded-md bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 transition-colors cursor-pointer disabled:opacity-50"
               >
                 <FileDown className="w-4 h-4" />
                 <span>{gerandoPdf ? 'Gerando Documento...' : 'Gerar e Baixar PDF Oficial'}</span>
@@ -691,7 +938,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 <button
                   type="button"
                   onClick={handleImprimir}
-                  className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0E1F3D] hover:bg-slate-50 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   <Printer className="w-4 h-4 text-slate-500" />
                   <span>Imprimir Folha</span>
@@ -700,7 +947,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                 <button
                   type="button"
                   onClick={handleCopiarTexto}
-                  className="py-2.5 px-3 rounded-xl border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0E1F3D] hover:bg-slate-50 dark:hover:bg-[#132A52] text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
+                  className="py-2 px-3 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-200 text-xs font-semibold flex items-center justify-center gap-2 transition-colors cursor-pointer"
                 >
                   {copiado ? (
                     <>
@@ -722,7 +969,7 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
           <div className="lg:col-span-7 flex flex-col items-center">
             <div className="w-full flex items-center justify-between pb-2 px-1 text-xs text-slate-500 dark:text-slate-400">
               <span className="font-semibold flex items-center gap-1.5">
-                <Sparkles className="w-3.5 h-3.5 text-blue-500" />
+                <Sparkles className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                 Pré-visualização da Folha A4 Timbrada
               </span>
               <span className="text-[11px] font-mono text-slate-400">
@@ -730,11 +977,11 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
               </span>
             </div>
 
-            {/* Container da Folha A4 com proporção e sombra realistas */}
+            {/* Container da Folha A4 */}
             <div className="w-full overflow-x-auto pb-4 flex justify-center">
               <div
                 ref={printRef}
-                className="w-[210mm] min-h-[297mm] bg-white text-slate-900 shadow-2xl rounded-sm p-[20mm] relative flex flex-col justify-between font-sans border border-slate-200 select-text"
+                className="manter-branco w-[210mm] min-h-[297mm] bg-white text-slate-900 p-[20mm] relative flex flex-col justify-between font-sans border border-slate-300 select-text"
                 style={{
                   boxSizing: 'border-box',
                 }}
@@ -836,58 +1083,91 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                   )}
 
                   {/* Corpo Textual da Declaração */}
-                  <div
-                    className={`text-justify text-slate-900 ${
-                      tipoAtivo === 'responsabilidade'
-                        ? 'space-y-2 text-[10px] sm:text-[11px] leading-snug'
-                        : 'space-y-4 text-xs sm:text-[13px] leading-relaxed'
-                    }`}
-                  >
-                    {(modoEdicaoLivre && textoEditado.trim()
-                      ? textoEditado.split('\n\n')
-                      : textoCompilado.paragrafos
-                    ).map((p, idx) => {
-                      const isBullet = p.startsWith('➤');
-                      return (
-                        <p
-                          key={idx}
-                          className={`font-serif ${
-                            isBullet
-                              ? 'pl-3 -indent-3 mb-2'
-                              : tipoAtivo === 'inexistencia_parentes'
-                              ? 'mb-2'
-                              : 'indent-8'
-                          }`}
-                        >
-                          {p}
-                        </p>
-                      );
-                    })}
+                  {tipoAtivo === 'cadastro_responsavel' && textoCompilado.secoesCadastro ? (
+                    <div className="space-y-4 text-xs text-slate-900 font-sans">
+                      {textoCompilado.secoesCadastro.map((secao, idx) => (
+                        <div key={idx} className="space-y-1.5">
+                          <div className="font-bold text-[#0F2C59] text-xs border-b border-slate-300 pb-0.5 uppercase tracking-wide">
+                            {secao.titulo}
+                          </div>
+                          <div className="space-y-1 text-[11.5px] leading-snug">
+                            {secao.linhas.map((linha, lIdx) => (
+                              <div key={lIdx} className="flex flex-wrap gap-1">
+                                <span className="font-bold text-slate-800">{linha.label}</span>
+                                <span className="text-slate-900">{linha.valor}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+                      ))}
 
-                    {/* Bloco de Ressalva para Menor Aprendiz */}
-                    {textoCompilado.ressalvaTexto && (
-                      <div className="pt-3 font-serif pl-8 space-y-1">
-                        <div className="font-bold text-slate-900 text-xs">
-                          Ressalva: emprega menor, a partir de quatorze anos, na condição de aprendiz ( {ressalvaAprendiz ? 'X' : '   '} )
+                      <div className="space-y-1.5 pt-1">
+                        <div className="font-bold text-[#0F2C59] text-xs border-b border-slate-300 pb-0.5 uppercase tracking-wide">
+                          4. DECLARAÇÃO DE DESIGNAÇÃO
                         </div>
-                        <div className="text-[11px] text-slate-600 italic">
-                          (assinalar com &quot;x&quot; a ressalva acima, caso verdadeira)
-                        </div>
+                        <p className="font-serif text-[12px] leading-relaxed text-justify text-slate-900">
+                          {modoEdicaoLivre && textoEditado.trim()
+                            ? textoEditado
+                            : textoCompilado.declaracaoDesignacao}
+                        </p>
                       </div>
-                    )}
-                  </div>
+                    </div>
+                  ) : (
+                    <div
+                      className={`text-justify text-slate-900 ${
+                        tipoAtivo === 'responsabilidade'
+                          ? 'space-y-2 text-[10px] sm:text-[11px] leading-snug'
+                          : 'space-y-4 text-xs sm:text-[13px] leading-relaxed'
+                      }`}
+                    >
+                      {(modoEdicaoLivre && textoEditado.trim()
+                        ? textoEditado.split('\n\n')
+                        : textoCompilado.paragrafos
+                      ).map((p, idx) => {
+                        const isBullet = p.startsWith('➤');
+                        return (
+                          <p
+                            key={idx}
+                            className={`font-serif ${
+                              isBullet
+                                ? 'pl-3 -indent-3 mb-2'
+                                : tipoAtivo === 'inexistencia_parentes'
+                                ? 'mb-2'
+                                : 'indent-8'
+                            }`}
+                          >
+                            {p}
+                          </p>
+                        );
+                      })}
+
+                      {/* Bloco de Ressalva para Menor Aprendiz */}
+                      {textoCompilado.ressalvaTexto && (
+                        <div className="pt-3 font-serif pl-8 space-y-1">
+                          <div className="font-bold text-slate-900 text-xs">
+                            Ressalva: emprega menor, a partir de quatorze anos, na condição de aprendiz ( {ressalvaAprendiz ? 'X' : '   '} )
+                          </div>
+                          <div className="text-[11px] text-slate-600 italic">
+                            (assinalar com &quot;x&quot; a ressalva acima, caso verdadeira)
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  )}
                 </div>
 
                 {/* Base da Folha: Local, Data e Assinaturas */}
                 <div
                   className={`relative z-10 pt-4 ${
-                    tipoAtivo === 'responsabilidade' ? 'mt-6' : 'mt-12'
+                    tipoAtivo === 'responsabilidade' || tipoAtivo === 'cadastro_responsavel' ? 'mt-6' : 'mt-12'
                   }`}
                 >
                   {/* Local e Datação */}
                   <div
-                    className={`text-xs font-serif text-slate-900 pl-8 ${
-                      tipoAtivo === 'responsabilidade' ? 'mb-4' : 'mb-8'
+                    className={`text-xs font-serif text-slate-900 ${
+                      tipoAtivo === 'cadastro_responsavel' ? 'mb-5' : 'pl-8'
+                    } ${
+                      tipoAtivo === 'responsabilidade' ? 'mb-4' : tipoAtivo !== 'cadastro_responsavel' ? 'mb-8' : ''
                     }`}
                   >
                     {tipoAtivo === 'trabalho_infantil' ? '(Local e data) ' : ''}
@@ -895,32 +1175,96 @@ export const ModalNovasDeclaracoes: React.FC<ModalNovasDeclaracoesProps> = ({
                   </div>
 
                   {/* Bloco de Assinatura Oficial com a Imagem configurada */}
-                  <div className="flex flex-col items-center justify-center text-center">
-                    {timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image') ? (
-                      <div className="h-16 flex items-end justify-center mb-1">
-                        <img
-                          src={timbrado.assinaturaImagem}
-                          alt="Assinatura"
-                          className="max-h-16 max-w-[200px] object-contain"
-                        />
+                  {tipoAtivo === 'cadastro_responsavel' ? (
+                    <div className="grid grid-cols-2 gap-6 items-end text-center">
+                      {/* Assinatura Responsável Legal */}
+                      <div className="flex flex-col items-center">
+                        {timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image') ? (
+                          <div className="h-14 flex items-end justify-center mb-1">
+                            <img
+                              src={timbrado.assinaturaImagem}
+                              alt="Assinatura Responsável Legal"
+                              className="max-h-14 max-w-[170px] object-contain"
+                            />
+                          </div>
+                        ) : (
+                          <div className="h-12" />
+                        )}
+                        <div className="w-full max-w-[230px] border-t border-slate-900 pt-1.5">
+                          <div className="text-[11px] font-bold text-slate-900 uppercase">
+                            {timbrado.nomeRepresentante || 'Gustavo Henrique Severino Pinto'}
+                          </div>
+                          <div className="text-[10px] text-slate-600 font-sans">
+                            Responsável Legal / {cargoResponsavel || timbrado.cargoRepresentante || 'Sócio-Administrador'}
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono">
+                            CPF: {timbrado.cpfRepresentante || '020.313.066-93'}
+                          </div>
+                        </div>
                       </div>
-                    ) : (
-                      <div className="h-12" />
-                    )}
 
-                    <div className="w-72 border-t border-slate-900 pt-1.5">
-                      <div className="text-xs font-bold text-slate-900 uppercase">
-                        {timbrado.nomeRepresentante || 'Gustavo Henrique Severino Pinto'}
-                      </div>
-                      <div className="text-[11px] text-slate-600 font-sans">
-                        CPF: {timbrado.cpfRepresentante || '020.313.066-93'} •{' '}
-                        {(timbrado.cargoRepresentante || 'Representante Legal').toUpperCase()}
-                      </div>
-                      <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-0.5">
-                        {timbrado.razaoSocial || 'GWS GLOBAL LIMITADA'}
+                      {/* Assinatura Preposto Designado */}
+                      <div className="flex flex-col items-center">
+                        {(() => {
+                          const imgPrep =
+                            prepostoOrigemAssinatura === 'socio1'
+                              ? timbrado.assinaturaImagem
+                              : prepostoOrigemAssinatura === 'socio2'
+                              ? timbrado.assinaturaImagem2
+                              : '';
+                          return imgPrep && imgPrep.startsWith('data:image') ? (
+                            <div className="h-14 flex items-end justify-center mb-1">
+                              <img
+                                src={imgPrep}
+                                alt="Assinatura Preposto Designado"
+                                className="max-h-14 max-w-[170px] object-contain"
+                              />
+                            </div>
+                          ) : (
+                            <div className="h-14" />
+                          );
+                        })()}
+                        <div className="w-full max-w-[230px] border-t border-slate-900 pt-1.5">
+                          <div className="text-[11px] font-bold text-slate-900 uppercase">
+                            {textoCompilado.prepostoAssinaturaNome || prepostoNome || timbrado.nomeRepresentante}
+                          </div>
+                          <div className="text-[10px] text-slate-600 font-sans">
+                            Preposto Designado (Ciente)
+                          </div>
+                          <div className="text-[10px] text-slate-500 font-mono">
+                            CPF: {textoCompilado.prepostoAssinaturaCpf || prepostoCpf || timbrado.cpfRepresentante}
+                          </div>
+                        </div>
                       </div>
                     </div>
-                  </div>
+                  ) : (
+                    <div className="flex flex-col items-center justify-center text-center">
+                      {timbrado.assinaturaImagem && timbrado.assinaturaImagem.startsWith('data:image') ? (
+                        <div className="h-16 flex items-end justify-center mb-1">
+                          <img
+                            src={timbrado.assinaturaImagem}
+                            alt="Assinatura"
+                            className="max-h-16 max-w-[200px] object-contain"
+                          />
+                        </div>
+                      ) : (
+                        <div className="h-12" />
+                      )}
+
+                      <div className="w-72 border-t border-slate-900 pt-1.5">
+                        <div className="text-xs font-bold text-slate-900 uppercase">
+                          {timbrado.nomeRepresentante || 'Gustavo Henrique Severino Pinto'}
+                        </div>
+                        <div className="text-[11px] text-slate-600 font-sans">
+                          CPF: {timbrado.cpfRepresentante || '020.313.066-93'} •{' '}
+                          {(timbrado.cargoRepresentante || 'Representante Legal').toUpperCase()}
+                        </div>
+                        <div className="text-[10px] text-slate-500 uppercase font-bold tracking-wider mt-0.5">
+                          {timbrado.razaoSocial || 'GWS GLOBAL LIMITADA'}
+                        </div>
+                      </div>
+                    </div>
+                  )}
 
                   {/* Rodapé Oficial */}
                   <div className="mt-8 pt-4 border-t border-slate-200 text-center text-[10px] text-slate-400">

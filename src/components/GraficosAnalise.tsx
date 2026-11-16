@@ -99,26 +99,26 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
       {/* 1. Gráfico Mês a Mês (Evolução de Licitações e Lucros) */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 flex flex-col justify-between">
         {/* Header com opções */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-2">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <Calendar className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
               <span>Desempenho Mês a Mês</span>
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Evolução temporal dos processos, cotações e lucros apurados
             </p>
           </div>
 
-          <div className="flex items-center bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg border border-slate-200/70 dark:border-white/5 text-[11px]">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-md border border-slate-200 dark:border-slate-800 text-[11px]">
             <button
               type="button"
               onClick={() => setMetricaMensal('valores')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer ${
                 metricaMensal === 'valores'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -127,9 +127,9 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
             <button
               type="button"
               onClick={() => setMetricaMensal('quantidade')}
-              className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer ${
                 metricaMensal === 'quantidade'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -163,13 +163,13 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
                     className="flex-1 flex flex-col items-center h-full justify-end group relative"
                   >
                     {/* Tooltip Hover */}
-                    <div className="absolute -top-16 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 bg-slate-900/95 dark:bg-black text-white text-[10px] p-2 rounded-lg shadow-lg whitespace-nowrap border border-white/10">
+                    <div className="absolute -top-16 opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10 bg-slate-900 text-white text-[10px] p-2 rounded-md whitespace-nowrap border border-slate-700">
                       <span className="font-bold block text-[11px] text-blue-300">
                         {m.label} ({m.totalLicitacoes} licitações)
                       </span>
-                      <span>Proposta: {formatarMoeda(m.valorProposta)}</span>
+                      <span className="font-mono">Proposta: {formatarMoeda(m.valorProposta)}</span>
                       {m.lucroLiquido > 0 && (
-                        <span className="block text-emerald-300 font-semibold">
+                        <span className="block text-emerald-300 font-semibold font-mono">
                           Lucro: {formatarMoeda(m.lucroLiquido)}
                         </span>
                       )}
@@ -179,14 +179,14 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
                     <div className="w-full max-w-[36px] flex items-end justify-center gap-1 h-full">
                       {/* Barra Valor / Processos */}
                       <div
-                        className="w-1/2 bg-blue-500 hover:bg-blue-600 rounded-t-md transition-all duration-300"
+                        className="w-1/2 bg-blue-500 hover:bg-blue-600 rounded-t transition-colors"
                         style={{ height: `${alturaProposta}%` }}
                       />
 
                       {/* Barra Lucro (se valores) */}
                       {metricaMensal === 'valores' && (
                         <div
-                          className="w-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-t-md transition-all duration-300"
+                          className="w-1/2 bg-emerald-500 hover:bg-emerald-600 rounded-t transition-colors"
                           style={{ height: `${alturaLucro}%` }}
                         />
                       )}
@@ -221,26 +221,26 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
       </div>
 
       {/* 2. Gráfico de Pizza / Donut (Distribuição) */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 flex flex-col justify-between">
         {/* Header com botões de alternância */}
-        <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5 gap-2">
+        <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800 gap-2">
           <div>
             <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
               <PieChart className="w-4 h-4 text-purple-600 dark:text-purple-400" />
               <span>Gráfico de Distribuição</span>
             </h3>
-            <p className="text-[11px] text-slate-400 mt-0.5">
+            <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
               Participação percentual por estado, modalidade ou operador
             </p>
           </div>
 
-          <div className="flex items-center bg-slate-100 dark:bg-white/5 p-0.5 rounded-lg border border-slate-200/70 dark:border-white/5 text-[11px]">
+          <div className="flex items-center bg-slate-100 dark:bg-slate-900 p-0.5 rounded-md border border-slate-200 dark:border-slate-800 text-[11px]">
             <button
               type="button"
               onClick={() => setTipoPizza('estados')}
-              className={`px-2 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded font-semibold transition-colors cursor-pointer ${
                 tipoPizza === 'estados'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs'
+                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 border border-slate-200 dark:border-slate-700'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -249,9 +249,9 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
             <button
               type="button"
               onClick={() => setTipoPizza('modalidades')}
-              className={`px-2 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded font-semibold transition-colors cursor-pointer ${
                 tipoPizza === 'modalidades'
-                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 shadow-2xs'
+                  ? 'bg-white dark:bg-slate-800 text-emerald-600 dark:text-emerald-400 border border-slate-200 dark:border-slate-700'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -260,9 +260,9 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
             <button
               type="button"
               onClick={() => setTipoPizza('responsaveis')}
-              className={`px-2 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+              className={`px-2 py-1 rounded font-semibold transition-colors cursor-pointer ${
                 tipoPizza === 'responsaveis'
-                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 shadow-2xs'
+                  ? 'bg-white dark:bg-slate-800 text-purple-600 dark:text-purple-400 border border-slate-200 dark:border-slate-700'
                   : 'text-slate-500 hover:text-slate-900 dark:hover:text-white'
               }`}
             >
@@ -283,12 +283,12 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
                   fill="none"
                   stroke={slice.cor}
                   strokeWidth="26"
-                  className="transition-all duration-300 hover:opacity-80 cursor-pointer"
+                  className="transition-opacity duration-200 hover:opacity-80 cursor-pointer"
                 />
               ))}
             </svg>
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <span className="text-xl font-bold text-slate-800 dark:text-white">
+              <span className="text-xl font-bold font-mono tabular-nums text-slate-800 dark:text-white">
                 {dadosDonut.reduce((acc, d) => acc + d.valor, 0)}
               </span>
               <span className="text-[10px] font-semibold text-slate-400 uppercase tracking-wider">
@@ -302,7 +302,7 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
             {dadosDonut.map((item, idx) => (
               <div
                 key={idx}
-                className="flex items-center justify-between p-2 rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-100 dark:border-white/5 text-xs"
+                className="flex items-center justify-between p-2 rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 text-xs"
               >
                 <div className="flex items-center gap-2 min-w-0">
                   <span
@@ -315,10 +315,10 @@ export const GraficosAnalise: React.FC<GraficosAnaliseProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2 shrink-0">
-                  <span className="font-semibold text-slate-600 dark:text-slate-300">
+                  <span className="font-semibold font-mono tabular-nums text-slate-600 dark:text-slate-300">
                     {item.valor} un
                   </span>
-                  <span className="font-mono font-bold text-[11px] px-1.5 py-0.5 rounded-md bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200/60 dark:border-white/10">
+                  <span className="font-mono font-bold tabular-nums text-[11px] px-1.5 py-0.5 rounded bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700">
                     {item.pct}%
                   </span>
                 </div>

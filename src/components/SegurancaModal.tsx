@@ -100,12 +100,12 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs animate-in fade-in duration-150">
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-2xl max-w-md w-full overflow-hidden animate-in zoom-in-95 duration-200">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
+      <div className="bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 max-w-md w-full overflow-hidden">
         {/* Cabeçalho do Modal */}
-        <div className="px-6 py-4 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D]">
+        <div className="px-6 py-4 bg-[#0F2C59] dark:bg-[#0B1426] text-white flex items-center justify-between border-b border-slate-800">
           <div className="flex items-center gap-2.5">
-            <div className="p-2 rounded-lg bg-white/10 text-amber-400">
+            <div className="p-2 rounded-md bg-white/10 text-amber-400">
               <Shield className="w-5 h-5" />
             </div>
             <div>
@@ -120,7 +120,7 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
           <button
             type="button"
             onClick={onFechar}
-            className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
@@ -128,22 +128,22 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
 
         {/* Corpo do Formulário */}
         <form onSubmit={handleSubmit} className="p-6 space-y-4">
-          <div className="p-3 rounded-xl bg-blue-50 border border-blue-200 flex items-start gap-2.5 text-xs text-blue-900">
-            <Cloud className="w-4 h-4 text-blue-600 shrink-0 mt-0.5" />
+          <div className="p-3 rounded-md bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800 flex items-start gap-2.5 text-xs text-blue-900 dark:text-blue-200">
+            <Cloud className="w-4 h-4 text-blue-600 dark:text-blue-400 shrink-0 mt-0.5" />
             <p>
               As credenciais são protegidas com hash criptográfico SHA-256 e sincronizadas na nuvem para manter o site protegido em qualquer dispositivo.
             </p>
           </div>
 
           {sucesso && (
-            <div className="p-3 rounded-xl bg-emerald-50 border border-emerald-200 flex items-center gap-2.5 text-xs text-emerald-800 animate-in fade-in duration-150">
+            <div className="p-3 rounded-md bg-emerald-50 dark:bg-emerald-950/40 border border-emerald-200 dark:border-emerald-800 flex items-center gap-2.5 text-xs text-emerald-800 dark:text-emerald-200">
               <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
               <span className="font-semibold">Alterações salvas com sucesso!</span>
             </div>
           )}
 
           {erro && (
-            <div className="p-3 rounded-xl bg-red-50 border border-red-200 flex items-start gap-2.5 text-xs text-red-700 animate-in fade-in duration-150">
+            <div className="p-3 rounded-md bg-red-50 dark:bg-red-950/40 border border-red-200 dark:border-red-900 flex items-start gap-2.5 text-xs text-red-700 dark:text-red-300">
               <AlertCircle className="w-4 h-4 text-red-600 shrink-0 mt-0.5" />
               <span>{erro}</span>
             </div>
@@ -151,7 +151,7 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
 
           {/* Campo ID / Usuário Atual (Somente Leitura) */}
           <div>
-            <label className="block text-xs font-bold text-slate-500 mb-1">
+            <label className="block text-xs font-bold text-slate-500 dark:text-slate-400 mb-1">
               ID / Usuário Atual
             </label>
             <div className="relative">
@@ -160,14 +160,14 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
                 type="text"
                 disabled
                 value={acessoAtual.usuarioId || ID_PADRAO}
-                className="w-full pl-9 pr-3 py-2 text-xs font-mono font-semibold bg-slate-100 border border-slate-200 rounded-lg text-slate-600 cursor-not-allowed select-all"
+                className="w-full pl-9 pr-3 py-2 text-xs font-mono font-semibold bg-slate-100 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-600 dark:text-slate-300 cursor-not-allowed select-all"
               />
             </div>
           </div>
 
           {/* Campo Novo ID / Usuário */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Novo ID / Usuário
             </label>
             <div className="relative">
@@ -178,16 +178,16 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
                 value={novoUsuarioId}
                 onChange={e => setNovoUsuarioId(e.target.value)}
                 placeholder="Ex: gwsglobal"
-                className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+                className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
               />
             </div>
           </div>
 
-          <div className="border-t border-slate-100 my-2" />
+          <div className="border-t border-slate-100 dark:border-slate-800 my-2" />
 
           {/* Campo Senha Atual (Exigida para autorização) */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Senha Atual <span className="text-red-500">*</span>
             </label>
             <div className="relative">
@@ -198,7 +198,7 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
                 value={senhaAtual}
                 onChange={e => setSenhaAtual(e.target.value)}
                 placeholder="Digite a senha atual para autorizar"
-                className="w-full pl-9 pr-10 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+                className="w-full pl-9 pr-10 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
               />
               <button
                 type="button"
@@ -216,7 +216,7 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
 
           {/* Campo Nova Senha */}
           <div>
-            <label className="block text-xs font-bold text-slate-700 mb-1">
+            <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
               Nova Senha (mínimo 6 caracteres)
             </label>
             <div className="relative">
@@ -226,15 +226,15 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
                 value={novaSenha}
                 onChange={e => setNovaSenha(e.target.value)}
                 placeholder="Deixe em branco se quiser manter a mesma"
-                className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+                className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
               />
             </div>
           </div>
 
           {/* Campo Confirmar Nova Senha */}
           {novaSenha && (
-            <div className="animate-in fade-in duration-150">
-              <label className="block text-xs font-bold text-slate-700 mb-1">
+            <div>
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
                 Confirmar Nova Senha
               </label>
               <div className="relative">
@@ -245,26 +245,26 @@ export const SegurancaModal: React.FC<SegurancaModalProps> = ({
                   value={confirmarSenha}
                   onChange={e => setConfirmarSenha(e.target.value)}
                   placeholder="Digite novamente a nova senha"
-                  className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 border border-slate-200 rounded-lg focus:outline-hidden focus:ring-2 focus:ring-[#0F2C59]/20 focus:border-[#0F2C59]"
+                  className="w-full pl-9 pr-3 py-2 text-xs font-semibold bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                 />
               </div>
             </div>
           )}
 
           {/* Rodapé com Botões */}
-          <div className="pt-3 border-t border-slate-100 flex items-center justify-end gap-2.5">
+          <div className="pt-3 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2.5">
             <button
               type="button"
               onClick={onFechar}
               disabled={salvando}
-              className="px-4 py-2 text-xs font-semibold text-slate-600 hover:bg-slate-100 rounded-lg transition-colors cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 text-xs font-semibold text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer disabled:opacity-50"
             >
               Cancelar
             </button>
             <button
               type="submit"
               disabled={salvando}
-              className="px-4 py-2 bg-[#0F2C59] hover:bg-[#163c78] text-white text-xs font-bold rounded-lg shadow-xs transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+              className="px-4 py-2 bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
             >
               <Check className="w-4 h-4 text-emerald-400" />
               {salvando ? 'Verificando...' : 'Salvar alterações'}

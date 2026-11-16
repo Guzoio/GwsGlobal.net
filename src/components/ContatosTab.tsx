@@ -3,22 +3,12 @@ import {
   Users,
   Search,
   Plus,
-  Phone,
-  Mail,
-  Building2,
-  User,
   Star,
   Edit2,
   Trash2,
   Copy,
   Check,
-  ExternalLink,
-  MapPin,
   X,
-  LayoutGrid,
-  List,
-  Sparkles,
-  AlertTriangle,
 } from 'lucide-react';
 import { ContatoPrefeitura, Licitacao } from '../types';
 
@@ -72,7 +62,6 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
 }) => {
   const [busca, setBusca] = useState('');
   const [filtroRapido, setFiltroRapido] = useState<'todos' | 'whatsapp' | 'favoritos'>('todos');
-  const [modoVisualizacao, setModoVisualizacao] = useState<'cards' | 'lista'>('cards');
   const [modalAberto, setModalAberto] = useState(false);
   const [contatoEdicao, setContatoEdicao] = useState<ContatoPrefeitura | null>(null);
   const [contatoParaExcluir, setContatoParaExcluir] = useState<ContatoPrefeitura | null>(null);
@@ -199,17 +188,17 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
 
   return (
     <div className="space-y-4 pb-10 animate-in fade-in duration-150">
-      {/* Top Bar: Pesquisa, Filtros Rápidos, Modo de Exibição e Novo Contato */}
-      <div className="bg-white dark:bg-[#0A162B] rounded-2xl p-3 sm:p-4 border border-slate-200/90 dark:border-slate-800 shadow-sm flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
+      {/* Top Bar: Pesquisa, Filtros Rápidos e Novo Contato */}
+      <div className="bg-white dark:bg-[#0F172A] rounded-lg p-3 sm:p-4 border border-slate-200 dark:border-slate-800 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-3">
         {/* Campo de Pesquisa */}
-        <div className="relative flex-1 min-w-[240px]">
+        <div className="relative flex-1 min-w-0 md:min-w-[240px]">
           <Search className="w-4 h-4 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             type="text"
             value={busca}
             onChange={e => setBusca(e.target.value)}
             placeholder="Pesquisar prefeitura, pessoa, telefone ou e-mail..."
-            className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm rounded-xl bg-slate-50 dark:bg-slate-900/60 border border-slate-200/80 dark:border-white/10 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/30 transition-all"
+            className="w-full pl-10 pr-9 py-2 text-xs sm:text-sm rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
           />
           {busca && (
             <button
@@ -223,15 +212,15 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
           )}
         </div>
 
-        {/* Filtros Rápidos (Chips Modernos) */}
+        {/* Filtros Rápidos */}
         <div className="flex items-center gap-1.5 flex-wrap sm:flex-nowrap">
           <button
             type="button"
             onClick={() => setFiltroRapido('todos')}
-            className={`px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`px-3 py-2 sm:py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
               filtroRapido === 'todos'
-                ? 'bg-blue-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                ? 'bg-[#0F2C59] dark:bg-blue-600 text-white'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
             }`}
           >
             Todos ({contatos.length})
@@ -239,10 +228,10 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
           <button
             type="button"
             onClick={() => setFiltroRapido('whatsapp')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
               filtroRapido === 'whatsapp'
-                ? 'bg-emerald-600 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                ? 'bg-emerald-600 text-white'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
             }`}
           >
             <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-500 group-hover:text-white" />
@@ -251,10 +240,10 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
           <button
             type="button"
             onClick={() => setFiltroRapido('favoritos')}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold transition-all cursor-pointer ${
+            className={`inline-flex items-center gap-1.5 px-3 py-2 sm:py-1.5 rounded-md text-xs font-semibold transition-colors cursor-pointer ${
               filtroRapido === 'favoritos'
-                ? 'bg-amber-500 text-white shadow-xs'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-white/5 dark:hover:bg-white/10 text-slate-600 dark:text-slate-300'
+                ? 'bg-amber-500 text-white'
+                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300'
             }`}
           >
             <Star className="w-3.5 h-3.5 fill-amber-400 text-amber-400" />
@@ -262,41 +251,12 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
           </button>
         </div>
 
-        {/* Separador e Controles da Direita */}
-        <div className="flex items-center justify-between sm:justify-end gap-2 pt-2 sm:pt-0 border-t sm:border-t-0 border-slate-100 dark:border-white/5">
-          {/* Alternador de Visualização: Cards vs Tabela */}
-          <div className="flex items-center bg-slate-100 dark:bg-slate-900/60 p-0.5 rounded-xl border border-slate-200/60 dark:border-white/5">
-            <button
-              type="button"
-              onClick={() => setModoVisualizacao('cards')}
-              title="Visualização em Cards Detalhados"
-              className={`p-1.5 rounded-lg text-xs transition-all ${
-                modoVisualizacao === 'cards'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <LayoutGrid className="w-3.5 h-3.5" />
-            </button>
-            <button
-              type="button"
-              onClick={() => setModoVisualizacao('lista')}
-              title="Visualização em Tabela / Linhas"
-              className={`p-1.5 rounded-lg text-xs transition-all ${
-                modoVisualizacao === 'lista'
-                  ? 'bg-white dark:bg-slate-800 text-blue-600 dark:text-blue-400 shadow-2xs font-bold'
-                  : 'text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-white'
-              }`}
-            >
-              <List className="w-3.5 h-3.5" />
-            </button>
-          </div>
-
-          {/* Botão Novo Contato */}
+        {/* Botão Novo Contato */}
+        <div className="flex items-center justify-end pt-2 md:pt-0 border-t md:border-t-0 border-slate-100 dark:border-slate-800">
           <button
             type="button"
             onClick={() => abrirModalNovo()}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition-all cursor-pointer whitespace-nowrap"
+            className="w-full md:w-auto inline-flex items-center justify-center gap-1.5 px-3.5 py-2.5 sm:py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer whitespace-nowrap"
           >
             <Plus className="w-4 h-4 stroke-[2.5]" />
             <span>Novo Contato</span>
@@ -306,8 +266,8 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
 
       {/* Conteúdo: Estado Vazio ou Lista/Cards */}
       {contatosFiltrados.length === 0 ? (
-        <div className="bg-white dark:bg-[#0A162B] rounded-2xl p-10 text-center border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
-          <div className="w-12 h-12 rounded-2xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center">
+        <div className="bg-white dark:bg-[#0F172A] rounded-lg p-10 text-center border border-slate-200 dark:border-slate-800 space-y-3">
+          <div className="w-12 h-12 rounded-lg bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 mx-auto flex items-center justify-center border border-blue-100 dark:border-blue-900/40">
             <Users className="w-6 h-6" />
           </div>
           <div className="space-y-1">
@@ -324,195 +284,20 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
             <button
               type="button"
               onClick={() => abrirModalNovo()}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
+              className="inline-flex items-center gap-2 px-4 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-colors cursor-pointer"
             >
               <Plus className="w-4 h-4" />
               <span>Cadastrar Primeiro Contato</span>
             </button>
           )}
         </div>
-      ) : modoVisualizacao === 'cards' ? (
-        /* VISUALIZAÇÃO EM CARDS: Elegante, Espaçosa e sem truncar e-mails */
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-3.5">
-          {contatosFiltrados.map(contato => {
-            const linkWhats = contato.whatsapp
-              ? gerarLinkWhatsApp(contato.whatsapp, contato.nomeContato, contato.prefeitura)
-              : '';
-
-            return (
-              <div
-                key={contato.id}
-                className={`bg-white dark:bg-[#0A162B] rounded-2xl border transition-all p-4 flex flex-col justify-between gap-3 shadow-2xs hover:shadow-md ${
-                  contato.favorito
-                    ? 'border-amber-300 dark:border-amber-500/40 ring-1 ring-amber-400/20'
-                    : 'border-slate-200/90 dark:border-slate-800/90 hover:border-blue-400/50 dark:hover:border-blue-500/50'
-                }`}
-              >
-                {/* Cabeçalho do Card: Prefeitura + Cidade + Ações */}
-                <div className="flex items-start justify-between gap-2.5">
-                  <div className="flex items-start gap-3 min-w-0">
-                    <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 flex items-center justify-center shrink-0 border border-blue-100 dark:border-blue-900/30">
-                      <Building2 className="w-4 h-4" />
-                    </div>
-                    <div className="min-w-0">
-                      <h3
-                        className="text-sm font-bold text-slate-900 dark:text-white leading-tight"
-                        title={contato.prefeitura}
-                      >
-                        {contato.prefeitura}
-                      </h3>
-                      {contato.cidadeUf && (
-                        <div className="flex items-center gap-1 text-[11px] text-slate-400 mt-0.5">
-                          <MapPin className="w-3 h-3 text-slate-400 shrink-0" />
-                          <span>{contato.cidadeUf}</span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  {/* Ações Rápidas (Favorito, Editar, Excluir) */}
-                  <div className="flex items-center gap-1 shrink-0 bg-slate-50 dark:bg-white/5 p-1 rounded-xl border border-slate-100 dark:border-white/5">
-                    <button
-                      type="button"
-                      onClick={() => handleToggleFavorito(contato)}
-                      title={contato.favorito ? 'Remover dos favoritos' : 'Adicionar aos favoritos'}
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-amber-500 transition-colors cursor-pointer"
-                    >
-                      <Star
-                        className={`w-3.5 h-3.5 ${
-                          contato.favorito ? 'fill-amber-400 text-amber-400' : ''
-                        }`}
-                      />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => abrirModalEditar(contato)}
-                      title="Editar contato"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 transition-colors cursor-pointer"
-                    >
-                      <Edit2 className="w-3.5 h-3.5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setContatoParaExcluir(contato);
-                      }}
-                      title="Excluir contato"
-                      className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 transition-colors cursor-pointer"
-                    >
-                      <Trash2 className="w-3.5 h-3.5" />
-                    </button>
-                  </div>
-                </div>
-
-                {/* Meio: Responsável & Cargo */}
-                <div className="flex items-center gap-2 text-xs text-slate-700 dark:text-slate-300 bg-slate-50/70 dark:bg-slate-900/40 px-3 py-1.5 rounded-xl border border-slate-100 dark:border-white/5">
-                  <User className="w-3.5 h-3.5 text-slate-400 shrink-0" />
-                  <span className="font-semibold text-slate-900 dark:text-white">
-                    {contato.nomeContato}
-                  </span>
-                  {contato.cargoSetor && (
-                    <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium">
-                      • {contato.cargoSetor}
-                    </span>
-                  )}
-                </div>
-
-                {/* Rodapé: Canais de Contato (WhatsApp, Telefone e E-mail com visual limpo e sem cortes) */}
-                <div className="space-y-2 pt-1 border-t border-slate-100 dark:border-white/5">
-                  {/* Linha com WhatsApp e Fixo */}
-                  <div className="flex flex-wrap items-center gap-2">
-                    {/* Botão de WhatsApp em destaque */}
-                    {contato.whatsapp && (
-                      <a
-                        href={linkWhats}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="inline-flex items-center gap-2 px-3 py-1.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white font-bold text-xs shadow-xs transition-all cursor-pointer"
-                        title="Abrir WhatsApp para conversar diretamente"
-                      >
-                        <WhatsAppIcon className="w-3.5 h-3.5 shrink-0" />
-                        <span>{contato.whatsapp}</span>
-                        <ExternalLink className="w-3 h-3 opacity-75" />
-                      </a>
-                    )}
-
-                    {/* Telefone Fixo com cópia rápida */}
-                    {contato.telefoneFixo && (
-                      <div className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-slate-100 dark:bg-white/5 text-slate-700 dark:text-slate-200 text-xs font-medium border border-slate-200/60 dark:border-white/5">
-                        <Phone className="w-3.5 h-3.5 text-amber-500 shrink-0" />
-                        <span>
-                          {contato.telefoneFixo}
-                          {contato.ramal ? ` R.${contato.ramal}` : ''}
-                        </span>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            copiarTexto(
-                              `${contato.telefoneFixo}${contato.ramal ? ` R.${contato.ramal}` : ''}`,
-                              `tel_${contato.id}`
-                            )
-                          }
-                          title="Copiar telefone fixo"
-                          className="p-1 hover:text-blue-600 dark:hover:text-blue-400 transition-colors ml-0.5"
-                        >
-                          {copiadoId === `tel_${contato.id}` ? (
-                            <Check className="w-3 h-3 text-emerald-500" />
-                          ) : (
-                            <Copy className="w-3 h-3 opacity-60" />
-                          )}
-                        </button>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* E-mail Completo: Amplo, sem reticências, com clique para enviar e cópia instantânea */}
-                  {contato.email && (
-                    <div className="flex items-center justify-between gap-2 px-3 py-1.5 rounded-xl bg-blue-50/60 dark:bg-blue-950/20 border border-blue-100/80 dark:border-blue-900/30 text-xs">
-                      <div className="flex items-center gap-2 min-w-0">
-                        <Mail className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
-                        <a
-                          href={`mailto:${contato.email}`}
-                          className="text-blue-700 dark:text-blue-300 font-semibold hover:underline select-all break-all"
-                          title="Clique para enviar e-mail"
-                        >
-                          {contato.email}
-                        </a>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => copiarTexto(contato.email!, `mail_${contato.id}`)}
-                        className="inline-flex items-center gap-1 px-2 py-0.5 rounded-md bg-white dark:bg-slate-800 text-[11px] font-semibold text-slate-600 dark:text-slate-300 hover:text-blue-600 dark:hover:text-white border border-slate-200/80 dark:border-white/10 shadow-2xs transition-all shrink-0 cursor-pointer"
-                        title="Copiar e-mail"
-                      >
-                        {copiadoId === `mail_${contato.id}` ? (
-                          <>
-                            <Check className="w-3 h-3 text-emerald-500" />
-                            <span className="text-emerald-600 dark:text-emerald-400">Copiado</span>
-                          </>
-                        ) : (
-                          <>
-                            <Copy className="w-3 h-3 opacity-70" />
-                            <span>Copiar</span>
-                          </>
-                        )}
-                      </button>
-                    </div>
-                  )}
-                </div>
-              </div>
-            );
-          })}
-        </div>
       ) : (
-        /* VISUALIZAÇÃO EM TABELA / LINHAS: Super organizada e compacta com todos os dados */
-        <div className="bg-white dark:bg-[#0A162B] rounded-2xl border border-slate-200/80 dark:border-slate-800 overflow-hidden shadow-xs">
+        /* VISUALIZAÇÃO EM TABELA / LINHAS */
+        <div className="bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-50 dark:bg-slate-900/50 border-b border-slate-200/80 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider">
+                <tr className="bg-slate-50 dark:bg-slate-900/80 border-b border-slate-200 dark:border-slate-800 text-slate-500 dark:text-slate-400 font-bold uppercase text-[10px] tracking-wider">
                   <th className="py-3 px-4">Prefeitura / Órgão</th>
                   <th className="py-3 px-4">Contato / Cargo</th>
                   <th className="py-3 px-4">WhatsApp</th>
@@ -521,7 +306,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                   <th className="py-3 px-4 text-right">Ações</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-100 dark:divide-white/5">
+              <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
                 {contatosFiltrados.map(contato => {
                   const linkWhats = contato.whatsapp
                     ? gerarLinkWhatsApp(contato.whatsapp, contato.nomeContato, contato.prefeitura)
@@ -530,7 +315,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                   return (
                     <tr
                       key={contato.id}
-                      className="hover:bg-slate-50/70 dark:hover:bg-white/5 transition-colors"
+                      className="hover:bg-slate-50 dark:hover:bg-slate-800/40 transition-colors"
                     >
                       {/* Prefeitura */}
                       <td className="py-3 px-4">
@@ -538,7 +323,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                           <button
                             type="button"
                             onClick={() => handleToggleFavorito(contato)}
-                            className="text-slate-300 hover:text-amber-400"
+                            className="text-slate-300 hover:text-amber-400 cursor-pointer"
                             title="Favoritar"
                           >
                             <Star
@@ -579,7 +364,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                             href={linkWhats}
                             target="_blank"
                             rel="noopener noreferrer"
-                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs transition-all active:scale-95"
+                            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-xs font-mono tabular-nums transition-colors"
                           >
                             <WhatsAppIcon className="w-3.5 h-3.5" />
                             <span>{contato.whatsapp}</span>
@@ -592,7 +377,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                       {/* Fixo */}
                       <td className="py-3 px-4 whitespace-nowrap">
                         {contato.telefoneFixo ? (
-                          <span className="font-mono text-slate-700 dark:text-slate-300">
+                          <span className="font-mono tabular-nums text-slate-700 dark:text-slate-300">
                             {contato.telefoneFixo}
                             {contato.ramal ? ` R.${contato.ramal}` : ''}
                           </span>
@@ -635,7 +420,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                           <button
                             type="button"
                             onClick={() => abrirModalEditar(contato)}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-white/5"
+                            className="p-1.5 rounded text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                             title="Editar"
                           >
                             <Edit2 className="w-3.5 h-3.5" />
@@ -646,7 +431,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                               e.stopPropagation();
                               setContatoParaExcluir(contato);
                             }}
-                            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
+                            className="p-1.5 rounded text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30 cursor-pointer"
                             title="Excluir"
                           >
                             <Trash2 className="w-3.5 h-3.5" />
@@ -664,12 +449,12 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
 
       {/* Modal para Adicionar / Editar Contato */}
       {modalAberto && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#0A162B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-lg w-full max-h-[90vh] overflow-y-auto animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
+          <div className="bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 max-w-lg w-full max-h-[90vh] overflow-y-auto">
             {/* Header */}
-            <div className="p-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between sticky top-0 bg-white dark:bg-[#0A162B] z-10">
+            <div className="p-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-white dark:bg-[#0F172A] z-10">
               <div className="flex items-center gap-2.5">
-                <div className="p-2 rounded-xl bg-emerald-500/10 text-emerald-600 dark:text-emerald-400">
+                <div className="p-2 rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-900/40">
                   <Users className="w-4 h-4" />
                 </div>
                 <div>
@@ -684,7 +469,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
               <button
                 type="button"
                 onClick={() => setModalAberto(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-700 dark:hover:text-white hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 <X className="w-4 h-4" />
               </button>
@@ -704,7 +489,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                   value={formPrefeitura}
                   onChange={e => setFormPrefeitura(e.target.value)}
                   placeholder="Ex: Prefeitura Municipal de Cerqueira César"
-                  className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                  className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                 />
                 <datalist id="lista-prefeituras-crm">
                   {prefeiturasCrm.map((p, i) => (
@@ -725,7 +510,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formNomeContato}
                     onChange={e => setFormNomeContato(e.target.value)}
                     placeholder="Ex: Carlos (Pregoeiro)"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
 
@@ -738,13 +523,13 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formCargoSetor}
                     onChange={e => setFormCargoSetor(e.target.value)}
                     placeholder="Ex: Compras, Pregoeiro"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
               </div>
 
               {/* WhatsApp em destaque */}
-              <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 space-y-1.5">
+              <div className="p-3 rounded-md bg-emerald-50/70 dark:bg-emerald-950/30 border border-emerald-200 dark:border-emerald-800/50 space-y-1.5">
                 <label className="block text-xs font-bold text-emerald-800 dark:text-emerald-300 flex items-center gap-1.5">
                   <WhatsAppIcon className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   <span>WhatsApp (com DDD)</span>
@@ -754,7 +539,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                   value={formWhatsapp}
                   onChange={e => setFormWhatsapp(aplicarMascaraTelefone(e.target.value))}
                   placeholder="(17) 99876-5432"
-                  className="w-full px-3 py-2 text-xs rounded-lg bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-600/50 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500"
+                  className="w-full px-3 py-2 text-xs rounded-md bg-white dark:bg-slate-900 border border-emerald-300 dark:border-emerald-700 text-slate-900 dark:text-white font-mono focus:outline-hidden focus:border-emerald-500"
                 />
               </div>
 
@@ -769,7 +554,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formTelefoneFixo}
                     onChange={e => setFormTelefoneFixo(aplicarMascaraTelefone(e.target.value))}
                     placeholder="(17) 3645-1200"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white font-mono focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white font-mono focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
                 <div>
@@ -781,7 +566,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formRamal}
                     onChange={e => setFormRamal(e.target.value)}
                     placeholder="204"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -797,7 +582,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formEmail}
                     onChange={e => setFormEmail(e.target.value)}
                     placeholder="licitacao@prefeitura.sp.gov.br"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
 
@@ -810,7 +595,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                     value={formCidadeUf}
                     onChange={e => setFormCidadeUf(e.target.value)}
                     placeholder="São Paulo - SP"
-                    className="w-full px-3 py-2 text-xs rounded-xl bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-emerald-500/40"
+                    className="w-full px-3 py-2 text-xs rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-hidden focus:border-emerald-500"
                   />
                 </div>
               </div>
@@ -830,17 +615,17 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
               </label>
 
               {/* Botões */}
-              <div className="pt-3 border-t border-slate-200 dark:border-white/10 flex items-center justify-end gap-2">
+              <div className="pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-end gap-2">
                 <button
                   type="button"
                   onClick={() => setModalAberto(false)}
-                  className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
+                  className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                 >
                   Cancelar
                 </button>
                 <button
                   type="submit"
-                  className="px-5 py-2 rounded-xl bg-emerald-600 hover:bg-emerald-700 active:scale-95 text-white text-xs font-bold shadow-xs cursor-pointer"
+                  className="px-5 py-2 rounded-md bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold cursor-pointer transition-colors"
                 >
                   {contatoEdicao ? 'Salvar Alterações' : 'Cadastrar Contato'}
                 </button>
@@ -852,10 +637,10 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
 
       {/* Modal de Confirmação de Exclusão (100% Funcional e compatível com iframes) */}
       {contatoParaExcluir && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/60 backdrop-blur-xs animate-in fade-in duration-150">
-          <div className="bg-white dark:bg-[#0A162B] rounded-2xl border border-slate-200 dark:border-slate-800 shadow-2xl max-w-md w-full p-5 space-y-4 animate-in zoom-in-95 duration-150">
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60">
+          <div className="bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 max-w-md w-full p-5 space-y-4">
             <div className="flex items-start gap-3.5">
-              <div className="p-2.5 rounded-xl bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50 shrink-0">
+              <div className="p-2.5 rounded-md bg-rose-50 dark:bg-rose-950/40 text-rose-600 dark:text-rose-400 border border-rose-200 dark:border-rose-900/50 shrink-0">
                 <Trash2 className="w-5 h-5" />
               </div>
               <div className="min-w-0 flex-1">
@@ -875,11 +660,11 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
               </div>
             </div>
 
-            <div className="pt-2 border-t border-slate-100 dark:border-white/5 flex items-center justify-end gap-2">
+            <div className="pt-2 border-t border-slate-100 dark:border-slate-800 flex items-center justify-end gap-2">
               <button
                 type="button"
                 onClick={() => setContatoParaExcluir(null)}
-                className="px-3.5 py-2 rounded-xl border border-slate-200 dark:border-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-white/5 cursor-pointer"
+                className="px-3.5 py-2 rounded-md border border-slate-200 dark:border-slate-700 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
               >
                 Cancelar
               </button>
@@ -891,7 +676,7 @@ export const ContatosTab: React.FC<ContatosTabProps> = ({
                   setContatoParaExcluir(null);
                   await onExcluirContato(idExcluir);
                 }}
-                className="px-4 py-2 rounded-xl bg-rose-600 hover:bg-rose-700 active:scale-95 text-white text-xs font-bold shadow-xs transition-all cursor-pointer flex items-center gap-1.5"
+                className="px-4 py-2 rounded-md bg-rose-600 hover:bg-rose-700 text-white text-xs font-bold transition-colors cursor-pointer flex items-center gap-1.5"
               >
                 <Trash2 className="w-3.5 h-3.5" />
                 <span>Sim, Excluir</span>

@@ -89,12 +89,12 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
       <button
         type="button"
         onClick={() => setAberto(prev => !prev)}
-        className={`relative p-2.5 rounded-xl border transition-all cursor-pointer flex items-center justify-center ${
+        className={`relative p-2.5 rounded-md border transition-colors cursor-pointer flex items-center justify-center ${
           aberto
-            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-500 text-blue-600 dark:text-blue-300 shadow-sm'
+            ? 'bg-blue-50 dark:bg-blue-950/60 border-blue-400 dark:border-blue-500 text-blue-600 dark:text-blue-300'
             : totalAlertas > 0
-            ? 'bg-rose-50/90 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/70 shadow-2xs'
-            : 'bg-slate-100 dark:bg-slate-800/80 border-slate-200/80 dark:border-slate-700/80 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200/70'
+            ? 'bg-rose-50 dark:bg-rose-950/40 border-rose-200 dark:border-rose-900/60 text-rose-600 dark:text-rose-400 hover:bg-rose-100 dark:hover:bg-rose-950/70'
+            : 'bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white hover:bg-slate-200'
         }`}
         title={
           totalAlertas > 0
@@ -102,11 +102,11 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
             : 'Notificações de Cobranças (Nenhum alerta pendente)'
         }
       >
-        <Bell className={`w-4 h-4 ${totalAlertas > 0 ? 'animate-bounce' : ''}`} />
+        <Bell className="w-4 h-4" />
 
-        {/* Ponto Vermelho / Contador de Notificações */}
+        {/* Contador de Notificações */}
         {totalAlertas > 0 && (
-          <span className="absolute -top-1.5 -right-1.5 min-w-[20px] h-5 px-1.5 rounded-full bg-rose-600 text-white text-[10px] font-black flex items-center justify-center shadow-md ring-2 ring-white dark:ring-[#0A162B] animate-pulse">
+          <span className="absolute -top-1.5 -right-1.5 min-w-[18px] h-4.5 px-1 rounded bg-rose-600 text-white text-[10px] font-bold font-mono flex items-center justify-center border border-white dark:border-[#0F172A]">
             {totalAlertas > 99 ? '99+' : totalAlertas}
           </span>
         )}
@@ -114,18 +114,18 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
 
       {/* Painel Dropdown do Sininho */}
       {aberto && (
-        <div className="absolute right-0 mt-2 w-[340px] sm:w-[420px] max-w-[95vw] bg-white dark:bg-[#0A162B] rounded-2xl border border-slate-200/90 dark:border-slate-800 shadow-2xl z-50 overflow-hidden animate-in fade-in zoom-in-95 duration-150">
+        <div className="absolute right-0 mt-2 w-[340px] sm:w-[420px] max-w-[95vw] bg-white dark:bg-[#0F172A] rounded-lg border border-slate-200 dark:border-slate-800 z-50 overflow-hidden">
           {/* Header do Painel */}
-          <div className="p-3.5 sm:p-4 bg-slate-50/90 dark:bg-[#0E1F3D] border-b border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+          <div className="p-3.5 sm:p-4 bg-slate-50 dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300">
+              <div className="p-1.5 rounded-md bg-blue-100 dark:bg-blue-950 text-blue-600 dark:text-blue-300">
                 <Bell className="w-4 h-4" />
               </div>
               <div>
                 <h3 className="text-xs sm:text-sm font-bold text-slate-900 dark:text-white flex items-center gap-1.5">
                   <span>Alertas de Cobranças</span>
                   {totalAlertas > 0 && (
-                    <span className="px-2 py-0.5 rounded-full text-[10px] font-black bg-rose-500 text-white">
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold font-mono bg-rose-600 text-white">
                       {totalAlertas}
                     </span>
                   )}
@@ -141,14 +141,14 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                 type="button"
                 onClick={onTestarSom}
                 title="Testar aviso sonoro de notificação"
-                className="p-1.5 rounded-lg text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-blue-600 dark:hover:text-blue-400 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
               >
                 <Volume2 className="w-4 h-4" />
               </button>
               <button
                 type="button"
                 onClick={() => setAberto(false)}
-                className="p-1.5 rounded-lg text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200/60 dark:hover:bg-white/5 transition-colors cursor-pointer"
+                className="p-1.5 rounded-md text-slate-400 hover:text-slate-600 dark:hover:text-white hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer"
                 title="Fechar"
               >
                 <X className="w-4 h-4" />
@@ -158,14 +158,14 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
 
           {/* Filtros Rápidos */}
           {totalAlertas > 0 && (
-            <div className="px-3.5 py-2 bg-slate-100/60 dark:bg-slate-900/40 border-b border-slate-200/50 dark:border-white/5 flex items-center gap-1.5 text-[11px]">
+            <div className="px-3.5 py-2 bg-slate-100 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 flex items-center gap-1.5 text-[11px]">
               <button
                 type="button"
                 onClick={() => setFiltro('todos')}
-                className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer ${
+                className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer ${
                   filtro === 'todos'
-                    ? 'bg-blue-600 text-white shadow-2xs'
-                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200/60 dark:hover:bg-white/5'
+                    ? 'bg-blue-600 text-white'
+                    : 'text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800'
                 }`}
               >
                 Todos ({totalAlertas})
@@ -174,9 +174,9 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                 <button
                   type="button"
                   onClick={() => setFiltro('pregoeiro')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                     filtro === 'pregoeiro'
-                      ? 'bg-amber-500 text-white shadow-2xs'
+                      ? 'bg-amber-600 text-white'
                       : 'text-amber-700 dark:text-amber-300 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                   }`}
                 >
@@ -188,9 +188,9 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                 <button
                   type="button"
                   onClick={() => setFiltro('criticos')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                     filtro === 'criticos'
-                      ? 'bg-rose-600 text-white shadow-2xs'
+                      ? 'bg-rose-600 text-white'
                       : 'text-rose-600 dark:text-rose-400 hover:bg-rose-50 dark:hover:bg-rose-950/30'
                   }`}
                 >
@@ -201,9 +201,9 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                 <button
                   type="button"
                   onClick={() => setFiltro('hoje')}
-                  className={`px-2.5 py-1 rounded-md font-semibold transition-all cursor-pointer flex items-center gap-1 ${
+                  className={`px-2.5 py-1 rounded font-semibold transition-colors cursor-pointer flex items-center gap-1 ${
                     filtro === 'hoje'
-                      ? 'bg-amber-600 text-white shadow-2xs'
+                      ? 'bg-amber-600 text-white'
                       : 'text-amber-600 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-950/30'
                   }`}
                 >
@@ -214,10 +214,10 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
           )}
 
           {/* Lista de Alertas */}
-          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 dark:divide-white/5">
+          <div className="max-h-[360px] overflow-y-auto divide-y divide-slate-100 dark:divide-slate-800">
             {alertasFiltrados.length === 0 ? (
               <div className="p-8 text-center space-y-2">
-                <div className="w-12 h-12 mx-auto rounded-full bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-100 dark:border-emerald-900/40">
+                <div className="w-12 h-12 mx-auto rounded-md bg-emerald-50 dark:bg-emerald-950/40 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-900">
                   <CheckCircle2 className="w-6 h-6" />
                 </div>
                 <h4 className="text-xs sm:text-sm font-bold text-slate-800 dark:text-white">
@@ -241,7 +241,7 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                         onNavegarParaCobranca(alerta.cobrancaId);
                       }
                     }}
-                    className={`p-3 sm:p-3.5 hover:bg-slate-50 dark:hover:bg-white/5 transition-colors cursor-pointer group flex items-start gap-3 ${
+                    className={`p-3 sm:p-3.5 hover:bg-slate-50 dark:hover:bg-slate-900/60 transition-colors cursor-pointer group flex items-start gap-3 ${
                       ehPregoeiro
                         ? 'bg-amber-50/40 dark:bg-amber-950/20'
                         : alerta.urgencia === 'critica'
@@ -252,7 +252,7 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                     }`}
                   >
                     <div
-                      className={`p-2 rounded-xl shrink-0 border mt-0.5 ${
+                      className={`p-2 rounded-md shrink-0 border mt-0.5 ${
                         ehPregoeiro
                           ? 'bg-amber-100 text-amber-700 border-amber-300 dark:bg-amber-950/60 dark:text-amber-300 dark:border-amber-800'
                           : alerta.urgencia === 'critica'
@@ -343,7 +343,7 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
           </div>
 
           {/* Footer do Painel */}
-          <div className="p-3 bg-slate-50 dark:bg-[#0E1F3D] border-t border-slate-200/80 dark:border-white/10 flex items-center justify-between">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
             <span className="text-[11px] text-slate-500 dark:text-slate-400">
               Módulo de Cobranças GWS
             </span>
@@ -353,7 +353,7 @@ export const SininhoNotificacoes: React.FC<SininhoNotificacoesProps> = ({
                 setAberto(false);
                 onNavegarParaCobranca();
               }}
-              className="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold transition-all shadow-xs flex items-center gap-1 cursor-pointer"
+              className="px-3 py-1.5 rounded-md bg-blue-600 hover:bg-blue-500 text-white text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer"
             >
               <span>Ver Painel Completo</span>
               <ArrowRight className="w-3 h-3" />

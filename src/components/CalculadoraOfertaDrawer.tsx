@@ -17,7 +17,6 @@ import {
   Minimize2,
 } from 'lucide-react';
 import { formatarMoeda, parseMoedaBrasileira, formatarNumeroPtBr } from '../utils/numberToWordsPtBr';
-import { obterTemaNatal } from '../utils/theme';
 
 interface CalculadoraOfertaDrawerProps {
   aberto: boolean;
@@ -91,16 +90,16 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
       <button
         type="button"
         onClick={onAlternarMinimizar}
-        className="fixed right-0 top-24 z-30 bg-[#0A1D37] hover:bg-[#122A4E] text-white py-3 px-3.5 rounded-l-2xl shadow-2xl border-l-2 border-y border-amber-400/60 flex items-center gap-2 cursor-pointer transition-all hover:pr-4 group animate-in slide-in-from-right duration-150"
+        className="fixed right-0 top-24 z-30 bg-[#0F2C59] hover:bg-[#163C78] text-white py-3 px-3.5 rounded-l-md border-l-2 border-y border-amber-400/70 flex items-center gap-2 cursor-pointer transition-colors group"
         title="Abrir Calculadora de Limite de Oferta (Fixo)"
       >
-        <div className="w-6 h-6 rounded-lg bg-amber-400/20 text-amber-400 flex items-center justify-center">
+        <div className="w-6 h-6 rounded-md bg-white/10 text-amber-400 flex items-center justify-center">
           <Calculator className="w-3.5 h-3.5" />
         </div>
         <span className="text-xs font-bold tracking-tight text-white hidden sm:inline">
           Calculadora de Oferta
         </span>
-        <ChevronLeft className="w-4 h-4 text-amber-400 group-hover:-translate-x-0.5 transition-transform" />
+        <ChevronLeft className="w-4 h-4 text-amber-400" />
       </button>
     );
   }
@@ -109,7 +108,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
     <div
       className={
         modoFixo
-          ? 'fixed top-16 right-0 bottom-0 z-30 w-full sm:w-[380px] lg:w-[400px] flex flex-col bg-white dark:bg-[#0A162B] shadow-2xl border-l border-slate-200/80 dark:border-slate-800 animate-in slide-in-from-right duration-200'
+          ? 'fixed top-14 sm:top-16 right-0 bottom-0 z-30 w-full sm:w-[380px] lg:w-[400px] flex flex-col bg-white dark:bg-[#0F172A] border-l border-slate-200 dark:border-slate-800'
           : 'fixed inset-0 z-50 overflow-hidden flex justify-end'
       }
     >
@@ -117,7 +116,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
       {!modoFixo && (
         <div
           onClick={onFechar}
-          className="fixed inset-0 bg-[#071326]/40 backdrop-blur-[2px] transition-opacity"
+          className="fixed inset-0 bg-slate-950/60"
           aria-hidden="true"
         />
       )}
@@ -127,14 +126,14 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
         className={
           modoFixo
             ? 'w-full h-full flex flex-col min-h-0 overflow-hidden'
-            : 'relative w-full sm:w-[400px] max-w-[400px] bg-white dark:bg-[#0A162B] shadow-2xl border-l border-slate-200/80 dark:border-slate-800 flex flex-col z-50 animate-in slide-in-from-right duration-200 max-h-screen'
+            : 'relative w-full sm:w-[400px] max-w-[400px] bg-white dark:bg-[#0F172A] border-l border-slate-200 dark:border-slate-800 flex flex-col z-50 max-h-screen'
         }
       >
         {/* Cabeçalho Navy Moderno GWS */}
-        <div className="px-4 sm:px-5 py-3.5 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D] shrink-0">
+        <div className="px-4 sm:px-5 py-3.5 bg-[#0F2C59] dark:bg-[#0B1426] text-white flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-2.5 min-w-0">
             <div className="relative shrink-0">
-              <div className="w-8 h-8 rounded-xl bg-white/10 flex items-center justify-center text-amber-400 shadow-2xs">
+              <div className="w-8 h-8 rounded-md bg-white/10 flex items-center justify-center text-amber-400">
                 <Calculator className="w-4 h-4" />
               </div>
             </div>
@@ -144,7 +143,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                   Calculadora de Ofertas
                 </h2>
                 {modoFixo && (
-                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.2 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
+                  <span className="text-[9px] font-black uppercase tracking-wider px-1.5 py-0.5 rounded bg-amber-400/20 text-amber-300 border border-amber-400/30">
                     Fixa
                   </span>
                 )}
@@ -159,7 +158,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
             <button
               type="button"
               onClick={limparCampos}
-              className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+              className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
               title="Limpar campos"
             >
               <RotateCcw className="w-3.5 h-3.5" />
@@ -168,7 +167,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
               <button
                 type="button"
                 onClick={onAlternarMinimizar || onFechar}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-semibold"
+                className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer flex items-center gap-1 text-[11px] font-semibold"
                 title="Recolher calculadora lateral"
               >
                 <ChevronRight className="w-4 h-4 text-amber-400" />
@@ -178,7 +177,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
               <button
                 type="button"
                 onClick={onFechar}
-                className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
+                className="p-1.5 rounded-md bg-white/10 hover:bg-white/20 text-slate-300 hover:text-white transition-colors cursor-pointer"
                 title="Fechar painel"
               >
                 <X className="w-4 h-4" />
@@ -190,7 +189,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
         {/* Conteúdo limpo e compacto */}
         <div className="flex-1 overflow-y-auto p-4 space-y-4 text-xs text-slate-700 dark:text-slate-200">
           {/* CAMPOS DE ENTRADA (GRID COMPACTO) */}
-          <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 space-y-3">
+          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
             <span className="text-[10px] font-bold text-slate-500 dark:text-slate-400 uppercase tracking-wider block">
               Dados da Simulação
             </span>
@@ -209,7 +208,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                     value={quantidade}
                     onChange={e => setQuantidade(e.target.value)}
                     placeholder="Qtd"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                   />
                   <span className="absolute right-2.5 top-2 text-[10px] text-slate-400">
                     un.
@@ -231,7 +230,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                     value={margemLucro}
                     onChange={e => setMargemLucro(e.target.value)}
                     placeholder="30"
-                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                    className="w-full px-3 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                   />
                   <span className="absolute right-2.5 top-2 text-[10px] font-bold text-slate-400">
                     %
@@ -270,7 +269,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                       }
                     }}
                     placeholder="0,00"
-                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
@@ -306,7 +305,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                       }
                     }}
                     placeholder="0,00"
-                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-xl font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                    className="w-full pl-8 pr-2.5 py-2 text-xs bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md font-mono font-bold text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                   />
                 </div>
               </div>
@@ -314,7 +313,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
           </div>
 
           {/* 1. VIABILIDADE PARA PARTICIPAR */}
-          <div className="bg-white dark:bg-[#0E1F3D]/50 border border-slate-200/80 dark:border-slate-700/80 rounded-2xl p-4 shadow-xs space-y-3">
+          <div className="bg-white dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
             <div className="flex items-center justify-between border-b border-slate-100 dark:border-slate-800 pb-2">
               <span className="text-[11px] font-bold text-slate-900 dark:text-white uppercase tracking-wide">
                 1. Viabilidade para Participar
@@ -330,12 +329,12 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
                   {/* Status Visual */}
                   <div>
                     {podeParticipar ? (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-emerald-600 text-white text-xs font-bold shadow-xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-emerald-600 text-white text-xs font-bold">
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         PARTICIPAR
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-xl bg-rose-600 text-white text-xs font-bold shadow-xs">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-md bg-rose-600 text-white text-xs font-bold">
                         <XCircle className="w-3.5 h-3.5" />
                         NÃO PARTICIPAR
                       </span>
@@ -384,7 +383,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
             </div>
 
             {/* Limite por Unidade */}
-            <div className="bg-[#0A1D37] text-white rounded-2xl p-4 flex items-center justify-between border border-[#152B4D] shadow-xs">
+            <div className="bg-[#0F2C59] text-white rounded-lg p-4 flex items-center justify-between border border-slate-700">
               <div>
                 <span className="text-[10px] uppercase font-bold text-amber-400 tracking-wider block">
                   Limite de Oferta / Unidade
@@ -397,7 +396,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
               <button
                 type="button"
                 onClick={() => handleCopiar(formatarMoeda(limiteUnidade), 'unidade')}
-                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-xl text-[10px] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
+                className="px-3 py-1.5 bg-white/10 hover:bg-white/20 text-white rounded-md text-[10px] font-semibold flex items-center gap-1.5 cursor-pointer transition-colors"
                 title="Copiar valor unitário"
               >
                 {copiadoCampo === 'unidade' ? (
@@ -415,7 +414,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
             </div>
 
             {/* Limite do Lote */}
-            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-2xl p-4 flex items-center justify-between shadow-xs">
+            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-200 dark:border-amber-800 rounded-lg p-4 flex items-center justify-between">
               <div>
                 <span className="text-[10px] uppercase font-bold text-amber-900 dark:text-amber-300 tracking-wider block">
                   Limite de Oferta / Lote ({qtdNum} un.)
@@ -428,7 +427,7 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
               <button
                 type="button"
                 onClick={() => handleCopiar(formatarMoeda(limiteLote), 'lote')}
-                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-xl text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors shadow-2xs"
+                className="px-3 py-1.5 bg-amber-400 hover:bg-amber-500 text-slate-950 rounded-md text-[10px] font-bold flex items-center gap-1.5 cursor-pointer transition-colors"
                 title="Copiar valor do lote"
               >
                 {copiadoCampo === 'lote' ? (
@@ -447,13 +446,13 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
 
             {/* Lucro Estimado no Limite */}
             <div className="grid grid-cols-2 gap-2.5 text-center">
-              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3">
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Lucro / Unidade</span>
                 <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5 tabular-nums">
                   {formatarMoeda(lucroUnidade)}
                 </span>
               </div>
-              <div className="bg-slate-50 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/80 rounded-xl p-3">
+              <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-3">
                 <span className="text-[10px] text-slate-500 dark:text-slate-400 block font-medium">Lucro Total do Lote</span>
                 <span className="text-xs font-bold font-mono text-emerald-600 dark:text-emerald-400 block mt-0.5 tabular-nums">
                   {formatarMoeda(lucroLote)}
@@ -464,14 +463,14 @@ export const CalculadoraOfertaDrawer: React.FC<CalculadoraOfertaDrawerProps> = (
         </div>
 
         {/* Rodapé simples */}
-        <div className="p-3.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200/80 dark:border-slate-800 flex items-center justify-between shrink-0">
+        <div className="p-3.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between shrink-0">
           <span className="text-[10px] text-slate-400">
             Cálculo em tempo real
           </span>
           <button
             type="button"
             onClick={onFechar}
-            className="px-4 py-2 bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition-colors cursor-pointer"
+            className="px-4 py-2 bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors cursor-pointer"
           >
             Fechar
           </button>

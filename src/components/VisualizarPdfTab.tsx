@@ -4,7 +4,6 @@ import { Licitacao, ItemLicitacao, PapelTimbradoConfig } from '../types';
 import { formatarMoeda, valorPorExtensoPtBr, formatarDataExtensoPtBr, converterParaFormatoInputDate } from '../utils/numberToWordsPtBr';
 import { TIMBRADO_PADRAO } from '../utils/storage';
 import { limparTextoDescricaoTecnica } from '../utils/sanitizarDescricao';
-import { obterTemaNatal } from '../utils/theme';
 
 interface VisualizarPdfTabProps {
   licitacao: Licitacao | undefined;
@@ -18,7 +17,6 @@ interface VisualizarPdfTabProps {
   onSalvarConfig?: (config: PapelTimbradoConfig) => void;
   onAtualizarDataProposta?: (licId: number, novaData: string) => void;
   onNovaLicitacao?: () => void;
-  temaNatal?: boolean;
 }
 
 export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
@@ -33,9 +31,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
   onSalvarConfig,
   onAtualizarDataProposta,
   onNovaLicitacao,
-  temaNatal,
 }) => {
-  const natalAtivo = temaNatal ?? obterTemaNatal();
   const [dataEmissaoLocal, setDataEmissaoLocal] = useState<string>(() => {
     return converterParaFormatoInputDate(
       licitacao?.data_proposta || licitacao?.data_cadastro || timbrado.dataEmissao
@@ -165,20 +161,20 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
   return (
     <div className="space-y-6 max-w-4xl mx-auto">
       {/* QUADRINHO DE SELEÇÃO DE LICITAÇÃO SALVA */}
-      <div className="bg-white border-2 border-[#0F2C59]/30 rounded-xl p-4 sm:p-5 shadow-xs space-y-3.5">
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 space-y-3.5">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 dark:border-slate-800 pb-3">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-[#0F2C59] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <div className="w-8 h-8 rounded-md bg-[#0F2C59] text-white flex items-center justify-center shrink-0">
               <FolderOpen className="w-4 h-4 text-amber-400" />
             </div>
             <div>
-              <h3 className="text-sm font-bold text-slate-900 leading-tight flex items-center gap-2">
+              <h3 className="text-sm font-bold text-slate-900 dark:text-white leading-tight flex items-center gap-2">
                 Selecionar Licitação Salva para Visualizar PDF
-                <span className="text-[10px] bg-slate-100 text-slate-700 font-semibold px-2 py-0.5 rounded-full border border-slate-200">
+                <span className="text-[10px] bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono tabular-nums">
                   {licitacoes.length} no histórico
                 </span>
               </h3>
-              <p className="text-xs text-slate-500 mt-0.5">
+              <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
                 Escolha a licitação desejada para carregar a proposta completa com seus itens e catálogo correspondentes
               </p>
             </div>
@@ -187,7 +183,7 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
           {onNovaLicitacao && (
             <button
               onClick={onNovaLicitacao}
-              className="text-xs font-semibold text-[#0F2C59] hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
+              className="text-xs font-semibold text-[#0F2C59] dark:text-blue-400 hover:underline flex items-center gap-1 self-start sm:self-auto cursor-pointer"
             >
               <PlusCircle className="w-3.5 h-3.5 text-amber-500" />
               Cadastrar Nova
@@ -196,19 +192,19 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
         </div>
 
         {licitacoes.length === 0 ? (
-          <div className="text-center py-4 text-xs text-slate-500">
+          <div className="text-center py-4 text-xs text-slate-500 dark:text-slate-400">
             Nenhuma licitação cadastrada ainda. Cadastre uma nova licitação para gerar propostas.
           </div>
         ) : (
           <div className="space-y-3">
             <div>
-              <label className="block text-xs font-bold text-slate-700 mb-1.5 uppercase tracking-wide">
+              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1.5 uppercase tracking-wide">
                 Licitação em Exibição:
               </label>
               <select
                 value={licitacao?.id || ''}
                 onChange={e => onSelecionarLicitacao(Number(e.target.value))}
-                className="w-full bg-slate-50 hover:bg-white border-2 border-slate-300 focus:border-[#0F2C59] rounded-lg px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 shadow-2xs focus:ring-2 focus:ring-[#0F2C59]/20 transition-all cursor-pointer"
+                className="w-full bg-slate-50 dark:bg-slate-900/60 hover:bg-white dark:hover:bg-slate-900 border border-slate-300 dark:border-slate-700 focus:border-[#0F2C59] dark:focus:border-blue-500 focus:outline-hidden rounded-md px-3.5 py-2.5 text-xs sm:text-sm font-bold text-slate-900 dark:text-white transition-colors cursor-pointer"
               >
                 {licitacoes.map(lic => {
                   const countItens = itens.filter(i => Number(i.licitacao_id) === Number(lic.id)).length;
@@ -224,21 +220,21 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
             {/* Detalhes Rápidos da Licitação Selecionada */}
             {licitacao && (
               <div className="grid grid-cols-2 sm:grid-cols-4 gap-2 pt-1">
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                  <span className="text-[10px] font-semibold text-slate-500 block uppercase">Modalidade</span>
-                  <span className="text-xs font-bold text-[#0F2C59] truncate block mt-0.5">{licitacao.modalidade}</span>
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-2.5">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block uppercase">Modalidade</span>
+                  <span className="text-xs font-bold text-[#0F2C59] dark:text-blue-400 truncate block mt-0.5">{licitacao.modalidade}</span>
                 </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                  <span className="text-[10px] font-semibold text-slate-500 block uppercase">Produtos no Anexo</span>
-                  <span className="text-xs font-bold text-slate-800 block mt-0.5">{itensDaLic.length} produto(s)</span>
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-2.5">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block uppercase">Produtos no Anexo</span>
+                  <span className="text-xs font-bold text-slate-800 dark:text-slate-200 block mt-0.5 font-mono tabular-nums">{itensDaLic.length} produto(s)</span>
                 </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                  <span className="text-[10px] font-semibold text-slate-500 block uppercase">Total Cotado</span>
-                  <span className="text-xs font-bold text-emerald-700 block mt-0.5 font-mono">{totalFormatado}</span>
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-2.5">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block uppercase">Total Cotado</span>
+                  <span className="text-xs font-bold text-emerald-700 dark:text-emerald-400 block mt-0.5 font-mono tabular-nums">{totalFormatado}</span>
                 </div>
-                <div className="bg-slate-50 border border-slate-200 rounded-lg p-2.5">
-                  <span className="text-[10px] font-semibold text-slate-500 block uppercase">Quem Fez (Resp.)</span>
-                  <span className="text-xs font-bold text-[#0F2C59] block mt-0.5 truncate">
+                <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md p-2.5">
+                  <span className="text-[10px] font-semibold text-slate-500 dark:text-slate-400 block uppercase">Quem Fez (Resp.)</span>
+                  <span className="text-xs font-bold text-[#0F2C59] dark:text-blue-400 block mt-0.5 truncate">
                     👤 {licitacao.responsavel || 'Gustavo'}
                   </span>
                 </div>
@@ -248,15 +244,15 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
             {/* Alternância rápida entre processos salvos */}
             {licitacoes.length > 1 && (
               <div className="pt-1 flex items-center gap-1.5 overflow-x-auto text-[11px]">
-                <span className="text-slate-400 font-medium shrink-0">Trocar rápido:</span>
+                <span className="text-slate-400 dark:text-slate-500 font-medium shrink-0">Trocar rápido:</span>
                 {licitacoes.map(lic => (
                   <button
                     key={lic.id}
                     onClick={() => onSelecionarLicitacao(lic.id)}
-                    className={`px-2.5 py-1 rounded-md font-semibold transition-all whitespace-nowrap cursor-pointer ${
+                    className={`px-2.5 py-1 rounded-md font-semibold transition-colors whitespace-nowrap cursor-pointer ${
                       Number(lic.id) === Number(licitacao?.id)
-                        ? 'bg-[#0F2C59] text-white shadow-2xs'
-                        : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                        ? 'bg-[#0F2C59] dark:bg-blue-600 text-white'
+                        : 'bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300'
                     }`}
                   >
                     #{lic.id} {lic.processo_pregao}
@@ -269,17 +265,17 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
       </div>
 
       {!licitacao ? (
-        <div className="bg-white border border-slate-200 rounded-xl p-12 text-center text-slate-500">
-          <Building2 className="w-10 h-10 mx-auto mb-2 text-slate-300" />
-          <h3 className="text-sm font-semibold text-slate-800">Nenhuma licitação selecionada</h3>
-          <p className="text-xs text-slate-400 mt-1">Selecione uma licitação na caixa acima para visualizar a proposta.</p>
+        <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-12 text-center text-slate-500 dark:text-slate-400">
+          <Building2 className="w-10 h-10 mx-auto mb-2 text-slate-300 dark:text-slate-600" />
+          <h3 className="text-sm font-semibold text-slate-800 dark:text-white">Nenhuma licitação selecionada</h3>
+          <p className="text-xs text-slate-400 dark:text-slate-500 mt-1">Selecione uma licitação na caixa acima para visualizar a proposta.</p>
         </div>
       ) : (
         <>
           {/* Banner de Ações do Documento */}
-          <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-5 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4">
-            <div>
-              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+          <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="min-w-0">
+              <span className="text-[11px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-950/60 px-2.5 py-0.5 rounded border border-emerald-200 dark:border-emerald-800">
                 Documento Pronto para Emissão
               </span>
               <h2 className="text-base font-bold text-slate-900 dark:text-white mt-1.5">
@@ -290,17 +286,17 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
               </p>
             </div>
 
-            <div className="flex items-center gap-2.5">
+            <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2.5 w-full sm:w-auto">
               <button
                 onClick={onIrParaTimbrado}
-                className="px-3.5 py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer"
+                className="px-3.5 py-2.5 sm:py-2 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 border border-slate-200 dark:border-slate-700 text-xs font-semibold rounded-md transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
-                <Sliders className="w-3.5 h-3.5 text-slate-500" />
+                <Sliders className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400" />
                 Configurar Timbrado
               </button>
               <button
                 onClick={onGerarPdf}
-                className="px-4 py-2 bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer active:scale-98"
+                className="px-4 py-2.5 sm:py-2 bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors flex items-center justify-center gap-2 cursor-pointer"
               >
                 <FileDown className="w-4 h-4 text-amber-400" />
                 GERAR E BAIXAR DOCUMENTO EM PDF
@@ -310,9 +306,9 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
 
           {/* Aviso se houver itens desmarcados na proposta */}
           {todosItensDaLic.length > itensDaLic.length && (
-            <div className="bg-amber-50 border border-amber-200 rounded-xl p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900 animate-in fade-in duration-150">
+            <div className="bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg p-3.5 flex items-center justify-between gap-3 text-xs text-amber-900 dark:text-amber-200">
               <div className="flex items-center gap-2">
-                <span className="font-bold text-amber-700">⚠️ Itens Ocultos do PDF:</span>
+                <span className="font-bold text-amber-700 dark:text-amber-400">⚠️ Itens Ocultos do PDF:</span>
                 <span>
                   Esta licitação possui <strong>{todosItensDaLic.length} produtos cadastrados</strong>, mas apenas <strong>{itensDaLic.length} estão com o quadrinho marcado</strong> para o PDF oficial ({todosItensDaLic.length - itensDaLic.length} item(ns) desmarcado(s) na aba Montar Proposta).
                 </span>
@@ -321,39 +317,39 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
           )}
 
           {/* Barra de Ajuste Rápido da Data de Emissão do Documento */}
-          <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
+          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-lg p-3.5 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs">
             <div className="flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-[#0F2C59]" />
-              <span className="font-semibold text-slate-800">Data da Emissão no Documento:</span>
+              <Calendar className="w-4 h-4 text-[#0F2C59] dark:text-blue-400" />
+              <span className="font-semibold text-slate-800 dark:text-slate-200">Data da Emissão no Documento:</span>
               <input
                 type="date"
                 value={dataEmissaoLocal}
                 onChange={e => handleAlterarData(e.target.value)}
-                className="px-2.5 py-1 bg-white border border-slate-300 rounded-md font-mono text-xs font-semibold text-slate-900 cursor-pointer shadow-2xs"
+                className="px-2.5 py-1 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 rounded-md font-mono text-xs font-semibold text-slate-900 dark:text-white cursor-pointer focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
               />
               <button
                 onClick={() => handleAlterarData(new Date().toISOString().split('T')[0])}
-                className="text-[11px] text-[#0F2C59] hover:underline font-semibold cursor-pointer"
+                className="text-[11px] text-[#0F2C59] dark:text-blue-400 hover:underline font-semibold cursor-pointer"
               >
                 Hoje
               </button>
             </div>
 
-            <div className="text-slate-600 text-[11px] font-medium flex items-center gap-1.5">
+            <div className="text-slate-600 dark:text-slate-400 text-[11px] font-medium flex items-center gap-1.5">
               <MapPin className="w-3.5 h-3.5 text-slate-400" />
               <span>Extenso no PDF:</span>
-              <span className="font-bold text-slate-900">{dataFormatadaTexto}</span>
+              <span className="font-bold text-slate-900 dark:text-white">{dataFormatadaTexto}</span>
             </div>
           </div>
 
           {/* Simulated A4 Page (Padrão Oficial: Arial Tamanho 12) */}
           <div
-            className="bg-white border-2 border-slate-300 rounded-lg shadow-md overflow-hidden manter-branco"
+            className="bg-white border border-slate-300 rounded-md overflow-x-auto manter-branco"
             style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
           >
             {/* CABEÇALHO GRÁFICO (se houver imagem) */}
             {timbrado.cabecalhoImagem && (
-              <div className="px-8 pt-4 pb-2 border-b border-slate-100 flex justify-center bg-slate-50/50">
+              <div className="px-4 sm:px-8 pt-4 pb-2 border-b border-slate-100 flex justify-center bg-slate-50/50">
                 <img
                   src={timbrado.cabecalhoImagem}
                   alt="Cabeçalho Timbrado"
@@ -363,50 +359,50 @@ export const VisualizarPdfTab: React.FC<VisualizarPdfTabProps> = ({
             )}
 
             {/* PÁGINA 1: QUADRO INSTITUCIONAL, PROPOSTA COMERCIAL & ASSINATURA */}
-            <div className="p-8 sm:p-12 space-y-5 text-slate-950">
+            <div className="p-4 sm:p-12 space-y-5 text-slate-950">
               {/* Topo do Processo Dinâmico (Arial 12pt) */}
               <div>
-                <p className="text-[12pt] text-slate-900 leading-tight">
+                <p className="text-[11pt] sm:text-[12pt] text-slate-900 leading-tight">
                   {licitacao.modalidade} <span className="font-extrabold font-mono">{licitacao.processo_pregao}</span>
                 </p>
-                <p className="text-[12pt] text-slate-900 leading-tight mt-1.5">
+                <p className="text-[11pt] sm:text-[12pt] text-slate-900 leading-tight mt-1.5">
                   Processo / Órgão: <span className="font-extrabold font-mono">{licitacao.orgao}</span>
                 </p>
               </div>
 
-              {/* TABELA COM BORDAS PRETAS IDÊNTICA À IMAGEM DO USUÁRIO */}
-              <div className="border-t border-b border-black text-[10.5pt] divide-y divide-black">
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">RAZÃO SOCIAL:</span>
-                  <span className="font-bold text-black">{razaoSocial}</span>
+              {/* TABELA COM BORDAS PRETAS */}
+              <div className="border-t border-b border-black text-[9.5pt] sm:text-[10.5pt] divide-y divide-black">
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">RAZÃO SOCIAL:</span>
+                  <span className="font-bold text-black min-w-0 break-words">{razaoSocial}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">CNPJ:</span>
-                  <span className="font-mono text-black">{cnpj}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">CNPJ:</span>
+                  <span className="font-mono text-black min-w-0 break-all">{cnpj}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-48 uppercase tracking-tight">INSCRIÇÃO ESTADUAL</span>
-                  <span className="font-mono text-black">{inscricaoEstadual}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-32 sm:w-48 shrink-0 uppercase tracking-tight">INSCRIÇÃO ESTADUAL</span>
+                  <span className="font-mono text-black min-w-0 break-all">{inscricaoEstadual}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">ENDEREÇO:</span>
-                  <span className="text-black">{endereco}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">ENDEREÇO:</span>
+                  <span className="text-black min-w-0 break-words">{endereco}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">TELEFONE:</span>
-                  <span className="font-mono text-black">{telefone}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">TELEFONE:</span>
+                  <span className="font-mono text-black min-w-0 break-all">{telefone}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">EMAIL:</span>
-                  <span className="font-mono text-black lowercase">{email}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">EMAIL:</span>
+                  <span className="font-mono text-black lowercase min-w-0 break-all">{email}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">BANCO (NOME/Nº):</span>
-                  <span className="text-black">{banco}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">BANCO (NOME/Nº):</span>
+                  <span className="text-black min-w-0 break-words">{banco}</span>
                 </div>
-                <div className="py-1 px-1 flex">
-                  <span className="font-bold text-black w-36 uppercase tracking-tight">AGÊNCIA Nº:</span>
-                  <span className="font-mono text-black">{agencia}</span>
+                <div className="py-1 px-1 flex gap-2">
+                  <span className="font-bold text-black w-28 sm:w-36 shrink-0 uppercase tracking-tight">AGÊNCIA Nº:</span>
+                  <span className="font-mono text-black min-w-0 break-all">{agencia}</span>
                 </div>
                 <div className="py-1 px-1 flex">
                   <span className="font-bold text-black w-48 uppercase tracking-tight">CONTA CORRENTE Nº:</span>

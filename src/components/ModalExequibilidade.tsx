@@ -316,12 +316,12 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75 backdrop-blur-xs animate-in fade-in duration-200">
-      <div className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-2xl shadow-2xl max-w-5xl w-full overflow-hidden flex flex-col max-h-[94vh]">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg max-w-5xl w-full overflow-hidden flex flex-col max-h-[94vh]">
         {/* Cabeçalho do Modal */}
-        <div className="px-5 py-3.5 bg-[#0A1D37] text-white flex items-center justify-between border-b border-[#152B4D] shrink-0">
+        <div className="px-5 py-3.5 bg-[#0F2C59] text-white flex items-center justify-between border-b border-slate-800 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="p-2 rounded-xl bg-emerald-500/20 text-emerald-400">
+            <div className="p-2 rounded-md bg-white/10 text-emerald-300 border border-white/15">
               <Scale className="w-5 h-5" />
             </div>
             <div>
@@ -329,7 +329,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                 <h2 className="text-sm sm:text-base font-bold text-white tracking-wide">
                   Exequibilidade de Preços
                 </h2>
-                <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
                   Lei 14.133 • Art. 59
                 </span>
               </div>
@@ -341,13 +341,13 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
 
           <div className="flex items-center gap-2">
             {/* Abas Alternar entre Formulário e Prévia */}
-            <div className="flex items-center bg-white/10 rounded-lg p-0.5">
+            <div className="flex items-center bg-white/10 rounded-md p-0.5 border border-white/10">
               <button
                 type="button"
                 onClick={() => setAbaVisualizacao('formulario')}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer ${
+                className={`px-3 py-1 text-xs font-semibold rounded transition-colors cursor-pointer ${
                   abaVisualizacao === 'formulario'
-                    ? 'bg-white text-slate-950 shadow-2xs'
+                    ? 'bg-white text-slate-950'
                     : 'text-slate-300 hover:text-white'
                 }`}
               >
@@ -357,9 +357,9 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                 type="button"
                 onClick={handleGerarPrevia}
                 disabled={itensCalculados.length === 0 || gerandoPdf}
-                className={`px-3 py-1 text-xs font-semibold rounded-md transition-colors cursor-pointer flex items-center gap-1 ${
+                className={`px-3 py-1 text-xs font-semibold rounded transition-colors cursor-pointer flex items-center gap-1 ${
                   abaVisualizacao === 'previa'
-                    ? 'bg-white text-slate-950 shadow-2xs'
+                    ? 'bg-white text-slate-950'
                     : 'text-slate-300 hover:text-white disabled:opacity-50'
                 }`}
               >
@@ -371,7 +371,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
             <button
               type="button"
               onClick={onFechar}
-              className="p-1.5 rounded-lg text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+              className="p-1.5 rounded-md text-white/70 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
               aria-label="Fechar"
             >
               <X className="w-5 h-5" />
@@ -381,7 +381,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
 
         {/* Barra de Notificação de Status */}
         {mensagemStatus && (
-          <div className="px-5 py-2 bg-emerald-50 dark:bg-emerald-950/60 border-b border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-2 animate-in fade-in duration-150 shrink-0">
+          <div className="px-5 py-2 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800 text-xs font-semibold text-emerald-900 dark:text-emerald-200 flex items-center gap-2 shrink-0">
             <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
             <span>{mensagemStatus}</span>
           </div>
@@ -390,18 +390,18 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
         {/* Corpo com scroll */}
         <div className="flex-1 overflow-y-auto p-4 sm:p-5 space-y-4">
           {/* SELETOR DE LICITAÇÃO & DADOS DO DOCUMENTO */}
-          <div className="bg-slate-50 dark:bg-slate-800/60 border border-slate-200 dark:border-slate-700/80 rounded-xl p-4 space-y-3">
+          <div className="bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-lg p-4 space-y-3">
             <div className="grid grid-cols-1 md:grid-cols-12 gap-3 items-end">
               {/* Dropdown de Licitação */}
               <div className="md:col-span-6">
                 <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1 flex items-center gap-1.5">
-                  <Building2 className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                  <Building2 className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                   Licitação / Pregão de Origem *
                 </label>
                 <select
                   value={licitacaoIdSelecionada}
                   onChange={e => setLicitacaoIdSelecionada(Number(e.target.value))}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-xs font-semibold text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                 >
                   {licitacoes.map(lic => {
                     const seusItens = itens.filter(i => Number(i.licitacao_id) === Number(lic.id));
@@ -425,7 +425,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                   type="date"
                   value={dataEmissao}
                   onChange={e => setDataEmissao(e.target.value)}
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-mono font-medium text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500 cursor-pointer"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-xs font-mono font-medium text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer"
                 />
               </div>
 
@@ -439,23 +439,23 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                   value={cidadeEmissao}
                   onChange={e => setCidadeEmissao(e.target.value)}
                   placeholder="Ex: Timóteo - MG"
-                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-lg px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-500"
+                  className="w-full bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md px-3 py-2 text-xs font-medium text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                 />
               </div>
             </div>
 
             {/* SELETOR INTERATIVO DE ITENS: Apenas os com a marcação do vezinho (✓) no quadradinho */}
-            <div className="pt-3 border-t border-slate-200 dark:border-slate-700/60 space-y-2.5">
+            <div className="pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2.5">
               <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
                   <CheckSquare className="w-4 h-4 text-emerald-600 dark:text-emerald-400" />
                   <span className="text-xs font-bold text-slate-800 dark:text-slate-200 uppercase tracking-wide">
                     Itens da Licitação (Somente os com vezinho ✓ são puxados):
                   </span>
-                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded-full ${
+                  <span className={`text-[11px] font-mono font-bold px-2 py-0.5 rounded border ${
                     itensGanhos.length > 0
-                      ? 'bg-emerald-100 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border border-emerald-300 dark:border-emerald-700'
-                      : 'bg-amber-100 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border border-amber-300 dark:border-amber-700'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-800 dark:text-emerald-300 border-emerald-200 dark:border-emerald-700'
+                      : 'bg-amber-50 dark:bg-amber-950/60 text-amber-800 dark:text-amber-300 border-amber-200 dark:border-amber-700'
                   }`}>
                     {itensGanhos.length} de {itensLicitacao.length} marcados com vezinho (✓)
                   </span>
@@ -470,7 +470,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                       }
                     }}
                     disabled={itensGanhos.length === 0}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors cursor-pointer disabled:opacity-40"
+                    className="px-2.5 py-1 text-[11px] font-semibold rounded-md border border-slate-300 dark:border-slate-700 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 transition-colors cursor-pointer disabled:opacity-40"
                     title="Desmarcar todos os produtos para selecionar manualmente apenas os que você ganhou"
                   >
                     Desmarcar Todos
@@ -483,7 +483,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                       }
                     }}
                     disabled={itensGanhos.length === itensLicitacao.length}
-                    className="px-2.5 py-1 text-[11px] font-semibold rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition-colors cursor-pointer disabled:opacity-40"
+                    className="px-2.5 py-1 text-[11px] font-semibold rounded-md bg-emerald-600 text-white hover:bg-emerald-500 transition-colors cursor-pointer disabled:opacity-40"
                     title="Marcar todos os itens desta licitação com o vezinho (✓)"
                   >
                     ✓ Marcar Todos
@@ -497,24 +497,24 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                   Esta licitação ainda não possui produtos cadastrados.
                 </p>
               ) : (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1 bg-white/60 dark:bg-slate-900/40 rounded-lg border border-slate-200/80 dark:border-slate-700/60">
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2 max-h-48 overflow-y-auto p-1.5 bg-white dark:bg-slate-950 rounded-md border border-slate-200 dark:border-slate-800">
                   {itensLicitacao.map(it => {
                     const estaMarcado = it.selecionado === true;
 
                     return (
                       <label
                         key={it.id}
-                        className={`flex items-start gap-2.5 p-2 rounded-lg border transition-all cursor-pointer ${
+                        className={`flex items-start gap-2.5 p-2 rounded-md border transition-colors cursor-pointer ${
                           estaMarcado
-                            ? 'bg-emerald-50/90 dark:bg-emerald-950/40 border-emerald-300 dark:border-emerald-700 ring-1 ring-emerald-400/40'
-                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-700/60 opacity-60 hover:opacity-100'
+                            ? 'bg-emerald-50 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-700'
+                            : 'bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 opacity-65 hover:opacity-100'
                         }`}
                       >
                         <input
                           type="checkbox"
                           checked={estaMarcado}
                           onChange={() => onAlternarSelecaoItem?.(it.id)}
-                          className="mt-0.5 w-4 h-4 rounded text-emerald-600 accent-emerald-600 border-slate-300 dark:border-slate-600 focus:ring-emerald-500 cursor-pointer shrink-0"
+                          className="mt-0.5 w-4 h-4 rounded text-emerald-600 accent-emerald-600 border-slate-300 dark:border-slate-600 focus:outline-hidden cursor-pointer shrink-0"
                           title={
                             estaMarcado
                               ? 'Desmarcar produto (não puxar na Exequibilidade)'
@@ -561,12 +561,12 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
           {abaVisualizacao === 'previa' ? (
             <div className="space-y-4">
               {/* Barra de Ferramentas Superior da Prévia */}
-              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-100 dark:bg-slate-800/80 rounded-xl border border-slate-200 dark:border-slate-700">
+              <div className="flex flex-wrap items-center justify-between gap-2 p-3 bg-slate-50 dark:bg-slate-900/60 rounded-md border border-slate-200 dark:border-slate-800">
                 <div className="flex items-center gap-2">
                   <button
                     type="button"
                     onClick={() => setAbaVisualizacao('formulario')}
-                    className="px-3 py-1.5 text-xs font-semibold rounded-lg bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer shadow-2xs"
+                    className="px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <span>← Voltar aos Cálculos</span>
                   </button>
@@ -579,7 +579,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                   <button
                     type="button"
                     onClick={handleGerarPrevia}
-                    className="inline-flex items-center gap-1 text-xs font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer px-2 py-1"
+                    className="inline-flex items-center gap-1 text-xs font-semibold text-[#0F2C59] dark:text-blue-400 hover:underline cursor-pointer px-2 py-1"
                   >
                     <RefreshCw className="w-3.5 h-3.5" /> Atualizar
                   </button>
@@ -587,7 +587,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                     type="button"
                     onClick={handleBaixarPdf}
                     disabled={gerandoPdf}
-                    className="px-4 py-1.5 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-lg shadow-xs transition-all flex items-center gap-1.5 cursor-pointer"
+                    className="px-4 py-1.5 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer"
                   >
                     <Download className="w-3.5 h-3.5 text-slate-950" />
                     <span>Baixar PDF</span>
@@ -596,9 +596,9 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
               </div>
 
               {/* Folha A4 Simulada (100% à prova de bloqueio por navegadores/iframes) */}
-              <div className="bg-slate-200/90 dark:bg-slate-950 p-2 sm:p-6 rounded-xl border border-slate-300 dark:border-slate-800 shadow-inner flex justify-center overflow-x-auto">
+              <div className="bg-[#F4F6F9] dark:bg-slate-950 p-2 sm:p-6 rounded-lg border border-slate-300 dark:border-slate-800 flex justify-center overflow-x-auto">
                 <div
-                  className="bg-white border-2 border-slate-300 rounded-xs shadow-xl p-6 sm:p-12 w-full max-w-[820px] text-slate-900 relative space-y-5"
+                  className="manter-branco bg-white border border-slate-300 p-6 sm:p-12 w-full max-w-[820px] text-slate-900 relative space-y-5"
                   style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
                 >
                   {/* Marca d'água central translúcida */}
@@ -909,10 +909,10 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
               {/* CARD SÍNTESE FINANCEIRO */}
               {itensCalculados.length > 0 && (
                 <div
-                  className={`p-4 rounded-xl border transition-all ${
+                  className={`p-4 rounded-lg border ${
                     totais.ehExequivel
-                      ? 'bg-emerald-50/70 dark:bg-emerald-950/30 border-emerald-300 dark:border-emerald-800'
-                      : 'bg-rose-50/70 dark:bg-rose-950/30 border-rose-300 dark:border-rose-800'
+                      ? 'bg-emerald-50 dark:bg-emerald-950/25 border-emerald-200 dark:border-emerald-800'
+                      : 'bg-rose-50 dark:bg-rose-950/25 border-rose-200 dark:border-rose-800'
                   }`}
                 >
                   <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 pb-2 mb-3 border-b border-black/10 dark:border-white/10">
@@ -924,10 +924,10 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                     </div>
 
                     <span
-                      className={`text-xs font-bold px-2.5 py-0.5 rounded-full ${
+                      className={`text-xs font-bold px-2.5 py-0.5 rounded border ${
                         totais.ehExequivel
-                          ? 'bg-emerald-200 dark:bg-emerald-900 text-emerald-900 dark:text-emerald-100'
-                          : 'bg-rose-200 dark:bg-rose-900 text-rose-900 dark:text-rose-100'
+                          ? 'bg-emerald-100 dark:bg-emerald-900/60 text-emerald-900 dark:text-emerald-100 border-emerald-300 dark:border-emerald-700'
+                          : 'bg-rose-100 dark:bg-rose-900/60 text-rose-900 dark:text-rose-100 border-rose-300 dark:border-rose-700'
                       }`}
                     >
                       {totais.ehExequivel ? '✓ Proposta Totalmente Exequível' : '⚠ Atenção: Margem Global Negativa'}
@@ -935,7 +935,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                   </div>
 
                   <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
-                    <div className="p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-black/5 dark:border-white/5">
+                    <div className="p-2.5 rounded-md bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
                       <span className="block text-[10px] font-semibold text-slate-500">
                         Faturamento Ganho:
                       </span>
@@ -944,7 +944,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-black/5 dark:border-white/5">
+                    <div className="p-2.5 rounded-md bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
                       <span className="block text-[10px] font-semibold text-slate-500">
                         Custo Fornecedores:
                       </span>
@@ -953,7 +953,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-black/5 dark:border-white/5">
+                    <div className="p-2.5 rounded-md bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
                       <span className="block text-[10px] font-semibold text-slate-500">
                         Total Impostos (-):
                       </span>
@@ -962,7 +962,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                       </span>
                     </div>
 
-                    <div className="p-2.5 rounded-lg bg-white/70 dark:bg-slate-900/60 border border-black/5 dark:border-white/5">
+                    <div className="p-2.5 rounded-md bg-white dark:bg-slate-900/70 border border-slate-200 dark:border-slate-800">
                       <span className="block text-[10px] font-semibold text-slate-500">
                         Lucro Líquido & Margem:
                       </span>
@@ -987,7 +987,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
 
               {/* LISTA DOS QUADRINHOS DE CUSTO POR PRODUTO GANHO */}
               {itensCalculados.length === 0 ? (
-                <div className="p-8 text-center bg-slate-50 dark:bg-slate-800/40 rounded-xl border border-dashed border-slate-300 dark:border-slate-700 text-slate-500">
+                <div className="p-8 text-center bg-slate-50 dark:bg-slate-900/60 rounded-lg border border-dashed border-slate-300 dark:border-slate-700 text-slate-500">
                   <AlertTriangle className="w-8 h-8 mx-auto mb-2 text-amber-500 opacity-70" />
                   <p className="font-semibold text-sm text-slate-700 dark:text-slate-300">
                     Nenhum produto marcado com o vezinho (✓) no quadradinho nesta licitação.
@@ -1000,7 +1000,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                 <div className="space-y-3.5">
                   <div className="text-xs font-bold text-slate-700 dark:text-slate-300 flex items-center justify-between">
                     <span className="flex items-center gap-1.5 uppercase tracking-wider">
-                      <Calculator className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400" />
+                      <Calculator className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                       Quadrinhos com os Cálculos de Cada Produto Ganho ({itensCalculados.length})
                     </span>
                     <span className="text-[11px] font-normal text-slate-500">
@@ -1020,7 +1020,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                     return (
                       <div
                         key={itCalc.id}
-                        className="bg-white dark:bg-slate-900 border border-slate-200 dark:border-slate-800 rounded-xl overflow-hidden shadow-xs hover:border-slate-300 dark:hover:border-slate-700 transition-all"
+                        className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg overflow-hidden hover:border-slate-300 dark:hover:border-slate-700 transition-colors"
                       >
                         {/* Faixa superior do Quadrinho (Item, Descrição, Marca, Qtd) com quadradinho do vezinho */}
                         <div className="px-4 py-2.5 bg-[#0F2C59] text-white flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
@@ -1056,7 +1056,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                         {/* Corpo do Quadrinho com 3 Seções: Entradas de Custo / Deduções / Resultado */}
                         <div className="p-4 grid grid-cols-1 md:grid-cols-12 gap-3 text-xs">
                           {/* Coluna 1: Campos de Entrada de Custos (da opção de porcentagem) */}
-                          <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 dark:bg-slate-800/50 p-3 rounded-lg border border-slate-200/80 dark:border-slate-700/60">
+                          <div className="md:col-span-7 grid grid-cols-2 sm:grid-cols-4 gap-2.5 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-md border border-slate-200 dark:border-slate-800">
                             {/* Valor Ganho Unitário */}
                             <div>
                               <label className="block text-[10px] font-bold text-slate-700 dark:text-slate-300 mb-1">
@@ -1074,7 +1074,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                                   onChange={e =>
                                     handleChangeCusto(itCalc.id, 'valor_ganho', e.target.value)
                                   }
-                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-white"
+                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                                   title="Preço arrematado unitário na licitação"
                                 />
                               </div>
@@ -1101,7 +1101,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                                     handleChangeCusto(itCalc.id, 'custo_fornecedor', e.target.value)
                                   }
                                   placeholder="0,00"
-                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-white"
+                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                                   title="Preço de aquisição no fornecedor"
                                 />
                               </div>
@@ -1125,7 +1125,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                                   onChange={e =>
                                     handleChangeCusto(itCalc.id, 'aliquota_imposto', e.target.value)
                                   }
-                                  className="w-full pl-2 pr-5 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-white"
+                                  className="w-full pl-2 pr-5 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                                   title="Percentual de impostos sobre faturamento"
                                 />
                                 <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-slate-400 font-bold">
@@ -1155,7 +1155,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                                     handleChangeCusto(itCalc.id, 'outros_custos', e.target.value)
                                   }
                                   placeholder="0,00"
-                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded text-slate-900 dark:text-white"
+                                  className="w-full pl-7 pr-2 py-1.5 text-xs font-mono font-bold bg-white dark:bg-slate-950 border border-slate-300 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                                   title="Custos adicionais com frete, logística e embalagem"
                                 />
                               </div>
@@ -1166,7 +1166,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                           </div>
 
                           {/* Coluna 2: Demonstrativo de Resultados & Botão Salvar nos Itens */}
-                          <div className="md:col-span-5 flex flex-col justify-between gap-2 p-3 rounded-lg bg-slate-50/80 dark:bg-slate-800/40 border border-slate-200/80 dark:border-slate-700/60">
+                          <div className="md:col-span-5 flex flex-col justify-between gap-2 p-3 rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800">
                             <div className="grid grid-cols-2 gap-2 text-[11px]">
                               <div>
                                 <span className="text-slate-500 block text-[10px]">Lucro Líquido Unit:</span>
@@ -1201,10 +1201,10 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                               <div>
                                 <span className="text-slate-500 block text-[10px]">Parecer:</span>
                                 <span
-                                  className={`inline-block font-bold text-[10px] px-1.5 py-0.5 rounded ${
+                                  className={`inline-block font-bold text-[10px] px-1.5 py-0.5 rounded border ${
                                     ehPositivo
-                                      ? 'bg-emerald-100 text-emerald-800 dark:bg-emerald-950/60 dark:text-emerald-300'
-                                      : 'bg-rose-100 text-rose-800 dark:bg-rose-950/60 dark:text-rose-300'
+                                      ? 'bg-emerald-50 text-emerald-800 border-emerald-200 dark:bg-emerald-950/60 dark:text-emerald-300 dark:border-emerald-800'
+                                      : 'bg-rose-50 text-rose-800 border-rose-200 dark:bg-rose-950/60 dark:text-rose-300 dark:border-rose-800'
                                   }`}
                                 >
                                   {ehPositivo ? '✓ Exequível' : '⚠ Prejuízo'}
@@ -1217,7 +1217,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                                 type="button"
                                 onClick={() => handleSalvarCustosNoItem(itCalc)}
                                 disabled={salvandoItem === itCalc.id}
-                                className="w-full mt-1 px-3 py-1.5 text-[11px] font-semibold text-slate-700 hover:text-slate-900 bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors cursor-pointer flex items-center justify-center gap-1.5"
+                                className="w-full mt-1 px-3 py-1.5 text-[11px] font-semibold text-slate-700 dark:text-slate-200 hover:text-slate-900 dark:hover:text-white bg-white dark:bg-slate-900 border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md transition-colors cursor-pointer flex items-center justify-center gap-1.5"
                                 title="Gravar estes parâmetros nos dados deste item no sistema"
                               >
                                 {salvandoItem === itCalc.id ? (
@@ -1245,7 +1245,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
         </div>
 
         {/* Rodapé de Ações do Modal */}
-        <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
+        <div className="px-5 py-3.5 bg-slate-50 dark:bg-slate-900/60 border-t border-slate-200 dark:border-slate-800 flex flex-col sm:flex-row items-center justify-between gap-3 shrink-0">
           <div className="text-xs text-slate-500">
             Documento emitido em conformidade com o Art. 59, III da Lei 14.133/2021.
           </div>
@@ -1254,7 +1254,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
             <button
               type="button"
               onClick={onFechar}
-              className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-xl transition-colors cursor-pointer"
+              className="px-4 py-2 text-xs font-semibold text-slate-700 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-800 rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-900 transition-colors cursor-pointer"
             >
               Fechar
             </button>
@@ -1264,7 +1264,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
                 type="button"
                 onClick={handleGerarPrevia}
                 disabled={itensCalculados.length === 0 || gerandoPdf}
-                className="px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-xl transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
+                className="px-4 py-2 text-xs font-semibold text-slate-800 dark:text-slate-200 bg-slate-200 hover:bg-slate-300 dark:bg-slate-800 dark:hover:bg-slate-700 rounded-md transition-colors flex items-center gap-1.5 cursor-pointer disabled:opacity-50"
               >
                 <Eye className="w-4 h-4" />
                 Pré-visualizar
@@ -1275,7 +1275,7 @@ export const ModalExequibilidade: React.FC<ModalExequibilidadeProps> = ({
               type="button"
               onClick={handleBaixarPdf}
               disabled={itensCalculados.length === 0 || gerandoPdf}
-              className="px-5 py-2 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-xl shadow-xs transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50 uppercase tracking-wider"
+              className="px-5 py-2 text-xs font-bold text-slate-950 bg-emerald-400 hover:bg-emerald-300 rounded-md transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50 uppercase tracking-wider"
             >
               {gerandoPdf ? (
                 <>

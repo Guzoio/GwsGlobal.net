@@ -38,7 +38,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
   const getCorEstado = (sigla: string, total: number) => {
     const isSelecionado = estadoSelecionado === sigla;
     if (isSelecionado) {
-      return 'fill-blue-600 dark:fill-blue-500 stroke-white stroke-[2.5] drop-shadow-md';
+      return 'fill-blue-600 dark:fill-blue-500 stroke-white stroke-[2.5]';
     }
 
     if (total === 0) {
@@ -67,15 +67,15 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
   const estadoAtivoInfo = estadoSelecionado ? resumoMap.get(estadoSelecionado) : null;
 
   return (
-    <div className="relative bg-white dark:bg-[#0A162B] border border-slate-200/90 dark:border-slate-800 rounded-2xl p-4 sm:p-5 shadow-xs flex flex-col justify-between overflow-hidden">
+    <div className="relative bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-4 sm:p-5 flex flex-col justify-between overflow-hidden">
       {/* Header do Mapa */}
-      <div className="flex items-center justify-between pb-3 border-b border-slate-100 dark:border-white/5">
+      <div className="flex items-center justify-between pb-3 border-b border-slate-200 dark:border-slate-800">
         <div>
           <h3 className="text-sm font-bold text-slate-900 dark:text-white flex items-center gap-2">
             <MapPin className="w-4 h-4 text-blue-600 dark:text-blue-400" />
             <span>Mapa do Brasil • Licitações por Estado</span>
           </h3>
-          <p className="text-[11px] text-slate-400 mt-0.5">
+          <p className="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">
             Passe o mouse para ver detalhes ou clique no estado para filtrar as análises
           </p>
         </div>
@@ -84,7 +84,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
           <button
             type="button"
             onClick={() => onSelecionarEstado(null)}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-blue-50 hover:bg-blue-100 dark:bg-blue-900/40 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200/80 dark:border-blue-700/50 transition-colors cursor-pointer"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 hover:bg-blue-100 dark:bg-blue-950/60 dark:hover:bg-blue-900/60 text-blue-700 dark:text-blue-300 text-xs font-semibold border border-blue-200 dark:border-blue-800 transition-colors cursor-pointer"
           >
             <span>Filtro: {estadoAtivoInfo?.nome || estadoSelecionado}</span>
             <X className="w-3.5 h-3.5" />
@@ -100,7 +100,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
       >
         <svg
           viewBox="0 0 600 600"
-          className="w-full max-w-[540px] max-h-[500px] h-auto transition-transform duration-200"
+          className="w-full max-w-[540px] max-h-[500px] h-auto"
           role="img"
           aria-label="Mapa do Brasil com distribuição de licitações"
         >
@@ -112,7 +112,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
             return (
               <g
                 key={geo.sigla}
-                className="cursor-pointer transition-all duration-150"
+                className="cursor-pointer"
                 onClick={() => {
                   if (estadoSelecionado === geo.sigla) {
                     onSelecionarEstado(null);
@@ -124,7 +124,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
               >
                 <path
                   d={geo.path}
-                  className={`transition-all duration-200 ${estiloCor}`}
+                  className={`transition-colors duration-150 ${estiloCor}`}
                 />
 
                 {/* Sigla para estados grandes ou com licitações */}
@@ -138,7 +138,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
                       estadoSelecionado === geo.sigla
                         ? 'fill-white font-extrabold'
                         : total > 0
-                        ? 'fill-white dark:fill-white font-bold drop-shadow-xs'
+                        ? 'fill-white dark:fill-white font-bold'
                         : 'fill-slate-400 dark:fill-slate-500 font-medium'
                     }`}
                   >
@@ -153,13 +153,13 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
         {/* Tooltip Flutuante */}
         {hoveredEstado && (
           <div
-            className="absolute z-20 pointer-events-none bg-slate-900/95 dark:bg-black/90 text-white rounded-xl p-3 shadow-xl backdrop-blur-md border border-white/10 text-xs w-60 animate-in fade-in zoom-in-95 duration-100"
+            className="absolute z-20 pointer-events-none bg-slate-900 text-white rounded-md p-3 border border-slate-700 text-xs w-60"
             style={{
               left: Math.min(Math.max(mousePos.x + 15, 10), 320),
               top: Math.min(Math.max(mousePos.y - 40, 10), 380),
             }}
           >
-            <div className="flex items-center justify-between pb-1.5 border-b border-white/15">
+            <div className="flex items-center justify-between pb-1.5 border-b border-slate-700">
               <div>
                 <span className="font-bold text-sm block leading-tight">
                   {hoveredEstado.nome} ({hoveredEstado.sigla})
@@ -168,7 +168,7 @@ export const MapaBrasilInterativo: React.FC<MapaBrasilInterativoProps> = ({
                   Região {hoveredEstado.regiao}
                 </span>
               </div>
-              <span className="px-2 py-0.5 rounded-full text-[10px] font-bold bg-blue-500/20 text-blue-300 border border-blue-400/30">
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold font-mono bg-blue-500/20 text-blue-300 border border-blue-400/30">
                 {hoveredEstado.totalLicitacoes}{' '}
                 {hoveredEstado.totalLicitacoes === 1 ? 'licitação' : 'licitações'}
               </span>

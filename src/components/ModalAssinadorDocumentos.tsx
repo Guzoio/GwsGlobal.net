@@ -364,13 +364,13 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
   if (!aberto) return null;
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-200">
-      <div className="relative w-full max-w-7xl h-[94vh] max-h-[960px] bg-white dark:bg-[#0A162B] border border-slate-200 dark:border-white/10 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/60">
+      <div className="relative w-full max-w-7xl h-[94vh] max-h-[960px] bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg flex flex-col overflow-hidden text-slate-800 dark:text-slate-100">
         
         {/* Cabeçalho do Modal */}
-        <div className="px-5 py-4 border-b border-slate-200 dark:border-white/10 flex items-center justify-between bg-slate-50/80 dark:bg-[#0E1F3D]/80">
+        <div className="px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-slate-50 dark:bg-slate-900/60">
           <div className="flex items-center gap-3">
-            <div className="p-2.5 rounded-xl bg-blue-600/15 text-blue-600 dark:text-blue-400 border border-blue-500/20 shadow-xs">
+            <div className="p-2.5 rounded-md bg-blue-50 dark:bg-blue-950/40 text-[#0F2C59] dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">
               <PenTool className="w-5 h-5" />
             </div>
             <div>
@@ -378,7 +378,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 <h2 className="text-base sm:text-lg font-bold text-slate-900 dark:text-white leading-tight">
                   Assinador de Documentos & Atas
                 </h2>
-                <span className="text-[10px] font-black uppercase tracking-wider px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-500/20 text-blue-800 dark:text-blue-300">
+                <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/50 text-[#0F2C59] dark:text-blue-300">
                   PDF Oficial
                 </span>
               </div>
@@ -393,10 +393,10 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
               <button
                 type="button"
                 onClick={handleLimparDocumento}
-                className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
+                className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-xs font-semibold text-slate-700 dark:text-slate-300 transition-colors cursor-pointer"
                 title="Voltar e escolher outro documento"
               >
-                <ArrowLeft className="w-3.5 h-3.5 text-blue-500" />
+                <ArrowLeft className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                 <span className="hidden sm:inline">Outro Documento</span>
               </button>
             )}
@@ -404,7 +404,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
             <button
               type="button"
               onClick={onFechar}
-              className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer"
+              className="flex items-center gap-1.5 px-3 py-1.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/30 text-xs font-semibold text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 hover:border-rose-200 dark:hover:border-rose-800 transition-colors cursor-pointer"
               title="Cancelar e fechar"
             >
               <X className="w-4 h-4" />
@@ -415,14 +415,14 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
 
         {/* Mensagens de Sucesso / Erro */}
         {sucessoMsg && (
-          <div className="px-5 py-2.5 bg-emerald-500/15 border-b border-emerald-500/30 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between">
+          <div className="px-5 py-2.5 bg-emerald-50 dark:bg-emerald-950/40 border-b border-emerald-200 dark:border-emerald-800 text-emerald-800 dark:text-emerald-300 text-xs font-semibold flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0" />
+              <CheckCircle2 className="w-4 h-4 text-emerald-600 dark:text-emerald-400 shrink-0" />
               <span>{sucessoMsg}</span>
             </div>
             <button
               onClick={() => setSucessoMsg(null)}
-              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline"
+              className="text-xs text-emerald-600 dark:text-emerald-400 hover:underline cursor-pointer"
             >
               Fechar
             </button>
@@ -430,14 +430,14 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
         )}
 
         {erroMsg && (
-          <div className="px-5 py-2.5 bg-rose-500/15 border-b border-rose-500/30 text-rose-800 dark:text-rose-300 text-xs font-semibold flex items-center justify-between">
+          <div className="px-5 py-2.5 bg-rose-50 dark:bg-rose-950/40 border-b border-rose-200 dark:border-rose-800 text-rose-800 dark:text-rose-300 text-xs font-semibold flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 text-rose-500 shrink-0" />
+              <AlertCircle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0" />
               <span>{erroMsg}</span>
             </div>
             <button
               onClick={() => setErroMsg(null)}
-              className="text-xs text-rose-600 dark:text-rose-400 hover:underline"
+              className="text-xs text-rose-600 dark:text-rose-400 hover:underline cursor-pointer"
             >
               Fechar
             </button>
@@ -446,9 +446,9 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
 
         {/* Conteúdo: Se não tem PDF, exibe Dropzone de Upload */}
         {!pdfBytes ? (
-          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-slate-50/50 dark:bg-[#07101E]/50">
-            <div className="max-w-lg w-full p-8 border-2 border-dashed border-blue-400/40 dark:border-blue-500/30 rounded-2xl bg-white/80 dark:bg-[#0E1F3D]/60 shadow-lg hover:border-blue-500 transition-all flex flex-col items-center">
-              <div className="w-16 h-16 rounded-2xl bg-blue-500/10 dark:bg-blue-500/20 text-blue-600 dark:text-blue-400 flex items-center justify-center mb-4">
+          <div className="flex-1 flex flex-col items-center justify-center p-6 text-center bg-[#F4F6F9] dark:bg-[#0B1120]">
+            <div className="max-w-lg w-full p-8 border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-lg bg-white dark:bg-[#0F172A] hover:border-[#0F2C59] dark:hover:border-blue-500 transition-colors flex flex-col items-center">
+              <div className="w-16 h-16 rounded-lg bg-blue-50 dark:bg-blue-950/40 border border-blue-200 dark:border-blue-800/60 text-[#0F2C59] dark:text-blue-400 flex items-center justify-center mb-4">
                 <Upload className="w-8 h-8" />
               </div>
               <h3 className="text-lg font-bold text-slate-900 dark:text-white">
@@ -459,7 +459,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
               </p>
 
               <div className="flex flex-col sm:flex-row items-center gap-3">
-                <label className="inline-flex items-center gap-2 px-5 py-3 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-semibold text-sm shadow-md cursor-pointer transition-all active:scale-95">
+                <label className="inline-flex items-center gap-2 px-5 py-2.5 rounded-md bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-semibold text-sm cursor-pointer transition-colors">
                   <FileText className="w-4 h-4" />
                   <span>Escolher Arquivo PDF</span>
                   <input
@@ -476,19 +476,19 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 <button
                   type="button"
                   onClick={onFechar}
-                  className="px-4 py-3 rounded-xl border border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-sm cursor-pointer transition-colors"
+                  className="px-4 py-2.5 rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-sm cursor-pointer transition-colors"
                 >
                   Cancelar e Fechar
                 </button>
               </div>
 
-              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-white/10 w-full flex items-center justify-center gap-6 text-[11px] text-slate-500 dark:text-slate-400">
+              <div className="mt-6 pt-6 border-t border-slate-200 dark:border-slate-800 w-full flex items-center justify-center gap-6 text-[11px] text-slate-500 dark:text-slate-400">
                 <span className="flex items-center gap-1.5">
-                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-500" />
+                  <ShieldCheck className="w-3.5 h-3.5 text-emerald-600 dark:text-emerald-400" />
                   Preserva o PDF Original
                 </span>
                 <span className="flex items-center gap-1.5">
-                  <PenTool className="w-3.5 h-3.5 text-blue-500" />
+                  <PenTool className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                   Usa Assinatura Salva
                 </span>
               </div>
@@ -499,31 +499,31 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
           <div className="flex-1 flex flex-col lg:flex-row min-h-0 overflow-hidden">
             
             {/* LADO ESQUERDO: Visualizador e Posicionador Interativo de Assinatura */}
-            <div className="flex-1 flex flex-col min-w-0 bg-slate-100 dark:bg-[#060D19] border-r border-slate-200 dark:border-white/10">
+            <div className="flex-1 flex flex-col min-w-0 bg-[#F4F6F9] dark:bg-[#0B1120] border-r border-slate-200 dark:border-slate-800">
               
               {/* Barra de Ferramentas do Visualizador */}
-              <div className="px-4 py-2.5 bg-white dark:bg-[#0E1F3D] border-b border-slate-200 dark:border-white/10 flex flex-wrap items-center justify-between gap-3 text-xs">
+              <div className="px-4 py-2.5 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 flex flex-wrap items-center justify-between gap-3 text-xs">
                 
                 {/* Nome do Documento e Ações de Trocar/Voltar */}
                 <div className="flex items-center gap-2 min-w-0">
                   <button
                     type="button"
                     onClick={handleLimparDocumento}
-                    className="p-1.5 px-2.5 rounded-lg border border-slate-300 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 transition-colors"
+                    className="p-1.5 px-2.5 rounded-md border border-slate-300 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 flex items-center gap-1.5 text-xs font-semibold cursor-pointer shrink-0 transition-colors"
                     title="Voltar e escolher outro documento"
                   >
-                    <ArrowLeft className="w-3.5 h-3.5 text-blue-500" />
+                    <ArrowLeft className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                     <span>Voltar</span>
                   </button>
 
-                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 max-w-[180px] sm:max-w-[240px]">
-                    <FileText className="w-3.5 h-3.5 text-blue-500 shrink-0" />
+                  <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-700 max-w-[180px] sm:max-w-[240px]">
+                    <FileText className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400 shrink-0" />
                     <span className="font-semibold text-slate-800 dark:text-slate-200 truncate text-xs" title={arquivoPdf?.name}>
                       {arquivoPdf?.name}
                     </span>
                   </div>
 
-                  <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border border-blue-500/30 bg-blue-500/10 hover:bg-blue-500/20 text-blue-700 dark:text-blue-300 text-xs font-semibold cursor-pointer shrink-0 transition-colors">
+                  <label className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-md border border-blue-200 dark:border-blue-800 bg-blue-50 dark:bg-blue-950/40 hover:bg-blue-100 dark:hover:bg-blue-900/50 text-[#0F2C59] dark:text-blue-300 text-xs font-semibold cursor-pointer shrink-0 transition-colors">
                     <FileUp className="w-3.5 h-3.5" />
                     <span>Trocar PDF</span>
                     <input
@@ -539,12 +539,12 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 </div>
 
                 {/* Navegador de Páginas */}
-                <div className="flex items-center gap-2 bg-slate-100 dark:bg-[#071326] px-2.5 py-1 rounded-lg border border-slate-200 dark:border-white/10">
+                <div className="flex items-center gap-2 bg-slate-50 dark:bg-slate-900/60 px-2.5 py-1 rounded-md border border-slate-200 dark:border-slate-700">
                   <button
                     type="button"
                     onClick={() => setPaginaAtual(p => Math.max(1, p - 1))}
                     disabled={paginaAtual <= 1}
-                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     title="Página Anterior"
                   >
                     <ChevronLeft className="w-4 h-4" />
@@ -558,7 +558,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     type="button"
                     onClick={() => setPaginaAtual(p => Math.min(totalPaginas, p + 1))}
                     disabled={paginaAtual >= totalPaginas}
-                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-white/10 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
+                    className="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-800 disabled:opacity-30 disabled:cursor-not-allowed cursor-pointer"
                     title="Próxima Página"
                   >
                     <ChevronRight className="w-4 h-4" />
@@ -568,7 +568,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     <button
                       type="button"
                       onClick={() => setPaginaAtual(totalPaginas)}
-                      className="ml-1 text-[10px] px-2 py-0.5 rounded bg-blue-500/15 text-blue-600 dark:text-blue-300 hover:bg-blue-500/25 cursor-pointer font-semibold"
+                      className="ml-1 text-[10px] px-2 py-0.5 rounded bg-blue-50 dark:bg-blue-950/60 border border-blue-200 dark:border-blue-800 text-[#0F2C59] dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-900/60 cursor-pointer font-semibold"
                       title="Ir para a última página (onde ficam as assinaturas)"
                     >
                       Última pág.
@@ -581,7 +581,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                   <button
                     type="button"
                     onClick={() => setZoomNivel(z => Math.max(0.6, Number((z - 0.15).toFixed(2))))}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+                    className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     title="Diminuir Zoom"
                   >
                     <ZoomOut className="w-3.5 h-3.5" />
@@ -592,7 +592,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                   <button
                     type="button"
                     onClick={() => setZoomNivel(z => Math.min(2.0, Number((z + 0.15).toFixed(2))))}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 cursor-pointer"
+                    className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"
                     title="Aumentar Zoom"
                   >
                     <ZoomIn className="w-3.5 h-3.5" />
@@ -600,7 +600,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                   <button
                     type="button"
                     onClick={() => setZoomNivel(1.0)}
-                    className="p-1.5 rounded-lg border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-[10px] font-semibold cursor-pointer"
+                    className="p-1.5 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-[10px] font-semibold cursor-pointer"
                     title="Zoom Padrão (100%)"
                   >
                     100%
@@ -609,9 +609,9 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
               </div>
 
               {/* Dica de Posicionamento */}
-              <div className="px-4 py-1.5 bg-blue-50 dark:bg-[#0b1d3d] border-b border-blue-100 dark:border-blue-900/40 text-[11px] text-blue-800 dark:text-blue-300 flex items-center justify-between">
+              <div className="px-4 py-1.5 bg-slate-50 dark:bg-slate-900/60 border-b border-slate-200 dark:border-slate-800 text-[11px] text-slate-700 dark:text-slate-300 flex items-center justify-between">
                 <div className="flex items-center gap-2">
-                  <Move className="w-3.5 h-3.5 text-blue-600 dark:text-blue-400 shrink-0" />
+                  <Move className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400 shrink-0" />
                   <span>
                     <strong>Clique no documento</strong> ou <strong>arraste a caixa pontilhada</strong> para posicionar a assinatura sobre a linha da Ata.
                   </span>
@@ -620,21 +620,21 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                   <button
                     type="button"
                     onClick={() => aplicarPresetPosicao('centro_ata')}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-500/30 cursor-pointer"
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     Centro
                   </button>
                   <button
                     type="button"
                     onClick={() => aplicarPresetPosicao('direita')}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-500/30 cursor-pointer"
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     Direita
                   </button>
                   <button
                     type="button"
                     onClick={() => aplicarPresetPosicao('esquerda')}
-                    className="text-[10px] font-semibold px-2 py-0.5 rounded bg-blue-100 dark:bg-blue-500/20 text-blue-900 dark:text-blue-200 hover:bg-blue-200 dark:hover:bg-blue-500/30 cursor-pointer"
+                    className="text-[10px] font-semibold px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 cursor-pointer"
                   >
                     Esquerda
                   </button>
@@ -646,7 +646,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 <div
                   ref={overlayRef}
                   onClick={handleCliqueOverlay}
-                  className="relative shadow-2xl bg-white border border-slate-300 dark:border-slate-700 cursor-crosshair select-none transition-transform"
+                  className="relative bg-white border border-slate-300 dark:border-slate-700 cursor-crosshair select-none"
                 >
                   {/* Canvas do PDF */}
                   <canvas ref={canvasRef} className="block" />
@@ -661,13 +661,13 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     }}
                     className={`absolute z-20 cursor-move border-2 border-dashed ${
                       arrastando
-                        ? 'border-blue-600 bg-blue-500/20 shadow-xl scale-102 ring-4 ring-blue-400/30'
+                        ? 'border-[#0F2C59] bg-blue-500/20'
                         : 'border-blue-500 bg-blue-500/10 hover:border-blue-600 hover:bg-blue-500/15'
-                    } rounded-lg p-2.5 transition-all text-center group`}
+                    } rounded-md p-2.5 transition-colors text-center group`}
                     title="Arraste para reposicionar a assinatura"
                   >
                     {/* Alça visual de arrasto */}
-                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-blue-600 text-white rounded text-[9px] font-bold tracking-wider uppercase flex items-center gap-1 shadow-sm opacity-90 group-hover:opacity-100">
+                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-2 py-0.5 bg-[#0F2C59] text-white rounded text-[9px] font-bold tracking-wider uppercase flex items-center gap-1 opacity-90 group-hover:opacity-100">
                       <Move className="w-2.5 h-2.5" />
                       Assinatura
                     </div>
@@ -677,7 +677,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                       <img
                         src={assinaturaAtiva.imagemBase64}
                         alt="Assinatura"
-                        className="max-h-16 w-full object-contain mx-auto pointer-events-none drop-shadow-xs"
+                        className="max-h-16 w-full object-contain mx-auto pointer-events-none"
                       />
                     ) : (
                       <div className="h-12 flex items-center justify-center text-xs text-rose-500 font-semibold bg-rose-50 dark:bg-rose-950/40 rounded border border-rose-300">
@@ -724,14 +724,14 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
             </div>
 
             {/* LADO DIREITO: Painel de Configuração da Assinatura */}
-            <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-[#0E1F3D] border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-white/10 overflow-y-auto">
+            <div className="w-full lg:w-96 flex flex-col bg-white dark:bg-[#0F172A] border-t lg:border-t-0 lg:border-l border-slate-200 dark:border-slate-800 overflow-y-auto">
               <div className="p-5 space-y-6">
                 
                 {/* 1. Escolha do Perfil de Assinatura */}
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                      <User className="w-3.5 h-3.5 text-blue-500" />
+                      <User className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                       1. Quem vai assinar?
                     </label>
                     <span className="text-[10px] text-slate-400">Papel Timbrado</span>
@@ -745,13 +745,13 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                           key={perfil.id}
                           type="button"
                           onClick={() => setPerfilSelecionadoId(perfil.id)}
-                          className={`w-full p-3 rounded-xl border text-left transition-all cursor-pointer flex items-center gap-3 ${
+                          className={`w-full p-3 rounded-md border text-left transition-colors cursor-pointer flex items-center gap-3 ${
                             ativo
-                              ? 'bg-blue-50 dark:bg-[#132A52] border-blue-500 ring-2 ring-blue-500/20'
-                              : 'bg-slate-50 dark:bg-[#071326] border-slate-200 dark:border-white/10 hover:border-slate-300'
+                              ? 'bg-blue-50 dark:bg-blue-950/30 border-[#0F2C59] dark:border-blue-500'
+                              : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700'
                           }`}
                         >
-                          <div className="w-12 h-10 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center overflow-hidden shrink-0">
+                          <div className="w-12 h-10 bg-white rounded-md border border-slate-200 p-1 flex items-center justify-center overflow-hidden shrink-0">
                             {perfil.imagemBase64 ? (
                               <img
                                 src={perfil.imagemBase64}
@@ -773,7 +773,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                           <div
                             className={`w-4 h-4 rounded-full border flex items-center justify-center shrink-0 ${
                               ativo
-                                ? 'border-blue-600 bg-blue-600 text-white'
+                                ? 'border-[#0F2C59] bg-[#0F2C59] dark:border-blue-600 dark:bg-blue-600 text-white'
                                 : 'border-slate-300 dark:border-slate-600'
                             }`}
                           >
@@ -785,10 +785,10 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
 
                     {/* Opção de Assinatura Avulsa / Upload na hora */}
                     <div
-                      className={`p-3 rounded-xl border transition-all ${
+                      className={`p-3 rounded-md border transition-colors ${
                         perfilSelecionadoId === 'custom'
-                          ? 'bg-blue-50 dark:bg-[#132A52] border-blue-500 ring-2 ring-blue-500/20'
-                          : 'bg-slate-50 dark:bg-[#071326] border-slate-200 dark:border-white/10'
+                          ? 'bg-blue-50 dark:bg-blue-950/30 border-[#0F2C59] dark:border-blue-500'
+                          : 'bg-slate-50 dark:bg-slate-900/60 border-slate-200 dark:border-slate-800'
                       }`}
                     >
                       <div className="flex items-center justify-between">
@@ -798,13 +798,13 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                             name="perfil_assinatura"
                             checked={perfilSelecionadoId === 'custom'}
                             onChange={() => setPerfilSelecionadoId('custom')}
-                            className="text-blue-600"
+                            className="text-[#0F2C59] dark:text-blue-500"
                           />
                           <span className="text-xs font-bold text-slate-900 dark:text-white">
                             Outra Assinatura (Upload Avulso)
                           </span>
                         </label>
-                        <label className="text-[11px] font-semibold text-blue-600 dark:text-blue-400 hover:underline cursor-pointer">
+                        <label className="text-[11px] font-semibold text-[#0F2C59] dark:text-blue-400 hover:underline cursor-pointer">
                           Carregar PNG
                           <input
                             type="file"
@@ -816,9 +816,9 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                       </div>
 
                       {perfilSelecionadoId === 'custom' && (
-                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-white/10 space-y-2">
+                        <div className="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 space-y-2">
                           {assinaturaCustomBase64 && (
-                            <div className="h-12 bg-white rounded-lg border border-slate-200 p-1 flex items-center justify-center">
+                            <div className="h-12 bg-white rounded-md border border-slate-200 p-1 flex items-center justify-center">
                               <img
                                 src={assinaturaCustomBase64}
                                 alt="Assinatura Customizada"
@@ -833,7 +833,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                               value={nomeCustom}
                               onChange={e => setNomeCustom(e.target.value)}
                               placeholder="Nome Completo"
-                              className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0A162B]"
+                              className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                             />
                           </div>
                           <div className="grid grid-cols-2 gap-2">
@@ -844,7 +844,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                                 value={cargoCustom}
                                 onChange={e => setCargoCustom(e.target.value)}
                                 placeholder="Cargo"
-                                className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0A162B]"
+                                className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                               />
                             </div>
                             <div>
@@ -854,7 +854,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                                 value={cpfCustom}
                                 onChange={e => setCpfCustom(e.target.value)}
                                 placeholder="000.000.000-00"
-                                className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-lg border border-slate-300 dark:border-slate-700 bg-white dark:bg-[#0A162B]"
+                                className="w-full mt-0.5 px-2.5 py-1.5 text-xs rounded-md border border-slate-300 dark:border-slate-700 bg-white dark:bg-slate-950 focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500"
                               />
                             </div>
                           </div>
@@ -868,10 +868,10 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 <div>
                   <div className="flex items-center justify-between mb-1.5">
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5">
-                      <Sliders className="w-3.5 h-3.5 text-blue-500" />
+                      <Sliders className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                       2. Tamanho da Assinatura
                     </label>
-                    <span className="text-xs font-mono font-bold text-blue-600 dark:text-blue-400">
+                    <span className="text-xs font-mono font-bold text-[#0F2C59] dark:text-blue-400">
                       {larguraPercent}%
                     </span>
                   </div>
@@ -882,7 +882,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     step="1"
                     value={larguraPercent}
                     onChange={e => setLarguraPercent(Number(e.target.value))}
-                    className="w-full accent-blue-600 cursor-pointer"
+                    className="w-full accent-[#0F2C59] dark:accent-blue-500 cursor-pointer"
                   />
                   <div className="flex justify-between text-[10px] text-slate-400 mt-0.5">
                     <span>Compacta (18%)</span>
@@ -894,11 +894,11 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 {/* 3. Opções Visuais do Selo */}
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2.5">
-                    <Stamp className="w-3.5 h-3.5 text-blue-500" />
+                    <Stamp className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                     3. Detalhes da Assinatura
                   </label>
 
-                  <div className="space-y-2 bg-slate-50 dark:bg-[#071326] p-3 rounded-xl border border-slate-200 dark:border-white/10">
+                  <div className="space-y-2 bg-slate-50 dark:bg-slate-900/60 p-3 rounded-md border border-slate-200 dark:border-slate-800">
                     <label className="flex items-center justify-between text-xs cursor-pointer select-none">
                       <span className="text-slate-700 dark:text-slate-300 font-medium">
                         Incluir Nome, Cargo e CNPJ
@@ -907,7 +907,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                         type="checkbox"
                         checked={incluirDadosTexto}
                         onChange={e => setIncluirDadosTexto(e.target.checked)}
-                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        className="rounded text-blue-600 focus:outline-hidden w-4 h-4 cursor-pointer"
                       />
                     </label>
 
@@ -919,7 +919,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                         type="checkbox"
                         checked={incluirLinha}
                         onChange={e => setIncluirLinha(e.target.checked)}
-                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        className="rounded text-blue-600 focus:outline-hidden w-4 h-4 cursor-pointer"
                       />
                     </label>
 
@@ -931,7 +931,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                         type="checkbox"
                         checked={incluirCarimboDigital}
                         onChange={e => setIncluirCarimboDigital(e.target.checked)}
-                        className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                        className="rounded text-blue-600 focus:outline-hidden w-4 h-4 cursor-pointer"
                       />
                     </label>
                   </div>
@@ -941,11 +941,11 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                 {totalPaginas > 1 && (
                   <div>
                     <label className="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-300 flex items-center gap-1.5 mb-2">
-                      <Layers className="w-3.5 h-3.5 text-blue-500" />
+                      <Layers className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                       4. Rúbrica nas Outras Páginas
                     </label>
 
-                    <div className="bg-slate-50 dark:bg-[#071326] p-3 rounded-xl border border-slate-200 dark:border-white/10 space-y-2">
+                    <div className="bg-slate-50 dark:bg-slate-900/60 p-3 rounded-md border border-slate-200 dark:border-slate-800 space-y-2">
                       <label className="flex items-center justify-between text-xs cursor-pointer select-none">
                         <div>
                           <div className="text-slate-800 dark:text-slate-200 font-semibold">
@@ -959,20 +959,20 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                           type="checkbox"
                           checked={aplicarRubricaDemaisPaginas}
                           onChange={e => setAplicarRubricaDemaisPaginas(e.target.checked)}
-                          className="rounded text-blue-600 focus:ring-blue-500 w-4 h-4 cursor-pointer"
+                          className="rounded text-blue-600 focus:outline-hidden w-4 h-4 cursor-pointer"
                         />
                       </label>
 
                       {aplicarRubricaDemaisPaginas && (
-                        <div className="pt-2 border-t border-slate-200 dark:border-white/10 flex items-center gap-2">
+                        <div className="pt-2 border-t border-slate-200 dark:border-slate-800 flex items-center gap-2">
                           <span className="text-[10px] text-slate-500 font-medium">Posição:</span>
                           <button
                             type="button"
                             onClick={() => setPosicaoRubrica('inferior_direito')}
                             className={`px-2 py-1 rounded text-[10px] font-semibold cursor-pointer ${
                               posicaoRubrica === 'inferior_direito'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                                ? 'bg-[#0F2C59] dark:bg-blue-600 text-white'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                             }`}
                           >
                             Canto Direito
@@ -982,8 +982,8 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                             onClick={() => setPosicaoRubrica('inferior_esquerdo')}
                             className={`px-2 py-1 rounded text-[10px] font-semibold cursor-pointer ${
                               posicaoRubrica === 'inferior_esquerdo'
-                                ? 'bg-blue-600 text-white'
-                                : 'bg-slate-200 dark:bg-white/10 text-slate-700 dark:text-slate-300'
+                                ? 'bg-[#0F2C59] dark:bg-blue-600 text-white'
+                                : 'bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-300'
                             }`}
                           >
                             Canto Esquerdo
@@ -1000,7 +1000,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     type="button"
                     onClick={handleAssinarEDownload}
                     disabled={gerandoAssinatura}
-                    className="w-full group py-3.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-bold text-sm shadow-lg hover:shadow-blue-500/25 transition-all flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed active:scale-98"
+                    className="w-full py-3 px-4 rounded-md bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {gerandoAssinatura ? (
                       <>
@@ -1009,7 +1009,7 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                       </>
                     ) : (
                       <>
-                        <Download className="w-4 h-4 group-hover:-translate-y-0.5 transition-transform" />
+                        <Download className="w-4 h-4" />
                         <span>Gerar & Baixar PDF Assinado</span>
                       </>
                     )}
@@ -1018,21 +1018,21 @@ export const ModalAssinadorDocumentos: React.FC<ModalAssinadorDocumentosProps> =
                     A assinatura é carimbada na <strong>página {paginaAtual}</strong> exatamente nas coordenadas selecionadas.
                   </p>
 
-                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-white/10">
+                  <div className="grid grid-cols-2 gap-2 mt-3 pt-3 border-t border-slate-200 dark:border-slate-800">
                     <button
                       type="button"
                       onClick={handleLimparDocumento}
-                      className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-slate-100 dark:hover:bg-white/10 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="py-2.5 px-3 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-700 dark:text-slate-300 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       title="Voltar para tela de upload e escolher outro PDF"
                     >
-                      <RotateCcw className="w-3.5 h-3.5 text-blue-500" />
+                      <RotateCcw className="w-3.5 h-3.5 text-[#0F2C59] dark:text-blue-400" />
                       <span>Trocar PDF</span>
                     </button>
 
                     <button
                       type="button"
                       onClick={onFechar}
-                      className="py-2.5 px-3 rounded-xl border border-slate-200 dark:border-white/10 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-200 dark:hover:border-rose-900/40 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                      className="py-2.5 px-3 rounded-md border border-slate-200 dark:border-slate-700 hover:bg-rose-50 dark:hover:bg-rose-950/20 hover:border-rose-200 dark:hover:border-rose-900/40 text-slate-600 dark:text-slate-400 hover:text-rose-600 dark:hover:text-rose-400 font-semibold text-xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
                       title="Cancelar processo e fechar"
                     >
                       <X className="w-3.5 h-3.5" />

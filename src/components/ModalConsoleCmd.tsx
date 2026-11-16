@@ -923,9 +923,9 @@ export const ModalConsoleCmd: React.FC<ModalConsoleCmdProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm animate-in fade-in duration-150">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-2 sm:p-4 bg-slate-950/75">
       <div
-        className={`bg-[#0A101D] border border-cyan-900/60 rounded-2xl shadow-2xl flex flex-col overflow-hidden text-slate-100 font-mono transition-all duration-200 ${
+        className={`bg-[#0A101D] border border-slate-700 rounded-lg flex flex-col overflow-hidden text-slate-100 font-mono transition-colors ${
           maximizada ? 'w-full h-full max-w-none rounded-none' : 'w-full max-w-4xl h-[85vh] max-h-[700px]'
         }`}
       >
@@ -1032,170 +1032,170 @@ export const ModalConsoleCmd: React.FC<ModalConsoleCmdProps> = ({
         </div>
 
         {/* Área de Visualização das Linhas (Saída do Console) */}
-        <div
-          onClick={() => inputRef.current?.focus()}
-          className="flex-1 overflow-y-auto p-4 space-y-2 text-xs sm:text-[13px] leading-relaxed cursor-text selection:bg-cyan-500/30"
-        >
-          {linhas.map(linha => {
-            if (linha.tipo === 'banner') {
-              return (
-                <div key={linha.id} className="text-cyan-400/90 whitespace-pre-wrap font-bold select-none py-1">
-                  {linha.texto}
-                </div>
-              );
-            }
-            if (linha.tipo === 'comando') {
-              return (
-                <div key={linha.id} className="flex items-start gap-2 text-slate-200 font-semibold">
-                  <span className="text-emerald-400 select-none">gws@admin:~$</span>
-                  <span className="text-white">{linha.texto}</span>
-                  {linha.timestamp && (
-                    <span className="text-[10px] text-slate-600 ml-auto select-none">{linha.timestamp}</span>
-                  )}
-                </div>
-              );
-            }
-            if (linha.tipo === 'sucesso') {
-              return (
-                <div key={linha.id} className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 whitespace-pre-wrap">
-                  {linha.texto}
-                </div>
-              );
-            }
-            if (linha.tipo === 'erro') {
-              return (
-                <div key={linha.id} className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 whitespace-pre-wrap">
-                  {linha.texto}
-                </div>
-              );
-            }
-            if (linha.tipo === 'sistema') {
-              return (
-                <div key={linha.id} className="text-amber-300/90 whitespace-pre-wrap py-0.5">
-                  {linha.texto}
-                </div>
-              );
-            }
-            return (
-              <div key={linha.id} className="text-slate-300 whitespace-pre-wrap">
-                {linha.texto}
+            <div
+              onClick={() => inputRef.current?.focus()}
+              className="flex-1 overflow-y-auto p-4 space-y-2 text-xs sm:text-[13px] leading-relaxed cursor-text selection:bg-cyan-500/30"
+            >
+              {linhas.map(linha => {
+                if (linha.tipo === 'banner') {
+                  return (
+                    <div key={linha.id} className="text-cyan-400/90 whitespace-pre-wrap font-bold select-none py-1">
+                      {linha.texto}
+                    </div>
+                  );
+                }
+                if (linha.tipo === 'comando') {
+                  return (
+                    <div key={linha.id} className="flex items-start gap-2 text-slate-200 font-semibold">
+                      <span className="text-emerald-400 select-none">gws@admin:~$</span>
+                      <span className="text-white">{linha.texto}</span>
+                      {linha.timestamp && (
+                        <span className="text-[10px] text-slate-600 ml-auto select-none">{linha.timestamp}</span>
+                      )}
+                    </div>
+                  );
+                }
+                if (linha.tipo === 'sucesso') {
+                  return (
+                    <div key={linha.id} className="p-2.5 rounded-lg bg-emerald-950/40 border border-emerald-500/40 text-emerald-300 whitespace-pre-wrap">
+                      {linha.texto}
+                    </div>
+                  );
+                }
+                if (linha.tipo === 'erro') {
+                  return (
+                    <div key={linha.id} className="p-2.5 rounded-lg bg-rose-950/40 border border-rose-500/40 text-rose-300 whitespace-pre-wrap">
+                      {linha.texto}
+                    </div>
+                  );
+                }
+                if (linha.tipo === 'sistema') {
+                  return (
+                    <div key={linha.id} className="text-amber-300/90 whitespace-pre-wrap py-0.5">
+                      {linha.texto}
+                    </div>
+                  );
+                }
+                return (
+                  <div key={linha.id} className="text-slate-300 whitespace-pre-wrap">
+                    {linha.texto}
+                  </div>
+                );
+              })}
+              <div ref={finalDoTerminalRef} />
+            </div>
+
+            {/* Dicas de Comandos em Pílulas Clicáveis (Abaixo do histórico) */}
+            <div className="bg-[#070C16] border-t border-cyan-900/30 px-4 py-1.5 flex items-center gap-2 overflow-x-auto text-[11px] shrink-0 text-slate-400 select-none">
+              <span className="text-slate-500 shrink-0">Atalhos:</span>
+              <button
+                type="button"
+                onClick={() => processarComando('help')}
+                className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                help
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('trocar-id')}
+                className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
+                title="Alterar número de ID da licitação"
+              >
+                trocar-id
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('trocar-processo')}
+                className="px-2 py-0.5 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
+                title="Alterar número do Processo/Pregão (ex: 6474/2026)"
+              >
+                trocar-processo
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('trocar-orgao')}
+                className="px-2 py-0.5 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
+                title="Alterar nome do Órgão Público"
+              >
+                trocar-orgao
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('trocar-data')}
+                className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
+                title="Alterar data de cadastro"
+              >
+                trocar-data
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('desfazer')}
+                className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold flex items-center gap-1"
+                title="Desfazer última alteração de ID (Ctrl+Z)"
+              >
+                <RotateCcw className="w-2.5 h-2.5" />
+                <span>desfazer</span>
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('listar')}
+                className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                listar
+              </button>
+              <button
+                type="button"
+                onClick={() => processarComando('limpar')}
+                className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
+              >
+                limpar
+              </button>
+            </div>
+
+            {/* Linha de Prompt Ativa para Digitar Comandos */}
+            <div className="bg-[#090F1C] border-t border-cyan-900/50 p-3 sm:px-4 flex items-center gap-2.5 shrink-0">
+              <div className="flex items-center gap-1 text-emerald-400 font-bold select-none shrink-0 text-xs sm:text-sm">
+                <span>gws@admin:~$</span>
               </div>
-            );
-          })}
-          <div ref={finalDoTerminalRef} />
-        </div>
 
-        {/* Dicas de Comandos em Pílulas Clicáveis (Abaixo do histórico) */}
-        <div className="bg-[#070C16] border-t border-cyan-900/30 px-4 py-1.5 flex items-center gap-2 overflow-x-auto text-[11px] shrink-0 text-slate-400 select-none">
-          <span className="text-slate-500 shrink-0">Atalhos:</span>
-          <button
-            type="button"
-            onClick={() => processarComando('help')}
-            className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-cyan-300 hover:text-white transition-colors cursor-pointer shrink-0"
-          >
-            help
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('trocar-id')}
-            className="px-2 py-0.5 rounded bg-cyan-500/15 hover:bg-cyan-500/25 text-cyan-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
-            title="Alterar número de ID da licitação"
-          >
-            trocar-id
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('trocar-processo')}
-            className="px-2 py-0.5 rounded bg-purple-500/15 hover:bg-purple-500/25 text-purple-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
-            title="Alterar número do Processo/Pregão (ex: 6474/2026)"
-          >
-            trocar-processo
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('trocar-orgao')}
-            className="px-2 py-0.5 rounded bg-blue-500/15 hover:bg-blue-500/25 text-blue-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
-            title="Alterar nome do Órgão Público"
-          >
-            trocar-orgao
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('trocar-data')}
-            className="px-2 py-0.5 rounded bg-emerald-500/15 hover:bg-emerald-500/25 text-emerald-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold"
-            title="Alterar data de cadastro"
-          >
-            trocar-data
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('desfazer')}
-            className="px-2 py-0.5 rounded bg-amber-500/15 hover:bg-amber-500/25 text-amber-300 hover:text-white transition-colors cursor-pointer shrink-0 font-bold flex items-center gap-1"
-            title="Desfazer última alteração de ID (Ctrl+Z)"
-          >
-            <RotateCcw className="w-2.5 h-2.5" />
-            <span>desfazer</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('listar')}
-            className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-300 hover:text-white transition-colors cursor-pointer shrink-0"
-          >
-            listar
-          </button>
-          <button
-            type="button"
-            onClick={() => processarComando('limpar')}
-            className="px-2 py-0.5 rounded bg-white/5 hover:bg-white/10 text-slate-400 hover:text-white transition-colors cursor-pointer shrink-0"
-          >
-            limpar
-          </button>
-        </div>
+              <input
+                ref={inputRef}
+                type="text"
+                value={inputComando}
+                onChange={e => setInputComando(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={
+                  modoInterativo
+                    ? modoInterativo.etapa === 'aguardando_id'
+                      ? `Digite o ID ou Processo/Pregão (ex: 15 ou 6474/2026, ou "cancelar") e aperte Enter...`
+                      : modoInterativo.tipo === 'id'
+                      ? 'Digite o NOVO ID desejado (ex: 45 ou 6474) e aperte Enter...'
+                      : modoInterativo.tipo === 'processo'
+                      ? 'Digite o NOVO número do Processo/Pregão (ex: 6474/2026) e aperte Enter...'
+                      : modoInterativo.tipo === 'orgao'
+                      ? 'Digite o NOVO nome do Órgão Público e aperte Enter...'
+                      : 'Digite a nova data (DD/MM/AAAA ou AAAA-MM-DD) e aperte Enter...'
+                    : 'Digite um comando (ex: trocar-id, listar, ver 6474/2026)...'
+                }
+                className="flex-1 bg-transparent border-none text-white focus:outline-hidden font-mono text-xs sm:text-sm placeholder:text-slate-600 caret-cyan-400"
+                autoFocus
+                spellCheck={false}
+                autoComplete="off"
+              />
 
-        {/* Linha de Prompt Ativa para Digitar Comandos */}
-        <div className="bg-[#090F1C] border-t border-cyan-900/50 p-3 sm:px-4 flex items-center gap-2.5 shrink-0">
-          <div className="flex items-center gap-1 text-emerald-400 font-bold select-none shrink-0 text-xs sm:text-sm">
-            <span>gws@admin:~$</span>
-          </div>
-
-          <input
-            ref={inputRef}
-            type="text"
-            value={inputComando}
-            onChange={e => setInputComando(e.target.value)}
-            onKeyDown={handleKeyDown}
-            placeholder={
-              modoInterativo
-                ? modoInterativo.etapa === 'aguardando_id'
-                  ? `Digite o ID ou Processo/Pregão (ex: 15 ou 6474/2026, ou "cancelar") e aperte Enter...`
-                  : modoInterativo.tipo === 'id'
-                  ? 'Digite o NOVO ID desejado (ex: 45 ou 6474) e aperte Enter...'
-                  : modoInterativo.tipo === 'processo'
-                  ? 'Digite o NOVO número do Processo/Pregão (ex: 6474/2026) e aperte Enter...'
-                  : modoInterativo.tipo === 'orgao'
-                  ? 'Digite o NOVO nome do Órgão Público e aperte Enter...'
-                  : 'Digite a nova data (DD/MM/AAAA ou AAAA-MM-DD) e aperte Enter...'
-                : 'Digite um comando (ex: trocar-id, trocar-processo, trocar-orgao, trocar-data, listar, ver 6474/2026)...'
-            }
-            className="flex-1 bg-transparent border-none text-white focus:outline-hidden font-mono text-xs sm:text-sm placeholder:text-slate-600 caret-cyan-400"
-            autoFocus
-            spellCheck={false}
-            autoComplete="off"
-          />
-
-          <button
-            type="button"
-            onClick={() => {
-              const cmd = inputComando;
-              setInputComando('');
-              processarComando(cmd);
-            }}
-            className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer shrink-0"
-          >
-            <span>Enter</span>
-            <CornerDownLeft className="w-3 h-3" />
-          </button>
-        </div>
+              <button
+                type="button"
+                onClick={() => {
+                  const cmd = inputComando;
+                  setInputComando('');
+                  processarComando(cmd);
+                }}
+                className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 text-white rounded-lg text-xs font-bold transition-colors flex items-center gap-1 cursor-pointer shrink-0"
+              >
+                <span>Enter</span>
+                <CornerDownLeft className="w-3 h-3" />
+              </button>
+            </div>
       </div>
     </div>
   );

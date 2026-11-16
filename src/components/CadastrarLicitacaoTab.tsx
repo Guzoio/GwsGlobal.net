@@ -96,9 +96,9 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
   return (
     <div className="max-w-3xl mx-auto space-y-5">
       {/* Header card */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-6">
         <h2 className="text-base font-bold text-slate-900 dark:text-white flex items-center gap-2.5">
-          <div className="p-2 rounded-xl bg-blue-50 dark:bg-blue-950/40 text-blue-600 dark:text-blue-400 border border-blue-100 dark:border-blue-900/50">
+          <div className="p-2 rounded-md bg-blue-50 dark:bg-blue-950/50 text-blue-600 dark:text-blue-400 border border-blue-200 dark:border-blue-800/60">
             <PlusCircle className="w-4 h-4" />
           </div>
           <span>Cadastrar Nova Licitação / Processo</span>
@@ -109,16 +109,16 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
       </div>
 
       {/* Formulário Principal */}
-      <div className="bg-white dark:bg-[#0A162B] border border-slate-200/80 dark:border-slate-800 rounded-2xl p-6 shadow-xs">
+      <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-6">
         {erro && (
-          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-xl text-xs font-semibold text-rose-700 dark:text-rose-300">
+          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-md text-xs font-semibold text-rose-700 dark:text-rose-300">
             {erro}
           </div>
         )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Seletor de Plataforma: BLL e BNC */}
-          <div className="p-3 bg-slate-50/90 dark:bg-[#0E1F3D]/60 border border-slate-200 dark:border-slate-700/80 rounded-xl">
+          <div className="p-3 bg-slate-50 dark:bg-slate-900/60 border border-slate-200 dark:border-slate-800 rounded-md">
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Globe className="w-4 h-4 text-slate-600 dark:text-slate-400" />
@@ -129,10 +129,10 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setPlataforma('BLL')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                  className={`px-4 py-2 text-xs font-black rounded-md border flex items-center gap-2 cursor-pointer transition-colors ${
                     plataforma === 'BLL'
-                      ? 'bg-emerald-600 text-white border-emerald-600 shadow-md ring-2 ring-emerald-400/40'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-emerald-400 hover:text-emerald-700'
+                      ? 'bg-emerald-600 text-white border-emerald-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-emerald-500 hover:text-emerald-700 dark:hover:text-emerald-400'
                   }`}
                   title="Plataforma BLL"
                 >
@@ -143,10 +143,10 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setPlataforma('BNC')}
-                  className={`px-4 py-2 text-xs font-black rounded-xl border flex items-center gap-2 cursor-pointer transition-all ${
+                  className={`px-4 py-2 text-xs font-black rounded-md border flex items-center gap-2 cursor-pointer transition-colors ${
                     plataforma === 'BNC'
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md ring-2 ring-blue-400/40'
-                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-400 hover:text-blue-700'
+                      ? 'bg-blue-600 text-white border-blue-600'
+                      : 'bg-white dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-300 dark:border-slate-700 hover:border-blue-500 hover:text-blue-700 dark:hover:text-blue-400'
                   }`}
                   title="Plataforma BNC"
                 >
@@ -177,7 +177,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                     }
                   }}
                   placeholder="Ex: Tribunal de Justiça de São Paulo / Prefeitura Municipal"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -194,7 +194,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                     setUfSelecionada(e.target.value);
                     setUfModificadaManualmente(true);
                   }}
-                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-bold font-mono cursor-pointer transition-colors"
+                  className="w-full pl-9 pr-3 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 font-bold font-mono cursor-pointer transition-colors"
                 >
                   {ESTADOS_BRASIL_OPCOES.map(est => (
                     <option key={est.sigla} value={est.sigla}>
@@ -219,7 +219,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                   value={processo}
                   onChange={e => setProcesso(e.target.value)}
                   placeholder="Ex: Pregão Eletrônico nº 055/2026"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
@@ -231,7 +231,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
               <select
                 value={modalidade}
                 onChange={e => setModalidade(e.target.value as ModalidadeLic)}
-                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 cursor-pointer transition-colors"
+                className="w-full px-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 cursor-pointer transition-colors"
               >
                 {MODALIDADES.map(m => (
                   <option key={m} value={m}>
@@ -254,7 +254,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                   value={dataCadastro}
                   onChange={e => setDataCadastro(e.target.value)}
                   placeholder="24/09/2026"
-                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700/80 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 font-mono transition-colors"
+                  className="w-full pl-10 pr-3.5 py-2.5 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 font-mono transition-colors"
                 />
               </div>
             </div>
@@ -274,10 +274,10 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                         setIsModoOutro(false);
                         setResponsavelSelecionado(resp);
                       }}
-                      className={`py-1.5 px-3 text-xs font-semibold rounded-xl border flex items-center gap-1.5 transition-all cursor-pointer ${
+                      className={`py-1.5 px-3 text-xs font-semibold rounded-md border flex items-center gap-1.5 transition-colors cursor-pointer ${
                         selecionado
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-xs'
-                          : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                          ? 'bg-blue-600 text-white border-blue-600'
+                          : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                       }`}
                     >
                       <User className="w-3.5 h-3.5" />
@@ -289,10 +289,10 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                 <button
                   type="button"
                   onClick={() => setIsModoOutro(true)}
-                  className={`py-1.5 px-3 text-xs font-semibold rounded-xl border flex items-center gap-1 transition-all cursor-pointer ${
+                  className={`py-1.5 px-3 text-xs font-semibold rounded-md border flex items-center gap-1 transition-colors cursor-pointer ${
                     isModoOutro
-                      ? 'bg-[#0A1D37] text-white border-[#0A1D37] shadow-xs'
-                      : 'bg-slate-50 dark:bg-slate-800 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-700'
+                      ? 'bg-[#0F2C59] text-white border-[#0F2C59] dark:bg-blue-600 dark:border-blue-600'
+                      : 'bg-slate-50 dark:bg-slate-900 text-slate-700 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-100 dark:hover:bg-slate-800'
                   }`}
                 >
                   + Outro...
@@ -300,7 +300,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
               </div>
 
               {isModoOutro && (
-                <div className="mt-2 animate-in fade-in duration-150">
+                <div className="mt-2">
                   <input
                     type="text"
                     required
@@ -308,7 +308,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
                     value={responsavelCustom}
                     onChange={e => setResponsavelCustom(e.target.value)}
                     placeholder="Digite o nome do novo responsável..."
-                    className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-850 border border-slate-200 dark:border-slate-700 rounded-xl focus:outline-hidden focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 transition-colors"
+                    className="w-full px-3.5 py-2 text-xs bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-md text-slate-900 dark:text-white focus:outline-hidden focus:border-[#0F2C59] dark:focus:border-blue-500 transition-colors"
                   />
                 </div>
               )}
@@ -318,7 +318,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
           <div className="pt-4 flex justify-end">
             <button
               type="submit"
-              className="px-5 py-2.5 bg-[#0A1D37] hover:bg-[#122A4E] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-xl shadow-xs transition-all cursor-pointer flex items-center gap-2 active:scale-98"
+              className="px-5 py-2.5 bg-[#0F2C59] hover:bg-[#163C78] dark:bg-blue-600 dark:hover:bg-blue-500 text-white text-xs font-bold rounded-md transition-colors cursor-pointer flex items-center gap-2"
             >
               <PlusCircle className="w-4 h-4 text-amber-400" />
               Salvar Licitação
