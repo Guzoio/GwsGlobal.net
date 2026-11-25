@@ -1,10 +1,12 @@
-import React, { useState, useEffect } from 'react';
-import { PlusCircle, Building2, Calendar, FileText, User, MapPin, Globe } from 'lucide-react';
+import React, { useState, useEffect, useMemo } from 'react';
+import { PlusCircle, Building2, Calendar, FileText, User, MapPin, Globe, AlertTriangle } from 'lucide-react';
 import { ModalidadeLic, Licitacao, PlataformaLicitacao } from '../types';
 import { ESTADOS_BRASIL_OPCOES, detectarEstado } from '../utils/geoBrasil';
+import { encontrarLicitacaoDuplicada } from '../utils/numberToWordsPtBr';
 
 interface CadastrarLicitacaoTabProps {
-  onCadastrar: (novaLic: Omit<Licitacao, 'id'>) => number | void;
+  licitacoes?: Licitacao[];
+  onCadastrar: (novaLic: Omit<Licitacao, 'id'>) => number | undefined | void;
   onSucesso?: (idCriado: number) => void;
   responsaveis?: string[];
   onAdicionarResponsavel?: (nome: string) => boolean;
@@ -18,6 +20,7 @@ const MODALIDADES: ModalidadeLic[] = [
 ];
 
 export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
+  licitacoes = [],
   onCadastrar,
   onSucesso,
   responsaveis = ['Gustavo', 'Victor'],
@@ -46,11 +49,28 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
     }
   }, [responsaveis, isModoOutro, responsavelSelecionado]);
 
+  // Verifica em tempo real se já existe licitação com mesmo Órgão, Processo, Modalidade e Data de Cadastro
+  const licitacaoDuplicada = useMemo(() => {
+    return encontrarLicitacaoDuplicada(licitacoes, {
+      orgao,
+      processo_pregao: processo,
+      modalidade,
+      data_cadastro: dataCadastro || dataHojePadrao,
+    });
+  }, [licitacoes, orgao, processo, modalidade, dataCadastro, dataHojePadrao]);
+
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
     if (!orgao.trim() || !processo.trim()) {
-      setErro('Preencha os campos obrigatórios (Órgão Público e Processo/Pregão).');
+      setErro('Preencha os campos obrigatórios (PROMOTOR e N° EDITAL).');
+      return;
+    }
+
+    if (licitacaoDuplicada) {
+      setErro(
+        `Não é possível cadastrar: esta licitação já foi cadastrada anteriormente (Responsável: ${licitacaoDuplicada.responsavel || 'N/I'} • Data: ${licitacaoDuplicada.data_cadastro} • ${licitacaoDuplicada.plataforma || 'BLL'}).`
+      );
       return;
     }
 
@@ -79,7 +99,11 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
       uf: ufSelecionada,
     });
 
-    if (idCriado && onSucesso) {
+    if (!idCriado) {
+      return;
+    }
+
+    if (onSucesso) {
       onSucesso(idCriado);
     }
 
@@ -110,9 +134,24 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
       {/* Formulário Principal */}
       <div className="bg-white dark:bg-[#0F172A] border border-slate-200 dark:border-slate-800 rounded-lg p-6">
-        {erro && (
-          <div className="mb-4 p-3 bg-rose-50 dark:bg-rose-950/40 border border-rose-200 dark:border-rose-900 rounded-md text-xs font-semibold text-rose-700 dark:text-rose-300">
-            {erro}
+        {(erro || licitacaoDuplicada) && (
+          <div className="mb-4 p-3.5 bg-rose-50 dark:bg-rose-950/40 border border-rose-300 dark:border-rose-800 rounded-md text-xs font-semibold text-rose-800 dark:text-rose-200 flex items-start gap-2.5">
+            <AlertTriangle className="w-4 h-4 text-rose-600 dark:text-rose-400 shrink-0 mt-0.5" />
+            <div className="space-y-0.5">
+              <div>
+                {licitacaoDuplicada
+                  ? 'Não é possível cadastrar: essa licitação já foi cadastrada!'
+                  : erro}
+              </div>
+              {licitacaoDuplicada && (
+                <div className="text-[11px] font-medium text-rose-700 dark:text-rose-300">
+                  Já existe no sistema: <strong>{licitacaoDuplicada.orgao}</strong> • Processo{' '}
+                  <strong>{licitacaoDuplicada.processo_pregao}</strong> •{' '}
+                  {licitacaoDuplicada.modalidade} • Data {licitacaoDuplicada.data_cadastro} (cadastrada por{' '}
+                  <strong>{licitacaoDuplicada.responsavel}</strong>).
+                </div>
+              )}
+            </div>
           </div>
         )}
 
@@ -122,7 +161,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2.5">
               <label className="text-xs font-bold text-slate-800 dark:text-slate-200 flex items-center gap-1.5">
                 <Globe className="w-4 h-4 text-slate-600 dark:text-slate-400" />
-                Plataforma *
+                Plataforma
               </label>
 
               <div className="flex items-center gap-2">
@@ -160,7 +199,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div className="sm:col-span-2">
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Órgão Público Licitante *
+                PROMOTOR
               </label>
               <div className="relative">
                 <Building2 className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -184,7 +223,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Estado / UF *
+                Estado / UF
               </label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-blue-500 absolute left-3 top-1/2 -translate-y-1/2" />
@@ -209,7 +248,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Número do Processo / Pregão *
+                N° EDITAL
               </label>
               <div className="relative">
                 <FileText className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -226,7 +265,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Modalidade de Licitação *
+                Modalidade de Licitação
               </label>
               <select
                 value={modalidade}
@@ -245,7 +284,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Data de Cadastro (DD/MM/AAAA)
+                DATA DE DISPUTA (DD/MM/AAAA)
               </label>
               <div className="relative">
                 <Calendar className="w-4 h-4 text-slate-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
@@ -261,7 +300,7 @@ export const CadastrarLicitacaoTab: React.FC<CadastrarLicitacaoTabProps> = ({
 
             <div>
               <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1.5">
-                Quem fez a licitação? (Responsável) *
+                Quem fez a licitação? (Responsável)
               </label>
               <div className="flex flex-wrap items-center gap-1.5">
                 {responsaveis.map(resp => {

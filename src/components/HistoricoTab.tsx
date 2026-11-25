@@ -1,4 +1,4 @@
-import React, { useState, useMemo } from 'react';
+import React, { useState, useMemo, useEffect } from 'react';
 import {
   Search,
   Trash2,
@@ -41,6 +41,26 @@ import { Licitacao, ItemLicitacao, PapelTimbradoConfig, PlataformaLicitacao } fr
 import { formatarMoeda, compararLicitacoesPorDataCadastroDesc } from '../utils/numberToWordsPtBr';
 import { obterPapelTimbradoConfig } from '../utils/storage';
 import { ModalDeclaracaoUnificada } from './ModalDeclaracaoUnificada';
+
+const HISTORICO_FILTROS_SESSION_KEY = 'gws_historico_filtros_sessao';
+
+interface FiltrosHistoricoSessao {
+  busca?: string;
+  filtroResponsavel?: string;
+  filtroData?: string;
+  filtroAcompanhamento?: 'todos' | 'acompanhar' | 'homologadas';
+  filtroPlataforma?: 'todas' | 'BLL' | 'BNC';
+}
+
+function lerFiltrosSessaoLocal(): FiltrosHistoricoSessao {
+  try {
+    const raw = sessionStorage.getItem(HISTORICO_FILTROS_SESSION_KEY);
+    if (!raw) return {};
+    return JSON.parse(raw) as FiltrosHistoricoSessao;
+  } catch {
+    return {};
+  }
+}
 
 // Funções utilitárias para conversão e comparação de datas
 function normalizarData(dataStr: string): string {
@@ -113,12 +133,35 @@ export const HistoricoTab: React.FC<HistoricoTabProps> = ({
   onAbrirConsoleCmd,
   onAtualizarPlataforma,
 }) => {
-  const [busca, setBusca] = useState('');
-  const [filtroResponsavel, setFiltroResponsavel] = useState<string>('Todos');
-  const [filtroData, setFiltroData] = useState<string>(''); // formato YYYY-MM-DD
-  const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>('todos');
-  const [filtroPlataforma, setFiltroPlataforma] = useState<'todas' | 'BLL' | 'BNC'>('todas');
+  const filtrosIniciais = useMemo(() => lerFiltrosSessaoLocal(), []);
+  const [busca, setBusca] = useState<string>(() => filtrosIniciais.busca || '');
+  const [filtroResponsavel, setFiltroResponsavel] = useState<string>(
+    () => filtrosIniciais.filtroResponsavel || 'Todos'
+  );
+  const [filtroData, setFiltroData] = useState<string>(() => filtrosIniciais.filtroData || ''); // formato YYYY-MM-DD
+  const [filtroAcompanhamento, setFiltroAcompanhamento] = useState<'todos' | 'acompanhar' | 'homologadas'>(
+    () => filtrosIniciais.filtroAcompanhamento || 'todos'
+  );
+  const [filtroPlataforma, setFiltroPlataforma] = useState<'todas' | 'BLL' | 'BNC'>(
+    () => filtrosIniciais.filtroPlataforma || 'todas'
+  );
   const [licitacaoParaExcluir, setLicitacaoParaExcluir] = useState<Licitacao | null>(null);
+
+  // Salva filtros exclusivamente na sessão local deste navegador (não afeta outros usuários/computadores)
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(
+        HISTORICO_FILTROS_SESSION_KEY,
+        JSON.stringify({
+          busca,
+          filtroResponsavel,
+          filtroData,
+          filtroAcompanhamento,
+          filtroPlataforma,
+        })
+      );
+    } catch {}
+  }, [busca, filtroResponsavel, filtroData, filtroAcompanhamento, filtroPlataforma]);
 
   // Modal de Confirmação para Mudança de Plataforma (BLL <-> BNC)
   const [confirmarMudancaPlataforma, setConfirmarMudancaPlataforma] = useState<{

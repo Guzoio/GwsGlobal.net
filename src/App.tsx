@@ -63,7 +63,7 @@ import {
   formatarDataPtBr,
 } from './utils/cobrancasCalculo';
 import { gerarArquivoPdf, baixarBlobPdf } from './utils/pdfGenerator';
-import { converterParaFormatoInputDate, compararLicitacoesPorDataCadastroDesc } from './utils/numberToWordsPtBr';
+import { converterParaFormatoInputDate, compararLicitacoesPorDataCadastroDesc, encontrarLicitacaoDuplicada } from './utils/numberToWordsPtBr';
 import { CheckCircle2, AlertCircle } from 'lucide-react';
 import { obterTema, aplicarTema, alternarTema, ThemeMode } from './utils/theme';
 import {
@@ -100,6 +100,9 @@ export default function App() {
   const [cobrancas, setCobrancas] = useState<Cobranca[]>(() => obterCobrancasLocal());
   const [cobrancaDestaqueId, setCobrancaDestaqueId] = useState<string | null>(null);
   const [abaAtiva, setAbaAtiva] = useState<string>('historico');
+  const [historicoNavegacao, setHistoricoNavegacao] = useState<
+    { aba: string; licitacaoId: number | null; scrollY: number }[]
+  >([]);
 
   // Alertas automáticos de cobranças para o Sininho Global (entrega, NF, liquidação e pagamento)
   const alertasCobrancas = useMemo(() => {
@@ -191,6 +194,50 @@ export default function App() {
       return novo;
     });
   }, []);
+
+  // Navegação exclusivamente local deste computador (não afeta outros usuários)
+  const navegarPara = useCallback(
+    (novaAba: string, novoLicId?: number | null) => {
+      const scrollAtual = typeof window !== 'undefined' ? window.scrollY : 0;
+      const licMudou = novoLicId !== undefined && Number(novoLicId) !== Number(licitacaoSelecionadaId);
+      if (novaAba !== abaAtiva || licMudou) {
+        setHistoricoNavegacao(prev => [
+          ...prev.slice(-29),
+          {
+            aba: abaAtiva,
+            licitacaoId: licitacaoSelecionadaId,
+            scrollY: scrollAtual,
+          },
+        ]);
+      }
+      if (novoLicId !== undefined) {
+        setLicitacaoSelecionadaId(novoLicId);
+      }
+      setAbaAtiva(novaAba);
+    },
+    [abaAtiva, licitacaoSelecionadaId, setLicitacaoSelecionadaId]
+  );
+
+  const handleVoltar = useCallback(() => {
+    if (historicoNavegacao.length === 0) {
+      if (abaAtiva !== 'historico') {
+        setAbaAtiva('historico');
+      }
+      return;
+    }
+    const anterior = historicoNavegacao[historicoNavegacao.length - 1];
+    setHistoricoNavegacao(prev => prev.slice(0, -1));
+    setAbaAtiva(anterior.aba);
+    if (anterior.licitacaoId !== undefined) {
+      setLicitacaoSelecionadaId(anterior.licitacaoId);
+    }
+    if (typeof window !== 'undefined') {
+      const targetY = anterior.scrollY || 0;
+      setTimeout(() => {
+        window.scrollTo({ top: targetY, behavior: 'auto' });
+      }, 40);
+    }
+  }, [historicoNavegacao, abaAtiva, setLicitacaoSelecionadaId]);
   const [timbradoConfig, setTimbradoConfig] = useState<PapelTimbradoConfig>(() =>
     obterPapelTimbradoConfig()
   );
@@ -985,6 +1032,20 @@ export default function App() {
   };
 
   const handleCadastrarLicitacao = (novaLic: Omit<Licitacao, 'id'>) => {
+    const duplicada = encontrarLicitacaoDuplicada(licitacoes, {
+      orgao: novaLic.orgao,
+      processo_pregao: novaLic.processo_pregao,
+      modalidade: novaLic.modalidade,
+      data_cadastro: novaLic.data_cadastro,
+    });
+    if (duplicada) {
+      mostrarToast(
+        `Não é possível cadastrar: essa licitação já foi cadastrada anteriormente (por ${duplicada.responsavel} em ${duplicada.data_cadastro}).`,
+        'erro'
+      );
+      return undefined;
+    }
+
     const maiorId = licitacoes.reduce((max, l) => {
       const num = Number(l.id);
       return !isNaN(num) && num > max ? num : max;
@@ -1012,8 +1073,7 @@ export default function App() {
       console.warn('Erro ao salvar nova licitação no Firestore:', err);
     });
 
-    setLicitacaoSelecionadaId(novoId);
-    setAbaAtiva('montar');
+    navegarPara('montar', novoId);
     mostrarToast(`Licitação "${novaLic.orgao}" criada com sucesso! Proposta limpa pronta para inserção de itens.`);
     return novoId;
   };
@@ -1220,6 +1280,8 @@ export default function App() {
         sidebarAberta={sidebarMobileAberta}
         sidebarDesktopAberta={sidebarDesktopAberta}
         onToggleSidebar={handleToggleSidebar}
+        onVoltar={handleVoltar}
+        podeVoltar={historicoNavegacao.length > 0 || abaAtiva !== 'historico'}
         onAbrirCalculadora={() => {
           if (abaAtiva === 'montar') {
             setCalculadoraMinimizada(false);
@@ -1234,17 +1296,14 @@ export default function App() {
         alertasCobrancas={todosAlertasSininho}
         onNavegarParaAlerta={(alerta) => {
           if (alerta.tipo === 'pregoeiro_retorno') {
-            if (alerta.licitacaoId) {
-              setLicitacaoSelecionadaId(alerta.licitacaoId);
-            }
-            setAbaAtiva('historico');
+            navegarPara('historico', alerta.licitacaoId || undefined);
           } else {
-            setAbaAtiva('cobrancas');
+            navegarPara('cobrancas');
             if (alerta.cobrancaId) setCobrancaDestaqueId(alerta.cobrancaId);
           }
         }}
         onNavegarParaCobranca={(id) => {
-          setAbaAtiva('cobrancas');
+          navegarPara('cobrancas');
           if (id) setCobrancaDestaqueId(id);
         }}
         onTestarSomNotificacao={tocarSomNotificacao}
@@ -1359,7 +1418,7 @@ export default function App() {
         <Sidebar
           abaAtiva={abaAtiva}
           setAbaAtiva={(aba) => {
-            setAbaAtiva(aba);
+            navegarPara(aba);
             setSidebarMobileAberta(false);
           }}
           totalLicitacoes={licitacoes.length}
@@ -1423,11 +1482,10 @@ export default function App() {
             onAtualizarResponsavel={handleAtualizarResponsavel}
             onExcluirLicitacao={handleExcluirLicitacao}
             onSelecionarLicitacao={id => {
-              setLicitacaoSelecionadaId(id);
-              setAbaAtiva('montar');
+              navegarPara('montar', id);
             }}
-            onNovaLicitacao={() => setAbaAtiva('cadastrar')}
-            onNavegarPara={setAbaAtiva}
+            onNovaLicitacao={() => navegarPara('cadastrar')}
+            onNavegarPara={aba => navegarPara(aba)}
             onAbrirSeguranca={() => setSegurancaModalAberto(true)}
             onToggleAcompanhamento={handleToggleAcompanhamento}
             onToggleHomologada={handleToggleHomologada}
@@ -1473,19 +1531,16 @@ export default function App() {
             itens={itens}
             contatos={contatos}
             onSelecionarLicitacao={setLicitacaoSelecionadaId}
-            onNavegarPara={setAbaAtiva}
+            onNavegarPara={aba => navegarPara(aba)}
           />
         )}
 
         {abaAtiva === 'cadastrar' && (
           <CadastrarLicitacaoTab
+            licitacoes={licitacoes}
             responsaveis={responsaveis}
             onAdicionarResponsavel={handleAdicionarResponsavel}
             onCadastrar={handleCadastrarLicitacao}
-            onSucesso={id => {
-              setLicitacaoSelecionadaId(id);
-              setAbaAtiva('montar');
-            }}
           />
         )}
 
@@ -1493,7 +1548,7 @@ export default function App() {
           <PapelTimbradoTab
             config={timbradoConfig}
             onSalvarConfig={handleSalvarTimbrado}
-            onVisualizarPdf={() => setAbaAtiva('preview')}
+            onVisualizarPdf={() => navegarPara('preview')}
           />
         )}
 
@@ -1510,8 +1565,8 @@ export default function App() {
             onExcluirItem={handleExcluirItem}
             onAtualizarDataProposta={handleAtualizarDataProposta}
             onGerarPdf={handleGerarPdf}
-            onVisualizarPdf={() => setAbaAtiva('preview')}
-            onIrParaTimbrado={() => setAbaAtiva('timbrado')}
+            onVisualizarPdf={() => navegarPara('preview')}
+            onIrParaTimbrado={() => navegarPara('timbrado')}
             onForcarSalvarProposta={handleForcarSalvarProposta}
             onAtualizarUfLicitacao={handleAtualizarUfLicitacao}
             calculadoraFixaAberta={abaAtiva === 'montar' && !calculadoraMinimizada}
@@ -1527,10 +1582,10 @@ export default function App() {
             itens={itens}
             timbrado={timbradoConfig}
             onGerarPdf={handleGerarPdf}
-            onIrParaTimbrado={() => setAbaAtiva('timbrado')}
+            onIrParaTimbrado={() => navegarPara('timbrado')}
             onSalvarConfig={handleSalvarTimbrado}
             onAtualizarDataProposta={handleAtualizarDataProposta}
-            onNovaLicitacao={() => setAbaAtiva('cadastrar')}
+            onNovaLicitacao={() => navegarPara('cadastrar')}
           />
         )}
       </main>

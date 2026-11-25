@@ -5,7 +5,7 @@ import {
   Sun,
   Moon,
   Menu,
-  PanelLeftClose,
+  ArrowLeft,
   PanelLeftOpen,
   Database,
   Cloud,
@@ -20,6 +20,8 @@ interface HeaderProps {
   sidebarAberta?: boolean;
   sidebarDesktopAberta?: boolean;
   onToggleSidebar?: () => void;
+  onVoltar?: () => void;
+  podeVoltar?: boolean;
   onAbrirCalculadora?: () => void;
   onLogout?: () => void;
   statusNuvem?: 'conectando' | 'conectado' | 'desconectado';
@@ -37,6 +39,8 @@ export const Header: React.FC<HeaderProps> = ({
   sidebarAberta = false,
   sidebarDesktopAberta = true,
   onToggleSidebar,
+  onVoltar,
+  podeVoltar = false,
   onAbrirCalculadora,
   onLogout,
   cloudStatus,
@@ -51,37 +55,22 @@ export const Header: React.FC<HeaderProps> = ({
   return (
     <header className="sticky top-0 z-30 bg-white dark:bg-[#0F172A] border-b border-slate-200 dark:border-slate-800 transition-colors duration-150">
       <div className="w-full px-3 sm:px-6 lg:px-8 h-14 sm:h-16 flex items-center justify-between gap-2 sm:gap-4">
-        {/* Lado esquerdo: Botão Retrair/Chamar Menu Lateral + Logotipo & Nome GWS GLOBAL.net */}
+        {/* Lado esquerdo: Menu (mobile ou quando oculto), Botão Voltar (no lugar de Ocultar) + Logotipo & Nome GWS GLOBAL.net */}
         <div className="flex items-center gap-2 sm:gap-3 min-w-0 shrink-0">
-          {/* Botão para abrir/fechar o menu lateral (funciona no desktop e no celular) */}
+          {/* Botão para abrir menu no celular (sempre visível < md) ou reabrir no desktop se oculto */}
           <button
             type="button"
             onClick={onToggleSidebar}
-            className={`min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 lg:px-3 rounded-md border transition-colors cursor-pointer flex items-center justify-center lg:gap-1.5 shrink-0 ${
+            className={`min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 rounded-md border transition-colors cursor-pointer items-center justify-center gap-1.5 shrink-0 ${
               sidebarDesktopAberta
-                ? 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#0F2C59] dark:text-blue-300 border-slate-300 dark:border-slate-700'
-                : 'bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#0F2C59] dark:text-blue-300 border-slate-300 dark:border-slate-700 md:bg-[#0F2C59] md:hover:bg-[#163C78] md:text-white md:border-[#0F2C59] dark:md:bg-blue-600 dark:md:hover:bg-blue-500 dark:md:text-white dark:md:border-blue-500'
+                ? 'flex md:hidden bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#0F2C59] dark:text-blue-300 border-slate-300 dark:border-slate-700'
+                : 'flex bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-[#0F2C59] dark:text-blue-300 border-slate-300 dark:border-slate-700 md:bg-[#0F2C59] md:hover:bg-[#163C78] md:text-white md:border-[#0F2C59] dark:md:bg-blue-600 dark:md:hover:bg-blue-500 dark:md:text-white dark:md:border-blue-500'
             }`}
-            aria-label={
-              sidebarDesktopAberta || sidebarAberta
-                ? 'Ocultar menu lateral'
-                : 'Mostrar menu lateral'
-            }
-            title={
-              sidebarDesktopAberta
-                ? 'Ocultar menu lateral para ganhar espaço'
-                : 'Abrir menu lateral'
-            }
+            aria-label={sidebarAberta ? 'Fechar menu lateral' : 'Abrir menu lateral'}
+            title="Abrir menu lateral"
           >
             <Menu className="w-5 h-5 md:hidden shrink-0" />
-            {sidebarDesktopAberta ? (
-              <>
-                <PanelLeftClose className="w-4 h-4 hidden md:block shrink-0" />
-                <span className="hidden lg:inline whitespace-nowrap text-xs font-semibold">
-                  Ocultar
-                </span>
-              </>
-            ) : (
+            {!sidebarDesktopAberta && (
               <>
                 <PanelLeftOpen className="w-4 h-4 hidden md:block shrink-0" />
                 <span className="hidden lg:inline whitespace-nowrap text-xs font-semibold">
@@ -89,6 +78,27 @@ export const Header: React.FC<HeaderProps> = ({
                 </span>
               </>
             )}
+          </button>
+
+          {/* Botão Voltar local ao lado da logo da empresa (substitui o botão Ocultar no cabeçalho) */}
+          <button
+            type="button"
+            onClick={onVoltar}
+            disabled={!podeVoltar}
+            className={`min-h-[40px] min-w-[40px] sm:min-h-[36px] sm:min-w-[36px] px-2.5 sm:px-3 rounded-md border transition-colors flex items-center justify-center gap-1.5 shrink-0 whitespace-nowrap ${
+              podeVoltar
+                ? 'bg-slate-100 hover:bg-[#0F2C59] hover:text-white hover:border-[#0F2C59] dark:bg-slate-800 dark:hover:bg-blue-600 dark:hover:text-white dark:hover:border-blue-500 text-[#0F2C59] dark:text-blue-300 border-slate-300 dark:border-slate-700 cursor-pointer'
+                : 'bg-slate-50 dark:bg-slate-900/60 text-slate-400 dark:text-slate-600 border-slate-200 dark:border-slate-800 cursor-not-allowed opacity-60'
+            }`}
+            aria-label="Voltar para a tela anterior"
+            title={
+              podeVoltar
+                ? 'Voltar para a tela anterior mantendo seus filtros (apenas neste computador)'
+                : 'Nenhuma tela anterior para voltar'
+            }
+          >
+            <ArrowLeft className="w-4 h-4 shrink-0" />
+            <span className="hidden sm:inline text-xs font-semibold">Voltar</span>
           </button>
 
           <div

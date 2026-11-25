@@ -302,3 +302,65 @@ export function compararLicitacoesPorDataCadastroDesc<
   }
   return Number(b.id) - Number(a.id);
 }
+
+export function normalizarTextoComparacao(valor: string | undefined | null): string {
+  return (valor || '')
+    .normalize('NFD')
+    .replace(/[\u0300-\u036f]/g, '')
+    .toLowerCase()
+    .replace(/\s+/g, ' ')
+    .trim();
+}
+
+export function normalizarProcessoComparacao(valor: string | undefined | null): string {
+  return normalizarTextoComparacao(valor)
+    .replace(/\s*\/\s*/g, '/')
+    .replace(/\b0+(\d+)/g, '$1');
+}
+
+export function normalizarDataComparacao(dataStr: string | undefined | null): string {
+  const limpo = (dataStr || '').trim();
+  if (!limpo) return '';
+  if (/^\d{4}-\d{2}-\d{2}/.test(limpo)) {
+    const [ano, mes, dia] = limpo.slice(0, 10).split('-');
+    return `${dia}/${mes}/${ano}`;
+  }
+  if (/^\d{1,2}\/\d{1,2}\/\d{4}/.test(limpo)) {
+    const [dia, mes, ano] = limpo.slice(0, 10).split('/');
+    return `${dia.padStart(2, '0')}/${mes.padStart(2, '0')}/${ano}`;
+  }
+  return limpo;
+}
+
+export function encontrarLicitacaoDuplicada<
+  T extends {
+    orgao: string;
+    processo_pregao: string;
+    modalidade: string;
+    data_cadastro: string;
+  }
+>(
+  licitacoes: T[],
+  candidata: {
+    orgao: string;
+    processo_pregao: string;
+    modalidade: string;
+    data_cadastro: string;
+  }
+): T | undefined {
+  const orgCand = normalizarTextoComparacao(candidata.orgao);
+  const procCand = normalizarProcessoComparacao(candidata.processo_pregao);
+  const modCand = normalizarTextoComparacao(candidata.modalidade);
+  const dataCand = normalizarDataComparacao(candidata.data_cadastro);
+
+  if (!orgCand || !procCand || !modCand || !dataCand) return undefined;
+
+  return licitacoes.find(lic => {
+    return (
+      normalizarTextoComparacao(lic.orgao) === orgCand &&
+      normalizarProcessoComparacao(lic.processo_pregao) === procCand &&
+      normalizarTextoComparacao(lic.modalidade) === modCand &&
+      normalizarDataComparacao(lic.data_cadastro) === dataCand
+    );
+  });
+}

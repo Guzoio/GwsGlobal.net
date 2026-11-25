@@ -124,6 +124,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [valorUnitarioTexto, setValorUnitarioTexto] = useState<string>('150,00');
   const [lanceMinimo, setLanceMinimo] = useState<string>('');
   const [lanceLote, setLanceLote] = useState<string>('');
+  const [lanceLoteManual, setLanceLoteManual] = useState<boolean>(false);
   const [imagemBase64, setImagemBase64] = useState<string>('');
   const [observacoes, setObservacoes] = useState<string>('');
   const [mostrarObservacoes, setMostrarObservacoes] = useState<boolean>(false);
@@ -183,6 +184,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setValorUnitario(150.0);
     setLanceMinimo('');
     setLanceLote('');
+    setLanceLoteManual(false);
     setImagemBase64('');
     setObservacoes('');
     setMostrarObservacoes(false);
@@ -298,6 +300,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
   const [itemEditandoLances, setItemEditandoLances] = useState<ItemLicitacao | null>(null);
   const [editLanceMinimo, setEditLanceMinimo] = useState<string>('');
   const [editLanceLote, setEditLanceLote] = useState<string>('');
+  const [editLanceLoteManual, setEditLanceLoteManual] = useState<boolean>(false);
 
   // Modal para análise de Lucro Líquido & Margem (%) de um item da proposta
   const [itemParaCalculoLucro, setItemParaCalculoLucro] = useState<ItemLicitacao | null>(null);
@@ -341,6 +344,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setValorUnitarioTexto('150,00');
     setLanceMinimo('');
     setLanceLote('');
+    setLanceLoteManual(false);
     setImagemBase64('');
     setObservacoes('');
     setNovoLinkInput('');
@@ -359,16 +363,18 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setQuantidade(item.quantidade);
     setValorUnitario(item.valor_unitario);
     setValorUnitarioTexto(formatarNumeroPtBr(item.valor_unitario));
-    setLanceMinimo(
-      item.lance_minimo !== undefined && item.lance_minimo > 0
-        ? formatarNumeroPtBr(item.lance_minimo)
-        : ''
-    );
-    setLanceLote(
-      item.lance_lote !== undefined && item.lance_lote > 0
-        ? formatarNumeroPtBr(item.lance_lote)
-        : ''
-    );
+    const minCarregado =
+      item.lance_minimo !== undefined && item.lance_minimo > 0 ? item.lance_minimo : 0;
+    const loteCarregado =
+      item.lance_lote !== undefined && item.lance_lote > 0 ? item.lance_lote : 0;
+    const esperadoAuto =
+      minCarregado > 0 ? Number((minCarregado * item.quantidade).toFixed(2)) : 0;
+    const ehPersonalizado =
+      loteCarregado > 0 && minCarregado > 0 && Math.abs(loteCarregado - esperadoAuto) > 0.02;
+
+    setLanceMinimo(minCarregado > 0 ? formatarNumeroPtBr(minCarregado) : '');
+    setLanceLote(loteCarregado > 0 ? formatarNumeroPtBr(loteCarregado) : '');
+    setLanceLoteManual(ehPersonalizado);
     setImagemBase64(item.caminho_imagem || '');
     setObservacoes(item.observacoes || '');
     setNovoLinkInput('');
@@ -590,6 +596,7 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
     setValorUnitarioTexto('150,00');
     setLanceMinimo('');
     setLanceLote('');
+    setLanceLoteManual(false);
     setImagemBase64('');
     setObservacoes('');
     setMostrarObservacoes(false);
@@ -598,16 +605,18 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
 
   const abrirModalEditarLances = (item: ItemLicitacao) => {
     setItemEditandoLances(item);
-    setEditLanceMinimo(
-      item.lance_minimo !== undefined && item.lance_minimo > 0
-        ? formatarNumeroPtBr(item.lance_minimo)
-        : ''
-    );
-    setEditLanceLote(
-      item.lance_lote !== undefined && item.lance_lote > 0
-        ? formatarNumeroPtBr(item.lance_lote)
-        : ''
-    );
+    const minCarregado =
+      item.lance_minimo !== undefined && item.lance_minimo > 0 ? item.lance_minimo : 0;
+    const loteCarregado =
+      item.lance_lote !== undefined && item.lance_lote > 0 ? item.lance_lote : 0;
+    const esperadoAuto =
+      minCarregado > 0 ? Number((minCarregado * item.quantidade).toFixed(2)) : 0;
+    const ehPersonalizado =
+      loteCarregado > 0 && minCarregado > 0 && Math.abs(loteCarregado - esperadoAuto) > 0.02;
+
+    setEditLanceMinimo(minCarregado > 0 ? formatarNumeroPtBr(minCarregado) : '');
+    setEditLanceLote(loteCarregado > 0 ? formatarNumeroPtBr(loteCarregado) : '');
+    setEditLanceLoteManual(ehPersonalizado);
   };
 
   const handleSalvarEdicaoLances = (e: React.FormEvent) => {
@@ -1069,10 +1078,12 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                   const val = parseInt(e.target.value, 10);
                   const novaQtd = isNaN(val) ? 1 : Math.max(1, val);
                   setQuantidade(novaQtd);
-                  if (lanceMinimo && !lanceLote) {
+                  if (!lanceLoteManual) {
                     const numMin = parseMoedaBrasileira(lanceMinimo);
-                    if (numMin !== undefined && novaQtd > 0) {
+                    if (numMin !== undefined && numMin > 0 && novaQtd > 0) {
                       setLanceLote(formatarNumeroPtBr(numMin * novaQtd));
+                    } else if (!lanceMinimo.trim()) {
+                      setLanceLote('');
                     }
                   }
                 }}
@@ -1193,10 +1204,14 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     onChange={e => {
                       const val = e.target.value;
                       setLanceMinimo(val);
-                      if (val && !lanceLote) {
-                        const num = parseMoedaBrasileira(val);
-                        if (num !== undefined && quantidade > 0) {
-                          setLanceLote(formatarNumeroPtBr(num * quantidade));
+                      if (!lanceLoteManual) {
+                        if (!val.trim()) {
+                          setLanceLote('');
+                        } else {
+                          const num = parseMoedaBrasileira(val);
+                          if (num !== undefined && num > 0 && quantidade > 0) {
+                            setLanceLote(formatarNumeroPtBr(num * quantidade));
+                          }
                         }
                       }
                     }}
@@ -1206,8 +1221,8 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       const parsed = parseMoedaBrasileira(text);
                       if (parsed !== undefined && !isNaN(parsed)) {
                         setLanceMinimo(formatarNumeroPtBr(parsed));
-                        if (!lanceLote && quantidade > 0) {
-                          setLanceLote(formatarNumeroPtBr(parsed * quantidade));
+                        if (!lanceLoteManual && quantidade > 0) {
+                          setLanceLote(parsed > 0 ? formatarNumeroPtBr(parsed * quantidade) : '');
                         }
                       } else {
                         setLanceMinimo(text);
@@ -1217,6 +1232,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       const num = parseMoedaBrasileira(lanceMinimo);
                       if (num !== undefined && num > 0) {
                         setLanceMinimo(formatarNumeroPtBr(num));
+                        if (!lanceLoteManual && quantidade > 0) {
+                          setLanceLote(formatarNumeroPtBr(num * quantidade));
+                        }
                       }
                     }}
                     placeholder="Ex: 2.530,57"
@@ -1226,12 +1244,32 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Lance Lote (R$){' '}
-                  <span className="text-slate-400 dark:text-slate-500 font-normal">
-                    (Total do lote mínimo aceito)
-                  </span>
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Lance Lote (R$){' '}
+                    <span className="text-slate-400 dark:text-slate-500 font-normal">
+                      {lanceLoteManual ? '(Editado manualmente)' : '(Automático: Qtd × Mín)'}
+                    </span>
+                  </label>
+                  {lanceLoteManual && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setLanceLoteManual(false);
+                        const numMin = parseMoedaBrasileira(lanceMinimo);
+                        if (numMin !== undefined && numMin > 0 && quantidade > 0) {
+                          setLanceLote(formatarNumeroPtBr(numMin * quantidade));
+                        } else {
+                          setLanceLote('');
+                        }
+                      }}
+                      className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                      title="Voltar ao cálculo automático (Quantidade × Lance Mínimo)"
+                    >
+                      Recalcular
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
@@ -1240,15 +1278,21 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     type="text"
                     inputMode="decimal"
                     value={lanceLote}
-                    onChange={e => setLanceLote(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setLanceLote(val);
+                      setLanceLoteManual(val.trim().length > 0);
+                    }}
                     onPaste={e => {
                       e.preventDefault();
                       const text = e.clipboardData.getData('text');
                       const parsed = parseMoedaBrasileira(text);
                       if (parsed !== undefined && !isNaN(parsed)) {
                         setLanceLote(formatarNumeroPtBr(parsed));
+                        setLanceLoteManual(parsed > 0);
                       } else {
                         setLanceLote(text);
+                        setLanceLoteManual(text.trim().length > 0);
                       }
                     }}
                     onBlur={() => {
@@ -1799,10 +1843,14 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     onChange={e => {
                       const val = e.target.value;
                       setEditLanceMinimo(val);
-                      if (val && !editLanceLote) {
-                        const num = parseMoedaBrasileira(val);
-                        if (num !== undefined && itemEditandoLances.quantidade > 0) {
-                          setEditLanceLote(formatarNumeroPtBr(num * itemEditandoLances.quantidade));
+                      if (!editLanceLoteManual) {
+                        if (!val.trim()) {
+                          setEditLanceLote('');
+                        } else {
+                          const num = parseMoedaBrasileira(val);
+                          if (num !== undefined && num > 0 && itemEditandoLances.quantidade > 0) {
+                            setEditLanceLote(formatarNumeroPtBr(num * itemEditandoLances.quantidade));
+                          }
                         }
                       }
                     }}
@@ -1812,8 +1860,10 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       const parsed = parseMoedaBrasileira(text);
                       if (parsed !== undefined && !isNaN(parsed)) {
                         setEditLanceMinimo(formatarNumeroPtBr(parsed));
-                        if (!editLanceLote && itemEditandoLances.quantidade > 0) {
-                          setEditLanceLote(formatarNumeroPtBr(parsed * itemEditandoLances.quantidade));
+                        if (!editLanceLoteManual && itemEditandoLances.quantidade > 0) {
+                          setEditLanceLote(
+                            parsed > 0 ? formatarNumeroPtBr(parsed * itemEditandoLances.quantidade) : ''
+                          );
                         }
                       } else {
                         setEditLanceMinimo(text);
@@ -1823,6 +1873,9 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                       const num = parseMoedaBrasileira(editLanceMinimo);
                       if (num !== undefined && num > 0) {
                         setEditLanceMinimo(formatarNumeroPtBr(num));
+                        if (!editLanceLoteManual && itemEditandoLances.quantidade > 0) {
+                          setEditLanceLote(formatarNumeroPtBr(num * itemEditandoLances.quantidade));
+                        }
                       }
                     }}
                     placeholder="Ex: 2.530,57"
@@ -1832,9 +1885,31 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
               </div>
 
               <div>
-                <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300 mb-1">
-                  Lance Lote (R$) <span className="text-slate-400 dark:text-slate-500 font-normal">(Total do Lote)</span>
-                </label>
+                <div className="flex items-center justify-between gap-2 mb-1">
+                  <label className="block text-xs font-semibold text-slate-700 dark:text-slate-300">
+                    Lance Lote (R$){' '}
+                    <span className="text-slate-400 dark:text-slate-500 font-normal">
+                      {editLanceLoteManual ? '(Editado manualmente)' : '(Automático: Qtd × Mín)'}
+                    </span>
+                  </label>
+                  {editLanceLoteManual && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setEditLanceLoteManual(false);
+                        const num = parseMoedaBrasileira(editLanceMinimo);
+                        if (num !== undefined && num > 0 && itemEditandoLances.quantidade > 0) {
+                          setEditLanceLote(formatarNumeroPtBr(num * itemEditandoLances.quantidade));
+                        } else {
+                          setEditLanceLote('');
+                        }
+                      }}
+                      className="text-[10px] font-semibold text-amber-700 dark:text-amber-300 hover:underline cursor-pointer whitespace-nowrap shrink-0"
+                    >
+                      Recalcular
+                    </button>
+                  )}
+                </div>
                 <div className="relative">
                   <span className="absolute left-3 top-1/2 -translate-y-1/2 text-xs text-slate-400 dark:text-slate-500 font-mono font-semibold">
                     R$
@@ -1843,15 +1918,21 @@ export const MontarPropostaTab: React.FC<MontarPropostaTabProps> = ({
                     type="text"
                     inputMode="decimal"
                     value={editLanceLote}
-                    onChange={e => setEditLanceLote(e.target.value)}
+                    onChange={e => {
+                      const val = e.target.value;
+                      setEditLanceLote(val);
+                      setEditLanceLoteManual(val.trim().length > 0);
+                    }}
                     onPaste={e => {
                       e.preventDefault();
                       const text = e.clipboardData.getData('text');
                       const parsed = parseMoedaBrasileira(text);
                       if (parsed !== undefined && !isNaN(parsed)) {
                         setEditLanceLote(formatarNumeroPtBr(parsed));
+                        setEditLanceLoteManual(parsed > 0);
                       } else {
                         setEditLanceLote(text);
+                        setEditLanceLoteManual(text.trim().length > 0);
                       }
                     }}
                     onBlur={() => {
